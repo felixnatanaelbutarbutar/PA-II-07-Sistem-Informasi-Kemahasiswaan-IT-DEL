@@ -1,0 +1,291 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* Header */
+.header {
+    background-color: #007bff;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.header nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+.header nav a:hover {
+    text-decoration: underline;
+}
+
+/* Hero Section */
+.hero {
+    background-image: url('images/beranda.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.hero h2 {
+    font-size: 36px;
+}
+
+.hero p {
+    font-size: 18px;
+}
+
+/* Grid Section */
+.grid-section {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+    gap: 20px;
+}
+
+.card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+}
+
+/* Gallery */
+.gallery {
+    text-align: center;
+    padding: 40px;
+}
+
+.gallery h3 {
+    font-size: 24px;
+}
+
+.gallery-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.gallery-container img {
+    width: 200px;
+    height: 150px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Testimoni */
+.testimoni {
+    text-align: center;
+    padding: 40px;
+    background-color: #e9ecef;
+}
+
+.testi-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.testi-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 200px;
+    text-align: center;
+}
+
+.testi-card img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+
+/* Kontak */
+.kontak {
+    text-align: center;
+    padding: 40px;
+}
+
+/* Footer */
+.footer {
+    background: var(--bs-dark);
+    
+}
+
+.footer .footer-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer .footer-item a {
+    line-height: 35px;
+    color: var(--bs-body);
+    transition: 0.5s;
+}
+
+.footer .footer-item p {
+    line-height: 35px;
+}
+
+.footer .footer-item a:hover {
+    color: var(--bs-primary);
+}
+
+.footer .footer-item .footer-btn a,
+.footer .footer-item .footer-btn a i {
+    transition: 0.5s;
+}
+
+.footer .footer-item .footer-btn a:hover {
+    background: var(--bs-white);
+}
+
+.footer .footer-item .footer-btn a:hover i {
+    color: var(--bs-primary);
+}
+
+
+.footer .footer-item .footer-instagram {
+    position: relative;
+    overflow: hidden;
+}
+
+.footer .footer-item .footer-instagram img {
+    transition: 0.5s;
+}
+
+.footer .footer-item .footer-instagram:hover img {
+    transform: scale(1.2);
+}
+
+.footer .footer-item .footer-instagram .footer-search-icon {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.5s;
+    opacity: 0;
+}
+
+.footer .footer-item .footer-instagram:hover .footer-search-icon {
+    opacity: 1;
+    background: rgba(0, 0, 0, .6);
+}
+
+.footer .footer-item .footer-btn a {
+    background: var(--bs-light);
+    color: var(--bs-primary);
+}
+
+.footer .footer-item .footer-btn a:hover {
+    background: var(--bs-primary);
+}
+
+.footer .footer-item .footer-btn a:hover i {
+    color: var(--bs-white);
+}
+/*** Footer End ***/
+
+
+/*** copyright Start ***/
+.copyright {
+    background: var(--bs-dark);
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+/*** copyright end ***/
+.footer-social {
+    margin-top: 40px; /* Atur sesuai kebutuhan */
+    padding-top: 20px;
+}
+.footer-logo {
+    margin-top: -20px; /* Mengangkat logo ke atas */
+    margin-left: 100px;
+    
+}
+.footer .row {
+    align-items: flex-start; /* Menjaga semua elemen tetap sejajar ke atas */
+}
+
+.footer-logo {
+    height: 70px;
+
+}
+
+.footer-social {
+    margin-top: 2rem !important; /* Kurangi jarak agar tidak mendorong elemen ke bawah */
+}
+
+.footer-social a {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+/* ========================= */
+/* Atur dropdown secara spesifik */
+/* ========================= */
+
+/* Pastikan dropdown tetap muncul saat hover */
+.nav-item.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+/* *Dropdown Layanan Kemahasiswaan* */
+#LayananDropdown + .dropdown-menu {
+    right: auto;  /* Reset ke default */
+    left: 0;  /* Muncul langsung di bawah teks */
+    min-width: 200px; /* Pastikan lebar cukup */
+}
+
+/* *Dropdown BEM (Perbaikan posisi)* */
+#BEMDropdown + .dropdown-menu {
+    right: auto;  /* Reset */
+    left: -10px !important; /* Geser lebih dekat ke teks BEM */
+    min-width: 200px;
+}
+
+/* *Styling Umum Dropdown* */
+.dropdown-menu {
+    background-color: rgba(0, 0, 0, 0.7); /* Lebih gelap */
+    border: none;
+    padding: 10px 0;
+    border-radius: 5px; /* Membuat sudut lebih lembut */
+}
+
+/* Warna teks dropdown */
+.dropdown-item {
+
+    padding: 8px 15px;
+}
+
+/* Efek hover lebih halus */
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}

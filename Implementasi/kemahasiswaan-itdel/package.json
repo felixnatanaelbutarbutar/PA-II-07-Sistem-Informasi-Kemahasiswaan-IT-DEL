@@ -1,0 +1,38 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@headlessui/react": "^2.0.0",
+        "@inertiajs/react": "^2.0.0",
+        "@tailwindcss/forms": "^0.5.3",
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-react": "^4.2.0",
+        "autoprefixer": "^10.4.12",
+        "axios": "^1.7.4",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^1.2.0",
+        "postcss": "^8.4.31",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "tailwindcss": "^3.2.1",
+        "vite": "^6.0.11"
+    },
+    "dependencies": {
+        "@fortawesome/fontawesome-free": "^6.7.2",
+        "@inertiajs/inertia-react": "^0.8.1",
+        "@inertiajs/react": "^2.0.3",
+        "@popperjs/core": "^2.11.8",
+        "@vitejs/plugin-react": "^4.3.4",
+        "bootstrap": "^5.3.3",
+        "jquery": "^3.7.1",
+        "owl.carousel": "^2.3.4",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "react-helmet": "^6.1.0",
+        "react-router-dom": "^7.2.0"
+    }
+}
