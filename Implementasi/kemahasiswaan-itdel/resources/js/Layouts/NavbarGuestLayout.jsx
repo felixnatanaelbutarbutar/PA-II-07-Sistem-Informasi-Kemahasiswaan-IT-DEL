@@ -105,8 +105,8 @@ const NavbarGuestLayout = () => {
                                 Berita
                             </Link>
                             <Link
-                                href="/pengumuman"
-                                className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/pengumuman') ? 'nav-item-active' : 'transition-colors hover:text-white'
+                                href="/announcementguest"
+                                className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/announcementguest') ? 'nav-item-active' : 'transition-colors hover:text-white'
                                     }`}
                             >
                                 Pengumuman

@@ -30,6 +30,7 @@ class RoleHelper
                 'organisasi' => false,
                 'beasiswa'=> true,
                 'news'=> true,
+                'achievements'=> true,
             ],
             'adminbem' => [
                 'berita' => false,
@@ -38,6 +39,7 @@ class RoleHelper
                 'kegiatan' => true,
                 'organisasi' => false,
                 'news'=> true,
+                'achievements'=> false,
 
             ],
             'adminmpm' => [
@@ -47,6 +49,7 @@ class RoleHelper
                 'kegiatan' => false,
                 'organisasi' => true,
                 'news'=> false,
+                'achievements'=> false,
             ],
         ];
 
@@ -129,6 +132,15 @@ class RoleHelper
                 'name' => 'Berita',
                 'route' => 'admin.news.index',
                 'icon' => 'newspaper',
+                'visible' => true,
+            ];
+        }
+        
+        if ($permissions['achievements'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Prestasi',
+                'route' => 'admin.achievements.index',
+                'icon' => 'award',
                 'visible' => true,
             ];
         }

@@ -1,16 +1,17 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
-use App\Models\User;
 use App\Models\News;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\KegiatanBEMController; // Tambahkan Controller Kegiatan BEM
+use App\Models\User;
+use Inertia\Inertia;
 use App\Helpers\RoleHelper;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Application;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\KegiatanBEMController; // Tambahkan Controller Kegiatan BEM
 
 
 
@@ -173,33 +174,39 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/announcement/edit/{announcement}', [AnnouncementController::class, 'edit'])->name('announcement.edit');
                 Route::put('/announcement/{announcement}', [AnnouncementController::class, 'update'])->name('announcement.update');
                 Route::delete('/announcement/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
-            
             });
         });
     });
 
-
-    // Guest routes
-    Route::get('/newsguest', [NewsController::class, 'guestIndex'])->name('news.guest.index');
-    Route::get('/news/{news_id}', [NewsController::class, 'show'])->name('news.show');
-
-
-
-    // Mahasiswa routes
-    Route::middleware(['role:mahasiswa'])->prefix('mahasiswa')->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('Mahasiswa/Dashboard', [
-                'auth' => [
-                    'user' => Auth::user()
-                ]
-            ]);
-        })->name('mahasiswa.dashboard');
-
-        // Add other mahasiswa specific routes here
+    Route::middleware(['auth'])->group(function () {
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::middleware(['role:kemahasiswaan'])->group(function () {
+                // Halaman daftar prestasi
+                Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+                // Halaman tambah prestasi
+                Route::get('/achievements/add', [AchievementController::class, 'create'])->name('achievements.create');
+                // Menambahkan prestasi baru
+                Route::post('/achievements', [AchievementController::class, 'store'])->name('achievements.store');
+                // Halaman edit prestasi
+                Route::get('/achievements/edit/{achievement}', [AchievementController::class, 'edit'])->name('achievements.edit');
+                // Update prestasi
+                Route::put('/achievements/{achievement}', [AchievementController::class, 'update'])->name('achievements.update');
+                // Hapus prestasi
+                Route::delete('/achievements/{achievement}', [AchievementController::class, 'destroy'])->name('achievements.destroy');
+            });
+        });
     });
+    
+
+
 });
 
 
+Route::get('/newsguest', [NewsController::class, 'guestIndex'])->name('news.guest.index');
+Route::get('/news/{news_id}', [NewsController::class, 'show'])->name('news.show');
+
+Route::get('/announcementguest', [AnnouncementController::class, 'guestIndex'])->name('announcement');
 
 // Import file auth routes
 require __DIR__ . '/auth.php';
+

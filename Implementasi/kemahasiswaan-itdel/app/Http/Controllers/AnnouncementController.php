@@ -14,7 +14,17 @@ use Illuminate\Support\Facades\Log;
 
 class AnnouncementController extends Controller
 {
-    public function announcement()
+    // public function guestIndex()
+    // {
+    //     $newsItems = News::with('category')->orderBy('created_at', 'desc')->get();
+    //     $categories = NewsCategory::all();
+
+    //     return Inertia::render('News', [
+    //         'newsItems' => $newsItems,
+    //         'categories' => $categories,
+    //     ]);
+    // }
+    public function guestIndex()
     {
         $announcements = Announcement::with('category')->get();
         Log::info('Data pengumuman yang diambil:', ['jumlah' => $announcements->count()]);
@@ -54,7 +64,7 @@ class AnnouncementController extends Controller
             $newNumber = 1;
         }
 
-        return 'n' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return 'anc' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
     public function store(Request $request)

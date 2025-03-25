@@ -38,6 +38,7 @@
         "@vitejs/plugin-react": "^4.3.4",
         "bootstrap": "^5.3.3",
         "jquery": "^3.7.1",
+        "lucide-react": "^0.483.0",
         "orgchart": "^5.0.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
