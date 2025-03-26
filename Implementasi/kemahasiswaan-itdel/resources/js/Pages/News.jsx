@@ -1,35 +1,31 @@
-// File: resources/js/Pages/News.jsx
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import '../../css/news.css';
 
 export default function News({ newsItems, categories }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('Semua');
     const [currentPage, setCurrentPage] = useState(1);
     const [featuredNews, setFeaturedNews] = useState(null);
-    const [latestNews, setLatestNews] = useState([]);
+    const [sidebarNews, setSidebarNews] = useState([]);
 
-    // Categories for filtering (including "Semua" as the default)
     const categoryList = ['Semua', ...categories.map(cat => cat.category_name)];
-
-    const itemsPerPage = 6;
+    const itemsPerPage = 4;
 
     useEffect(() => {
         // Set featured news (either marked as featured or the most recent one)
         const featured = newsItems.find(news => news.isFeatured) || 
-                         (newsItems.length > 0 ? {...newsItems[0], isFeatured: true} : null);
+                        (newsItems.length > 0 ? {...newsItems[0], isFeatured: true} : null);
         setFeaturedNews(featured);
 
-        // Get 3 latest news items excluding the featured one
-        const latestItems = [...newsItems]
+        // Get 5 news items for the sidebar, excluding the featured one
+        const sidebarItems = [...newsItems]
             .filter(news => news.news_id !== (featured?.news_id || 0))
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 3);
-        setLatestNews(latestItems);
+            .slice(0, 5);
+        setSidebarNews(sidebarItems);
     }, [newsItems]);
 
     // Filter news based on search and category
@@ -56,311 +52,297 @@ export default function News({ newsItems, categories }) {
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
 
+    const styles = {
+        body: {
+            fontFamily: 'Arial, sans-serif',
+            margin: 0,
+            padding: 0,
+            backgroundColor: '#f5f7fa',
+        },
+        container: {
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: '20px',
+        },
+        heroSection: {
+            display: 'flex',
+            gap: '20px',
+            marginBottom: '20px',
+        },
+        heroMain: {
+            flex: 2,
+            position: 'relative',
+            background: '#fff',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+        },
+        heroMainImg: {
+            width: '100%',
+            height: '400px',
+            objectFit: 'cover',
+        },
+        heroMainCategory: {
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            background: '#fff9db',
+            padding: '5px 10px',
+            borderRadius: '5px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+        },
+        heroMainTitle: {
+            position: 'absolute',
+            bottom: '20px',
+            left: '20px',
+            color: '#000',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            background: 'rgba(255, 255, 255, 0.8)',
+            padding: '10px',
+            borderRadius: '5px',
+        },
+        heroSidebar: {
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+        },
+        heroSidebarNewsCard: {
+            background: '#fff',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+        },
+        heroSidebarNewsCardImg: {
+            width: '100%',
+            height: '150px',
+            objectFit: 'cover',
+        },
+        heroSidebarNewsCardCategory: {
+            background: '#e6f0fa',
+            padding: '5px 10px',
+            borderRadius: '5px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            margin: '10px',
+        },
+        heroSidebarNewsCardTitle: {
+            fontSize: '16px',
+            fontWeight: 'bold',
+            margin: '0 10px 10px',
+        },
+        newsGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '20px',
+        },
+        newsCard: {
+            background: '#fff',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+        },
+        newsCardImg: {
+            width: '100%',
+            height: '150px',
+            objectFit: 'cover',
+        },
+        newsCardCategory: {
+            background: '#e6f0fa',
+            padding: '5px 10px',
+            borderRadius: '5px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            margin: '10px',
+        },
+        newsCardTitle: {
+            fontSize: '16px',
+            fontWeight: 'bold',
+            margin: '0 10px 10px',
+        },
+        newsCardDescription: {
+            fontSize: '14px',
+            color: '#666',
+            margin: '0 10px 10px',
+        },
+        searchFilterContainer: {
+            marginBottom: '20px',
+            padding: '20px',
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            gap: '20px',
+            alignItems: 'center',
+        },
+        searchInput: {
+            flex: 1,
+            padding: '10px',
+            borderRadius: '5px',
+            border: '1px solid #ddd',
+            fontSize: '16px',
+        },
+        filterSelect: {
+            padding: '10px',
+            borderRadius: '5px',
+            border: '1px solid #ddd',
+            fontSize: '16px',
+        },
+        pagination: {
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '20px',
+            gap: '10px',
+        },
+        pageButton: {
+            padding: '10px 15px',
+            borderRadius: '5px',
+            border: '1px solid #ddd',
+            background: '#fff',
+            cursor: 'pointer',
+        },
+        pageButtonActive: {
+            background: '#007bff',
+            color: '#fff',
+            border: '1px solid #007bff',
+        },
+        pageButtonDisabled: {
+            background: '#f0f0f0',
+            cursor: 'not-allowed',
+        },
+    };
+
     return (
         <GuestLayout>
             <NavbarGuestLayout />
-            <div className="news-page py-5">
-                <div className="container">
-                    {/* Header Section */}
-                    <div className="text-center mb-5 wow fadeIn" data-wow-delay="0.2s">
-                        <h1 className="news-heading display-4 fw-bold text-white mb-3">Berita Terbaru</h1>
-                        <p className="lead text-gray-300 mx-auto" style={{ maxWidth: '700px' }}>
-                            Ikuti informasi terbaru seputar kegiatan, prestasi, dan pengumuman dari IT Del Kemahasiswaan.
-                        </p>
+            <div style={styles.body}>
+                <div style={styles.container}>
+                    {/* Search and Filter Section */}
+                    <div style={styles.searchFilterContainer}>
+                        <input
+                            type="text"
+                            style={styles.searchInput}
+                            placeholder="Cari berita..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <select
+                            style={styles.filterSelect}
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        >
+                            {categoryList.map((category) => (
+                                <option key={category} value={category}>
+                                    {category}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
-                    {/* Featured News Section */}
+                    {/* Hero Section */}
                     {featuredNews && (
-                        <div className="featured-news mb-5 wow fadeIn" data-wow-delay="0.4s">
-                            <div className="featured-card position-relative overflow-hidden rounded-lg">
-                                <div className="featured-image-container">
-                                    <img
-                                        src={featuredNews.image ? `/storage/${featuredNews.image}` : 'https://via.placeholder.com/1200x600'}
-                                        alt={featuredNews.title}
-                                        className="featured-image"
-                                    />
-                                    <div className="featured-overlay"></div>
+                        <div style={styles.heroSection}>
+                            <div style={styles.heroMain}>
+                                <img
+                                    style={styles.heroMainImg}
+                                    src={featuredNews.image ? `/storage/${featuredNews.image}` : 'https://via.placeholder.com/800x400'}
+                                    alt={featuredNews.title}
+                                />
+                                <div style={styles.heroMainCategory}>
+                                    {categories.find(cat => cat.category_id === featuredNews.category_id)?.category_name || 'Uncategorized'}
                                 </div>
-                                <div className="featured-content p-4 p-md-5">
-                                    <div className="featured-badge mb-2">
-                                        <span className="badge bg-primary px-3 py-2 rounded-pill fs-6">
-                                            {categories.find(cat => cat.category_id === featuredNews.category_id)?.category_name || 'Uncategorized'}
-                                        </span>
-                                    </div>
-                                    <h2 className="featured-title text-white fw-bold mb-3">{featuredNews.title}</h2>
-                                    <p className="featured-excerpt text-gray-200 mb-4" dangerouslySetInnerHTML={{ __html: featuredNews.content.substring(0, 200) + '...' }} />
-                                    <div className="d-flex align-items-center text-gray-300 mb-4">
-                                        <i className="far fa-calendar-alt me-2"></i>
-                                        <span>{formatDate(featuredNews.created_at)}</span>
-                                    </div>
-                                    <Link
-                                        href={route('news.show', featuredNews.news_id)}
-                                        className="btn btn-primary btn-lg px-4 py-2 featured-btn"
-                                    >
-                                        Baca Selengkapnya <i className="fas fa-arrow-right ms-2"></i>
+                                <div style={styles.heroMainTitle}>{featuredNews.title}</div>
+                            </div>
+                            <div style={styles.heroSidebar}>
+                                {sidebarNews.map((news, index) => (
+                                    <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
+                                        <div style={styles.heroSidebarNewsCard}>
+                                            <img
+                                                style={styles.heroSidebarNewsCardImg}
+                                                src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/400x150'}
+                                                alt={news.title}
+                                            />
+                                            <div style={styles.heroSidebarNewsCardCategory}>
+                                                {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
+                                            </div>
+                                            <div style={styles.heroSidebarNewsCardTitle}>{news.title}</div>
+                                        </div>
                                     </Link>
-                                </div>
+                                ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Latest News Highlight Section */}
-                    <div className="latest-news-section mb-5">
-                        <div className="section-header d-flex justify-content-between align-items-center mb-4">
-                            <h3 className="text-white fw-bold position-relative highlight-heading">
-                                Berita Terbaru
-                                <span className="highlight-line"></span>
-                            </h3>
-                            <Link href="#" className="text-primary text-decoration-none">
-                                Lihat Semua <i className="fas fa-arrow-right ms-1"></i>
-                            </Link>
-                        </div>
-                        
-                        <div className="row">
-                            {latestNews.map((news, index) => (
-                                <div 
-                                    key={news.news_id} 
-                                    className="col-md-4 mb-4 wow fadeIn" 
-                                    data-wow-delay={`${0.2 + (index * 0.1)}s`}
+                    {/* News Grid */}
+                    <div style={styles.newsGrid}>
+                        {paginatedNews.length > 0 ? (
+                            paginatedNews.map((news) => (
+                                <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
+                                    <div style={styles.newsCard}>
+                                        <img
+                                            style={styles.newsCardImg}
+                                            src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/300x150'}
+                                            alt={news.title}
+                                        />
+                                        <div style={styles.newsCardCategory}>
+                                            {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
+                                        </div>
+                                        <div style={styles.newsCardTitle}>{news.title}</div>
+                                        <div style={styles.newsCardDescription}>
+                                            {news.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...'}
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
+                                Tidak ada berita yang ditemukan.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div style={styles.pagination}>
+                            <button
+                                style={{
+                                    ...styles.pageButton,
+                                    ...(currentPage === 1 ? styles.pageButtonDisabled : {}),
+                                }}
+                                onClick={() => setCurrentPage(currentPage - 1)}
+                                disabled={currentPage === 1}
+                            >
+                                <i className="fas fa-chevron-left"></i>
+                            </button>
+                            {[...Array(totalPages)].map((_, index) => (
+                                <button
+                                    key={index}
+                                    style={{
+                                        ...styles.pageButton,
+                                        ...(currentPage === index + 1 ? styles.pageButtonActive : {}),
+                                    }}
+                                    onClick={() => setCurrentPage(index + 1)}
                                 >
-                                    <div className="latest-news-card h-100">
-                                        <div className="latest-news-image-wrapper position-relative">
-                                            <img
-                                                src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/600x400'}
-                                                alt={news.title}
-                                                className="img-fluid rounded-top latest-news-image"
-                                            />
-                                            <div className="latest-news-date">
-                                                <span className="day">{new Date(news.created_at).getDate()}</span>
-                                                <span className="month">{new Date(news.created_at).toLocaleString('id-ID', { month: 'short' })}</span>
-                                            </div>
-                                            <span className="badge bg-primary latest-news-category">
-                                                {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
-                                            </span>
-                                        </div>
-                                        <div className="latest-news-content p-4">
-                                            <h5 className="text-white mb-3">{news.title}</h5>
-                                            <p className="text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: news.content.substring(0, 100) + '...' }} />
-                                            <Link
-                                                href={route('news.show', news.news_id)}
-                                                className="latest-read-more"
-                                            >
-                                                Baca Selengkapnya <i className="fas fa-long-arrow-alt-right ms-1"></i>
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
+                                    {index + 1}
+                                </button>
                             ))}
+                            <button
+                                style={{
+                                    ...styles.pageButton,
+                                    ...(currentPage === totalPages ? styles.pageButtonDisabled : {}),
+                                }}
+                                onClick={() => setCurrentPage(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                            >
+                                <i className="fas fa-chevron-right"></i>
+                            </button>
                         </div>
-                    </div>
-
-                    {/* Search and Filter Section */}
-                    <div className="search-filter-container mb-5 p-4 rounded-lg wow fadeIn" data-wow-delay="0.2s">
-                        <div className="row">
-                            <div className="col-md-8 mb-3 mb-md-0">
-                                <div className="search-input-wrapper">
-                                    <i className="fas fa-search search-icon"></i>
-                                    <input
-                                        type="text"
-                                        className="form-control news-search"
-                                        placeholder="Cari berita..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="col-md-4">
-                                <div className="filter-select-wrapper">
-                                    <select
-                                        className="form-select news-filter"
-                                        value={selectedCategory}
-                                        onChange={(e) => setSelectedCategory(e.target.value)}
-                                    >
-                                        {categoryList.map((category) => (
-                                            <option key={category} value={category}>
-                                                {category}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <i className="fas fa-filter filter-icon"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Content and Sidebar */}
-                    <div className="row">
-                        {/* News Grid */}
-                        <div className="col-lg-8">
-                            <div className="section-header mb-4">
-                                <h3 className="text-white fw-bold position-relative highlight-heading">
-                                    Semua Berita
-                                    <span className="highlight-line"></span>
-                                </h3>
-                            </div>
-                            
-                            <div className="row">
-                                {paginatedNews.length > 0 ? (
-                                    paginatedNews.map((news, index) => (
-                                        <div
-                                            key={news.news_id}
-                                            className="col-md-6 mb-4 wow fadeIn"
-                                            data-wow-delay={`${0.2 + (index * 0.1)}s`}
-                                        >
-                                            <div className="news-card h-100">
-                                                <div className="news-image-wrapper position-relative">
-                                                    <img
-                                                        src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/600x400'}
-                                                        alt={news.title}
-                                                        className="img-fluid rounded-top news-image"
-                                                    />
-                                                    <div className="news-overlay"></div>
-                                                    <span className="badge bg-primary news-category">
-                                                        {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
-                                                    </span>
-                                                </div>
-                                                <div className="news-content p-4">
-                                                    <h5 className="text-white mb-2">{news.title}</h5>
-                                                    <p className="text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: news.content.substring(0, 100) + '...' }} />
-                                                    <div className="d-flex align-items-center text-gray-400 mb-3">
-                                                        <i className="far fa-calendar-alt me-2"></i>
-                                                        <span>{formatDate(news.created_at)}</span>
-                                                    </div>
-                                                    <Link
-                                                        href={route('news.show', news.news_id)}
-                                                        className="btn btn-primary read-more-btn"
-                                                    >
-                                                        Baca Selengkapnya <i className="fas fa-arrow-right ms-1"></i>
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="col-12 p-5 text-center text-gray-300 no-results">
-                                        <i className="fas fa-search fa-3x mb-3"></i>
-                                        <h4>Tidak ada berita yang ditemukan.</h4>
-                                        <p>Coba gunakan kata kunci atau kategori yang berbeda.</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <nav className="mt-5 wow fadeIn" data-wow-delay="0.2s">
-                                    <ul className="pagination pagination-lg justify-content-center">
-                                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                                            <button
-                                                className="page-link"
-                                                onClick={() => setCurrentPage(currentPage - 1)}
-                                                disabled={currentPage === 1}
-                                            >
-                                                <i className="fas fa-chevron-left"></i>
-                                            </button>
-                                        </li>
-                                        {[...Array(totalPages)].map((_, index) => (
-                                            <li
-                                                key={index}
-                                                className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}
-                                            >
-                                                <button
-                                                    className="page-link"
-                                                    onClick={() => setCurrentPage(index + 1)}
-                                                >
-                                                    {index + 1}
-                                                </button>
-                                            </li>
-                                        ))}
-                                        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                                            <button
-                                                className="page-link"
-                                                onClick={() => setCurrentPage(currentPage + 1)}
-                                                disabled={currentPage === totalPages}
-                                            >
-                                                <i className="fas fa-chevron-right"></i>
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </nav>
-                            )}
-                        </div>
-
-                        {/* Sidebar */}
-                        <div className="col-lg-4">
-                            {/* Popular News Sidebar */}
-                            <div className="sidebar-popular wow fadeIn" data-wow-delay="0.4s">
-                                <div className="sidebar-header">
-                                    <h4 className="sidebar-heading text-white fw-bold position-relative">
-                                        Berita Populer
-                                        <span className="sidebar-highlight-line"></span>
-                                    </h4>
-                                </div>
-                                
-                                <div className="sidebar-content">
-                                    {newsItems.slice(0, 4).map((news, index) => (
-                                        <div key={news.news_id} className="sidebar-item wow fadeIn" data-wow-delay={`${0.5 + (index * 0.1)}s`}>
-                                            <Link href={route('news.show', news.news_id)} className="sidebar-link">
-                                                <div className="d-flex align-items-center">
-                                                    <div className="sidebar-image-container">
-                                                        <img
-                                                            src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/100x80'}
-                                                            alt={news.title}
-                                                            className="sidebar-image"
-                                                        />
-                                                        <div className="sidebar-image-number">{index + 1}</div>
-                                                    </div>
-                                                    <div className="sidebar-text">
-                                                        <h6 className="sidebar-title text-white mb-1">{news.title}</h6>
-                                                        <div className="d-flex align-items-center sidebar-date">
-                                                            <i className="far fa-calendar-alt me-2"></i>
-                                                            <span>{formatDate(news.created_at)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            {/* Categories Sidebar */}
-                            <div className="sidebar-categories mt-5 wow fadeIn" data-wow-delay="0.6s">
-                                <div className="sidebar-header">
-                                    <h4 className="sidebar-heading text-white fw-bold position-relative">
-                                        Kategori Berita
-                                        <span className="sidebar-highlight-line"></span>
-                                    </h4>
-                                </div>
-                                
-                                <div className="categories-list">
-                                    {categories.map((category, index) => (
-                                        <div key={category.category_id} className="category-item wow fadeIn" data-wow-delay={`${0.7 + (index * 0.1)}s`}>
-                                            <button 
-                                                className={`category-btn ${selectedCategory === category.category_name ? 'active' : ''}`}
-                                                onClick={() => setSelectedCategory(category.category_name)}
-                                            >
-                                                <span className="category-name">{category.category_name}</span>
-                                                <span className="category-count">
-                                                    {newsItems.filter(news => news.category_id === category.category_id).length}
-                                                </span>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            {/* Subscribe Card */}
-                            <div className="subscribe-card mt-5 p-4 rounded-lg text-center wow fadeIn" data-wow-delay="0.8s">
-                                <i className="fas fa-envelope-open-text subscribe-icon mb-3"></i>
-                                <h5 className="text-white mb-3">Dapatkan Berita Terbaru</h5>
-                                <p className="text-gray-300 mb-3">Daftarkan email Anda untuk mendapatkan berita dan informasi terbaru</p>
-                                <div className="subscribe-form">
-                                    <input type="email" className="form-control mb-2" placeholder="Email Anda" />
-                                    <button className="btn btn-primary w-100">Berlangganan</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
             <FooterLayout />
