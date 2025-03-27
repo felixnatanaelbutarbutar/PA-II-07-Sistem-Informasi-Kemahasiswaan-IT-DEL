@@ -13,6 +13,11 @@ export default function Announcement() {
         console.log("Props lengkap:", props);
         console.log("Panjang array pengumuman:", announcement.length);
         console.log("Item pertama jika ada:", announcement[0]);
+
+        // Fallback for direct requests
+        if (window.history.state && !window.history.state.inertia) {
+            window.location.reload();
+        }
     }, [announcement, props]);
 
     // Filter pengumuman berdasarkan search term
@@ -31,53 +36,60 @@ export default function Announcement() {
 
     // Helper function untuk menentukan tipe file dan menampilkan dengan benar
     const renderFilePreview = (item) => {
-        // Debugging: Log item untuk memastikan data
-        console.log("Rendering item:", item.title, item);
+        console.log("Rendering item:", item?.title, item);
 
-        // Jika tidak ada item atau tidak ada file
         if (!item || (!item.file && !item.image)) {
-            console.log("No file for item:", item.title);
-            return <span className="text-gray-500">Tidak ada file</span>;
+            console.log("No file for item:", item?.title);
+            return (
+                <img
+                    src="/images/placeholder.png"
+                    alt="Placeholder"
+                    style={styles.listItemImg}
+                />
+            );
         }
 
-        // Ambil file path
         const filePath = item.file || item.image;
-        console.log("File path for item:", item.title, filePath);
+        console.log("File path for item:", item?.title, filePath);
 
-        // Jika file path kosong
         if (!filePath) {
-            console.log("File path is empty for item:", item.title);
-            return <span className="text-gray-500">Tidak ada file</span>;
+            console.log("File path is empty for item:", item?.title);
+            return (
+                <img
+                    src="/images/placeholder.png"
+                    alt="Placeholder"
+                    style={styles.listItemImg}
+                />
+            );
         }
 
-        // Cek apakah ini PDF
         if (filePath.toLowerCase().endsWith('.pdf')) {
-            console.log("Rendering PDF for item:", item.title, filePath);
+            console.log("Rendering PDF for item:", item?.title, filePath);
             return (
                 <a
                     href={`/storage/${filePath}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center h-full text-blue-600 hover:text-blue-800"
+                    style={styles.listItemImg}
                 >
-                    <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                     </svg>
-                    <span className="mt-2">Lihat PDF</span>
+                    <span className="mt-2 text-sm">Lihat PDF</span>
                 </a>
             );
         }
 
-        // Cek apakah ini gambar yang didukung
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
         const isImage = imageExtensions.some(ext => filePath.toLowerCase().endsWith(ext));
         if (isImage) {
-            console.log("Rendering image for item:", item.title, filePath);
+            console.log("Rendering image for item:", item?.title, filePath);
             return (
                 <img
                     src={`/storage/${filePath}`}
-                    alt={item.title || 'Gambar pengumuman'}
-                    className="w-full h-full object-cover"
+                    alt={item?.title || 'Gambar pengumuman'}
+                    style={styles.listItemImg}
                     onError={(e) => {
                         console.log("Image gagal dimuat:", filePath);
                         e.target.src = "/images/placeholder.png";
@@ -86,91 +98,188 @@ export default function Announcement() {
             );
         }
 
-        // Fallback untuk file yang tidak didukung (bukan gambar atau PDF)
-        console.log("Rendering fallback for unsupported file:", item.title, filePath);
+        console.log("Rendering fallback for unsupported file:", item?.title, filePath);
         return (
             <a
                 href={`/storage/${filePath}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center justify-center h-full text-blue-600 hover:text-blue-800"
+                style={styles.listItemImg}
             >
-                <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                 </svg>
-                <span className="mt-2">Lihat File</span>
+                <span className="mt-2 text-sm">Lihat File</span>
             </a>
         );
     };
 
+    const styles = {
+        body: {
+            fontFamily: 'Arial, sans-serif',
+            margin: 0,
+            padding: 0,
+            backgroundColor: '#f5f7fa',
+        },
+        container: {
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: '20px',
+        },
+        searchFilterContainer: {
+            marginBottom: '20px',
+            padding: '20px',
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            justifyContent: 'center',
+        },
+        searchInput: {
+            width: '50%',
+            padding: '10px',
+            borderRadius: '5px',
+            border: '1px solid #ddd',
+            fontSize: '16px',
+        },
+        listContainer: {
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            overflow: 'hidden',
+        },
+        listItem: {
+            display: 'flex',
+            alignItems: 'center',
+            padding: '20px',
+            borderBottom: '1px solid #eee',
+            transition: 'background 0.3s',
+        },
+        listItemHover: {
+            background: '#f9f9f9',
+        },
+        listItemImg: {
+            width: '200px',
+            height: '120px',
+            objectFit: 'cover',
+            borderRadius: '5px',
+            marginRight: '20px',
+        },
+        listItemContent: {
+            flex: 1,
+        },
+        listItemCategory: {
+            background: '#e6f0fa',
+            padding: '5px 10px',
+            borderRadius: '5px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            display: 'inline-block',
+            marginBottom: '10px',
+        },
+        listItemTitle: {
+            fontSize: '18px',
+            fontWeight: 'bold',
+            marginBottom: '10px',
+            color: '#333',
+        },
+        listItemDescription: {
+            fontSize: '14px',
+            color: '#666',
+            marginBottom: '10px',
+        },
+        listItemLink: {
+            color: '#007bff',
+            textDecoration: 'none',
+            fontSize: '14px',
+        },
+        emptyState: {
+            textAlign: 'center',
+            padding: '40px',
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+        },
+    };
+
     return (
         <GuestLayout>
-            <NavbarGuestLayout></NavbarGuestLayout>
-
+            <NavbarGuestLayout />
             <Head title="Pengumuman" />
-
-            <div className="py-10 max-w-7xl mx-auto px-4">
-                <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">Pengumuman</h1>
-
-                {/* Search Bar */}
-                <div className="relative flex justify-center mb-6">
-                    <input
-                        type="text"
-                        placeholder="Cari pengumuman..."
-                        className="w-full md:w-1/2 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-
-                {/* Debugging Info - hapus di lingkungan produksi */}
-                {(!announcement || announcement.length === 0) && (
-                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-                        <p className="font-bold">Tidak ada data</p>
-                        <p>Tidak ada data pengumuman yang diterima dari server.</p>
+            <div style={styles.body}>
+                <div style={styles.container}>
+                    {/* Search Bar */}
+                    <div style={styles.searchFilterContainer}>
+                        <input
+                            type="text"
+                            style={styles.searchInput}
+                            placeholder="Cari pengumuman..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
-                )}
 
-                {/* Pengumuman List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredAnnouncement.map((item) => {
-                        const itemId = getItemId(item);
-                        if (!itemId) return null;
+                    {/* Debugging Info - hapus di lingkungan produksi */}
+                    {(!announcement || announcement.length === 0) && (
+                        <div style={{ background: '#fefcbf', borderLeft: '4px solid #f6e05e', color: '#b7791f', padding: '16px', marginBottom: '24px' }}>
+                            <p style={{ fontWeight: 'bold' }}>Tidak ada data</p>
+                            <p>Tidak ada data pengumuman yang diterima dari server.</p>
+                        </div>
+                    )}
 
-                        return (
-                            <div key={itemId} className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
-                                {/* Display Image or PDF */}
-                                <div className="h-52 overflow-hidden relative flex items-center justify-center bg-gray-100">
-                                    {renderFilePreview(item)}
-                                </div>
-                                <div className="p-4 flex flex-col flex-grow">
-                                    <h2 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2">{item.title || 'Tanpa Judul'}</h2>
-                                    <p className="text-gray-500 text-sm mb-3">{item.category?.category_name || "Uncategorized"}</p>
-                                    <div className="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow" dangerouslySetInnerHTML={{ __html: item.content || '' }}></div>
+                    {/* Announcement List */}
+                    <div style={styles.listContainer}>
+                        {filteredAnnouncement.length > 0 ? (
+                            filteredAnnouncement.map((item) => {
+                                const itemId = getItemId(item);
+                                if (!itemId) return null;
+                                return (
                                     <a
+                                        key={itemId}
                                         href={`/announcement/${itemId}`}
-                                        className="text-blue-600 hover:underline mt-auto inline-block"
+                                        style={{ textDecoration: 'none' }}
                                     >
-                                        Baca Selengkapnya
+                                        <div
+                                            style={styles.listItem}
+                                            onMouseEnter={(e) => (e.currentTarget.style.background = styles.listItemHover.background)}
+                                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                        >
+                                            {renderFilePreview(item)}
+                                            <div style={styles.listItemContent}>
+                                                <div style={styles.listItemCategory}>
+                                                    {item.category?.category_name || "Uncategorized"}
+                                                </div>
+                                                <div style={styles.listItemTitle}>
+                                                    {item.title || 'Tanpa Judul'}
+                                                </div>
+                                                <div style={styles.listItemDescription}>
+                                                    {(item.content || '').replace(/<[^>]+>/g, '').substring(0, 150) + '...'}
+                                                </div>
+                                                <div style={styles.listItemLink}>
+                                                    Baca Selengkapnya
+                                                </div>
+                                            </div>
+                                        </div>
                                     </a>
-                                </div>
+                                );
+                            })
+                        ) : (
+                            <div style={styles.emptyState}>
+                                <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <h3 style={{ fontSize: '20px', fontWeight: '500', color: '#4a4a4a', marginBottom: '10px' }}>
+                                    Tidak ada pengumuman
+                                </h3>
+                                <p style={{ color: '#666' }}>
+                                    {searchTerm ? "Tidak ada hasil yang cocok dengan pencarian Anda" : "Belum ada pengumuman yang ditambahkan"}
+                                </p>
                             </div>
-                        );
-                    })}
-                </div>
-
-                {/* Empty State */}
-                {filteredAnnouncement.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg shadow-md">
-                        <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        <h3 className="text-xl font-medium text-gray-700 mb-1">Tidak ada pengumuman</h3>
-                        <p className="text-gray-500">
-                            {searchTerm ? "Tidak ada hasil yang cocok dengan pencarian Anda" : "Belum ada pengumuman yang ditambahkan"}
-                        </p>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
         </GuestLayout>
     );

@@ -55,17 +55,22 @@ class AnnouncementController extends Controller
 
     private function generateAnnouncementId()
     {
-        $lastAnnouncement = Announcement::latest('announcement_id')->first();
+        // Ambil ID terakhir dari database berdasarkan urutan terbesar
+        $lastAnnouncement = Announcement::orderBy('announcement_id', 'desc')->first();
 
         if ($lastAnnouncement) {
-            $lastNumber = (int) substr($lastAnnouncement->announcement_id, 1);
-            $newNumber = $lastNumber + 1;
+            // Ambil angka dari ID terakhir dan tambahkan 1
+            $lastIdNumber = (int) substr($lastAnnouncement->announcement_id, 3);
+            $newIdNumber = $lastIdNumber + 1;
         } else {
-            $newNumber = 1;
+            // Jika belum ada data, mulai dari 1
+            $newIdNumber = 1;
         }
 
-        return 'anc' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        // Format ID baru (contoh: ANC001, ANC002, ...)
+        return 'ANC' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
     }
+
 
     public function store(Request $request)
     {
