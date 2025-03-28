@@ -11,9 +11,12 @@ return new class extends Migration {
             $table->string('type_id', 10)->primary();
             $table->string('type_name', 100)->unique();
             $table->text('description');
-            $table->uuid('created_by')->nullable()->references('id')->on('users')->onDelete('SET NULL');
-            $table->uuid('updated_by')->nullable()->references('id')->on('users')->onDelete('SET NULL');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
+
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('SET NULL');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('SET NULL');
         });
     }
 

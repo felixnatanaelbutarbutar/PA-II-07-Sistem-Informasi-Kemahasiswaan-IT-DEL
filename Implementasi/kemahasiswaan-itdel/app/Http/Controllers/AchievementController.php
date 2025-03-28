@@ -50,46 +50,54 @@ class AchievementController extends Controller
 
     public function store(Request $request)
     {
+        // Validate the incoming request data
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'category' => 'required|in:International,National,Regional',
-            'achievement_type_id' => 'required|exists:achievement_types,type_id',
-            'rank' => 'nullable|integer|min:1|max:3',
-            'medal' => 'nullable|in:Gold,Silver,Bronze',
+            'achievement_type_id' => 'required|string|exists:achievement_types,type_id',
+            'medal' => 'nullable|in:Gold,Silver,Bronze', // Medal is already optional
             'event_name' => 'required|string|max:255',
             'event_date' => 'required|date',
+            'created_by' => 'required|exists:users,id',
+            'updated_by' => 'nullable|exists:users,id',
         ]);
-    
+
+        // Get the authenticated user and their role
         $user = Auth::user();
         $role = strtolower($user->role);
-    
-        // Generate ID otomatis untuk achievement_id
-        $achievementId = $this->generateAchievementId(); 
-    
-        // Simpan data ke database
-        Achievement::create([
-            'achievement_id' => $achievementId,
-            'title' => $request->title,
-            'description' => $request->description,
-            'category' => $request->category,
-            'achievement_type_id' => $request->achievement_type_id,
-            'rank' => $request->rank,
-            'medal' => $request->medal,
-            'event_name' => $request->event_name,
-            'event_date' => $request->event_date,
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-        ]);
-    
-        // Ambil ulang data untuk dikirim ke frontend
+
+        // Generate a unique achievement_id
+        $achievementId = $this->generateAchievementId();
+
+        // Create a new achievement record
+        try {
+            Achievement::create([
+                'achievement_id' => $achievementId,
+                'title' => $request->title,
+                'description' => $request->description,
+                'category' => $request->category,
+                'achievement_type_id' => $request->achievement_type_id,
+                'medal' => $request->medal, // Optional
+                'event_name' => $request->event_name,
+                'event_date' => $request->event_date,
+                'created_by' => $request->created_by,
+                'updated_by' => $request->updated_by,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error creating achievement: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to create achievement: ' . $e->getMessage()])->withInput();
+        }
+
+        // Fetch updated data for the index view
         $achievements = Achievement::with('achievementType')->get();
         $achievementTypes = AchievementType::all();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
-    
+
+        // Redirect to the index route with updated data
         return redirect()->route('admin.achievements.index')->with([
-            'success' => 'Prestasi berhasil ditambahkan!',
+            'success' => 'Prestasi berhasil ditambahkan.',
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -124,20 +132,38 @@ class AchievementController extends Controller
             'description' => 'required|string',
             'category' => 'required|in:International,National,Regional',
             'achievement_type_id' => 'required|exists:achievement_types,type_id',
-            'rank' => 'nullable|integer|min:1|max:3',
-            'medal' => 'nullable|in:Gold,Silver,Bronze',
+            'medal' => 'nullable|in:Gold,Silver,Bronze', // Medal is optional
             'event_name' => 'required|string|max:255',
             'event_date' => 'required|date',
         ]);
 
-        $achievement->update($request->all());
+        try {
+            $achievement->update($request->only([
+                'title',
+                'description',
+                'category',
+                'achievement_type_id',
+                'medal',
+                'event_name',
+                'event_date',
+            ]));
+        } catch (\Exception $e) {
+            Log::error('Error updating achievement: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to update achievement: ' . $e->getMessage()])->withInput();
+        }
 
         return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil diperbarui!');
     }
 
     public function destroy(Achievement $achievement)
     {
-        $achievement->delete();
+        try {
+            $achievement->delete();
+        } catch (\Exception $e) {
+            Log::error('Error deleting achievement: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to delete achievement: ' . $e->getMessage()]);
+        }
+
         return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil dihapus!');
     }
 
@@ -159,6 +185,6 @@ class AchievementController extends Controller
         }
 
         // Format ID baru (contoh: ACH001, ACH002, ...)
-        return 'ach' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
+        return 'ach' . str_pad($newIdNumber, 7, '0', STR_PAD_LEFT); // Adjusted to ensure 10 characters
     }
 }

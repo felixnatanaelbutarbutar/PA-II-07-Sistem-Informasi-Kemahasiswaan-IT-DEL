@@ -1,161 +1,159 @@
-import { useEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import '../../css/footer.css'; // Ensure this points to the correct file
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaArrowUp } from 'react-icons/fa';
 
 const FooterLayout = () => {
-    // Load Font Awesome for social media icons
-    useEffect(() => {
-        const linkElement = document.createElement('link');
-        linkElement.rel = 'stylesheet';
-        linkElement.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
-        document.head.appendChild(linkElement);
-
-        return () => {
-            document.head.removeChild(linkElement);
-        };
-    }, []);
-
-    // Initialize WOW.js for animations
-    useEffect(() => {
-        if (typeof window !== 'undefined' && window.WOW) {
-            new window.WOW().init();
-        }
-    }, []);
+    // Smooth scroll to top functionality
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     return (
-        <footer className="footer py-5 wow fadeIn" data-wow-delay="0.2s">
-            <div className="container">
-                <div className="row g-5 d-flex align-items-start justify-content-between">
+        <footer className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* Logo & Description */}
-                    <div className="col-lg-4 col-md-6 d-flex align-items-center">
-                        <div className="footer-logo me-3">
+                    <div className="flex flex-col items-start">
+                        <div className="mb-4">
                             <img
-                                src="img/logofooter.png"
-                                alt="Logo"
-                                style={{ maxWidth: 160, height: 'auto' }}
+                                src="/img/logofooter.png" // Replace with your actual logo path
+                                alt="Kemahasiswaan IT Del Logo"
+                                className="h-12 w-auto"
                             />
                         </div>
-                        <div
-                            className="footer-divider"
-                            style={{
-                                borderLeft: '2px solid rgba(255,255,255,0.2)',
-                                height: 150,
-                                margin: '0 20px',
-                            }}
-                        />
-                        <div>
-                            <h4 className="footer-heading text-white mb-2">Kemahasiswaan IT Del</h4>
-                            <p className="text-gray-300 m-0" style={{ fontSize: 15 }}>
-                                Mengelola kegiatan dan kesejahteraan mahasiswa di bawah naungan
-                                Wakil Rektor Bidang Akademik.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Peta (Map) */}
-                    <div className="col-lg-3 col-md-6">
-                        <h4 className="footer-heading text-white mb-3">Peta</h4>
-                        <hr
-                            style={{
-                                borderTop: '1px solid #fff',
-                                opacity: '0.2',
-                                margin: '10px 0',
-                            }}
-                        />
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2188.0349666325465!2d99.14719957306939!3d2.383147867320283!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x302e00fdad2d7341%3A0xf59ef99c591fe451!2sDel%20Institute%20of%20Technology!5e0!3m2!1sen!2sid!4v1740194730081!5m2!1sen!2sid"
-                            width="100%"
-                            height={120}
-                            style={{ border: 0, borderRadius: 10, boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)' }}
-                            allowFullScreen
-                            loading="lazy"
-                            title="Institut Teknologi Del Location"
-                            className="footer-map"
-                        />
-                    </div>
-
-                    {/* Alamat (Address) */}
-                    <div className="col-lg-3 col-md-6">
-                        <h4 className="footer-heading text-white mb-3">Alamat</h4>
-                        <hr
-                            style={{
-                                borderTop: '1px solid #fff',
-                                opacity: '0.2',
-                                margin: '10px 0',
-                            }}
-                        />
-                        <p className="text-gray-300 m-0" style={{ fontSize: 14 }}>
-                            Jl. Sisingamangaraja, Sitoluama, Laguboti, Toba Samosir, Sumatera
-                            Utara, Indonesia
-                            <br />
-                            Kode Pos: 22381
+                        <h4 className="text-lg font-semibold text-white mb-2">Kemahasiswaan IT Del</h4>
+                        <p className="text-sm text-gray-300">
+                            Mengelola kegiatan dan kesejahteraan mahasiswa di bawah naungan Wakil Rektor Bidang Akademik.
                         </p>
                     </div>
 
-                    {/* Media Sosial (Social Media) */}
-                    <div className="col-lg-2 col-md-6">
-                        <h4 className="footer-heading text-white mb-3">Media Sosial</h4>
-                        <hr
-                            style={{
-                                borderTop: '1px solid #fff',
-                                opacity: '0.2',
-                                margin: '10px 0',
-                            }}
+                    {/* Quick Links */}
+                    <div>
+                        <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
+                        <ul className="space-y-2">
+                            <li>
+                                <Link href="/" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Beranda
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/about" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Tentang Kami
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/news" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Berita
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/achievements" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Prestasi
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/contact" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Kontak
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Contact & Map */}
+                    <div>
+                        <h4 className="text-lg font-semibold text-white mb-4">Kontak Kami</h4>
+                        <p className="text-sm text-gray-300 mb-2">
+                            Jl. Sisingamangaraja, Sitoluama, Laguboti, Toba Samosir, Sumatera Utara, Indonesia
+                            <br />
+                            Kode Pos: 22381
+                        </p>
+                        <p className="text-sm text-gray-300 mb-2">
+                            <span className="font-semibold">Email:</span> kemahasiswaan@del.ac.id
+                        </p>
+                        <p className="text-sm text-gray-300 mb-4">
+                            <span className="font-semibold">Telepon:</span> +62 123 456 7890
+                        </p>
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2188.0349666325465!2d99.14719957306939!3d2.383147867320283!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x302e00fdad2d7341%3A0xf59ef99c591fe451!2sDel%20Institute%20of%20Technology!5e0!3m2!1sen!2sid!4v1740194730081!5m2!1sen!2sid"
+                            width="100%"
+                            height="120"
+                            className="rounded-lg shadow-lg"
+                            style={{ border: 0 }}
+                            allowFullScreen
+                            loading="lazy"
+                            title="Institut Teknologi Del Location"
                         />
-                        <div className="footer-btn d-flex">
+                    </div>
+
+                    {/* Social Media */}
+                    <div>
+                        <h4 className="text-lg font-semibold text-white mb-4">Media Sosial</h4>
+                        <div className="flex space-x-3">
                             <a
-                                className="btn btn-md-square rounded-circle me-2"
-                                href="#"
+                                href="https://facebook.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition duration-200"
                                 aria-label="Facebook"
                             >
-                                <i className="fab fa-facebook-f" />
+                                <FaFacebookF size={16} />
                             </a>
                             <a
-                                className="btn btn-md-square rounded-circle me-2"
-                                href="#"
+                                href="https://twitter.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-3 bg-blue-400 rounded-full hover:bg-blue-500 transition duration-200"
                                 aria-label="Twitter"
                             >
-                                <i className="fab fa-twitter" />
+                                <FaTwitter size={16} />
                             </a>
                             <a
-                                className="btn btn-md-square rounded-circle me-2"
-                                href="#"
+                                href="https://instagram.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-3 bg-pink-600 rounded-full hover:bg-pink-700 transition duration-200"
                                 aria-label="Instagram"
                             >
-                                <i className="fab fa-instagram" />
+                                <FaInstagram size={16} />
                             </a>
                             <a
-                                className="btn btn-md-square rounded-circle"
-                                href="#"
+                                href="https://linkedin.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-3 bg-blue-800 rounded-full hover:bg-blue-900 transition duration-200"
                                 aria-label="LinkedIn"
                             >
-                                <i className="fab fa-linkedin-in" />
+                                <FaLinkedinIn size={16} />
                             </a>
                         </div>
                     </div>
                 </div>
 
                 {/* Divider */}
-                <hr
-                    style={{
-                        borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-                        margin: '2rem 0',
-                    }}
-                />
+                <hr className="my-8 border-t border-blue-800" />
 
-                {/* Back to Top Button and Copyright */}
-                <div className="text-center mt-4">
-                    <a
-                        href="#"
-                        className="btn btn-primary rounded-circle back-to-top mb-3"
-                        aria-label="Back to Top"
-                    >
-                        <i className="fas fa-arrow-up" />
-                    </a>
-                    <p className="text-gray-300 m-0" style={{ fontSize: 14 }}>
-                        &copy; {new Date().getFullYear()} Institut Teknologi Del Kemahasiswaan. All Rights Reserved.
+                {/* Bottom Bar */}
+                <div className="flex flex-col md:flex-row justify-between items-center">
+                    <p className="text-sm text-gray-300 mb-4 md:mb-0">
+                        © {new Date().getFullYear()} Institut Teknologi Del Kemahasiswaan. All Rights Reserved.
                     </p>
+                    <div className="flex space-x-4">
+                        <Link href="/privacy" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                            Privacy Policy
+                        </Link>
+                        <Link href="/terms" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                            Terms of Service
+                        </Link>
+                    </div>
                 </div>
+
+                {/* Back to Top Button */}
+                <button
+                    onClick={scrollToTop}
+                    className="fixed bottom-8 right-8 p-3 bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 transition duration-200"
+                    aria-label="Back to Top"
+                >
+                    <FaArrowUp size={16} />
+                </button>
             </div>
         </footer>
     );

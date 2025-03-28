@@ -3,14 +3,11 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function Add({ auth, permissions, userRole, menu, achievementTypes }) {
-    const [filePreview, setFilePreview] = useState(null);
-
     const { data, setData, post, processing, errors, reset } = useForm({
         title: '',
         description: '',
         category: '',
-        achievement_type_id: '', // Matches backend
-        rank: '',
+        achievement_type_id: '',
         medal: '',
         event_name: '',
         event_date: '',
@@ -23,12 +20,11 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
         post(route('admin.achievements.store'), {
             onSuccess: () => {
                 reset();
-                setFilePreview(null);
             },
             onError: (errors) => {
                 console.log('Form submission errors:', errors);
             },
-            preserveScroll: true, // Keeps scroll position on error
+            preserveScroll: true,
         });
     };
 
@@ -93,24 +89,10 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
                         >
                             <option value="">Pilih Jenis Prestasi</option>
                             {achievementTypes.map((type) => (
-                                <option key={type.id} value={type.id}>{type.type_name}</option>
+                                <option key={type.type_id} value={type.type_id}>{type.type_name}</option>
                             ))}
                         </select>
                         {errors.achievement_type_id && <p className="text-red-500 text-sm mt-1">{errors.achievement_type_id}</p>}
-                    </div>
-
-                    {/* Peringkat (Rank) */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Peringkat (1-3)</label>
-                        <input
-                            type="number"
-                            value={data.rank}
-                            onChange={(e) => setData('rank', e.target.value)}
-                            min="1"
-                            max="3"
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        {errors.rank && <p className="text-red-500 text-sm mt-1">{errors.rank}</p>}
                     </div>
 
                     {/* Medali */}

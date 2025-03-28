@@ -12,17 +12,18 @@ return new class extends Migration {
             $table->string('title', 255);
             $table->text('description');
             $table->enum('category', ['International', 'National', 'Regional']);
-            $table->string('achievement_type_id', 10); // Changed to match frontend
-            $table->integer('rank')->nullable()->check('rank BETWEEN 1 AND 3');
+            $table->string('achievement_type_id', 10);
             $table->enum('medal', ['Gold', 'Silver', 'Bronze'])->nullable();
             $table->string('event_name', 255);
             $table->date('event_date');
-            $table->uuid('created_by')->nullable()->references('id')->on('users')->onDelete('SET NULL');
-            $table->uuid('updated_by')->nullable()->references('id')->on('users')->onDelete('SET NULL');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
-            // Foreign key to achievement_types
+            // Foreign keys
             $table->foreign('achievement_type_id')->references('type_id')->on('achievement_types')->onDelete('RESTRICT');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

@@ -13,11 +13,6 @@ export default function Announcement() {
         console.log("Props lengkap:", props);
         console.log("Panjang array pengumuman:", announcement.length);
         console.log("Item pertama jika ada:", announcement[0]);
-
-        // Fallback for direct requests
-        if (window.history.state && !window.history.state.inertia) {
-            window.location.reload();
-        }
     }, [announcement, props]);
 
     // Filter pengumuman berdasarkan search term
@@ -41,11 +36,12 @@ export default function Announcement() {
         if (!item || (!item.file && !item.image)) {
             console.log("No file for item:", item?.title);
             return (
-                <img
-                    src="/images/placeholder.png"
-                    alt="Placeholder"
-                    style={styles.listItemImg}
-                />
+                <div style={styles.listItemImg} className="flex flex-col items-center justify-center text-gray-500">
+                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="mt-2 text-sm">Tidak ada file</span>
+                </div>
             );
         }
 
@@ -55,11 +51,12 @@ export default function Announcement() {
         if (!filePath) {
             console.log("File path is empty for item:", item?.title);
             return (
-                <img
-                    src="/images/placeholder.png"
-                    alt="Placeholder"
-                    style={styles.listItemImg}
-                />
+                <div style={styles.listItemImg} className="flex flex-col items-center justify-center text-gray-500">
+                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="mt-2 text-sm">Tidak ada file</span>
+                </div>
             );
         }
 
@@ -92,7 +89,14 @@ export default function Announcement() {
                     style={styles.listItemImg}
                     onError={(e) => {
                         console.log("Image gagal dimuat:", filePath);
-                        e.target.src = "/images/placeholder.png";
+                        e.target.outerHTML = `
+                            <div style="${Object.entries(styles.listItemImg).map(([key, value]) => `${key}: ${value}`).join(';')}" class="flex flex-col items-center justify-center text-gray-500">
+                                <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="mt-2 text-sm">Gambar gagal dimuat</span>
+                            </div>
+                        `;
                     }}
                 />
             );
@@ -236,33 +240,31 @@ export default function Announcement() {
                                 const itemId = getItemId(item);
                                 if (!itemId) return null;
                                 return (
-                                    <a
+                                    <div
                                         key={itemId}
-                                        href={`/announcement/${itemId}`}
-                                        style={{ textDecoration: 'none' }}
+                                        style={styles.listItem}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = styles.listItemHover.background)}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                     >
-                                        <div
-                                            style={styles.listItem}
-                                            onMouseEnter={(e) => (e.currentTarget.style.background = styles.listItemHover.background)}
-                                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                                        >
-                                            {renderFilePreview(item)}
-                                            <div style={styles.listItemContent}>
-                                                <div style={styles.listItemCategory}>
-                                                    {item.category?.category_name || "Uncategorized"}
-                                                </div>
-                                                <div style={styles.listItemTitle}>
-                                                    {item.title || 'Tanpa Judul'}
-                                                </div>
-                                                <div style={styles.listItemDescription}>
-                                                    {(item.content || '').replace(/<[^>]+>/g, '').substring(0, 150) + '...'}
-                                                </div>
-                                                <div style={styles.listItemLink}>
-                                                    Baca Selengkapnya
-                                                </div>
+                                        {renderFilePreview(item)}
+                                        <div style={styles.listItemContent}>
+                                            <div style={styles.listItemCategory}>
+                                                {item.category?.category_name || "Uncategorized"}
                                             </div>
+                                            <div style={styles.listItemTitle}>
+                                                {item.title || 'Tanpa Judul'}
+                                            </div>
+                                            <div style={styles.listItemDescription}>
+                                                {(item.content || '').replace(/<[^>]+>/g, '').substring(0, 150) + '...'}
+                                            </div>
+                                            <a
+                                                href={`/announcement/${itemId}`}
+                                                style={styles.listItemLink}
+                                            >
+                                                Baca Selengkapnya
+                                            </a>
                                         </div>
-                                    </a>
+                                    </div>
                                 );
                             })
                         ) : (
@@ -270,7 +272,7 @@ export default function Announcement() {
                                 <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
-                                <h3 style={{ fontSize: '20px', fontWeight: '500', color: '#4a4a4a', marginBottom: '10px' }}>
+                                <h3 style={{ fontSize: '20px', fontWeight: '500', color: '#4a4a4a react', marginBottom: '10px' }}>
                                     Tidak ada pengumuman
                                 </h3>
                                 <p style={{ color: '#666' }}>

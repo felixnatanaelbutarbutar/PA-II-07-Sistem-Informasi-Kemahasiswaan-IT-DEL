@@ -18,9 +18,8 @@ class Achievement extends Model
         'title',
         'description',
         'category',
-        'achievement_type_id', // Updated to match migration
-        'rank',
-        'medal',
+        'achievement_type_id',
+        'medal', // Already optional
         'event_name',
         'event_date',
         'created_by',
