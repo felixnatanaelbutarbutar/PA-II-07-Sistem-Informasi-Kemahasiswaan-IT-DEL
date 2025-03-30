@@ -53,25 +53,29 @@ class AuthenticatedSessionController extends Controller
             return back()->withErrors(['email' => 'Role tidak dikenali. Hubungi administrator.']);
         }
 
-        $redirectRoute = match ($user->role) {
+        // Determine the default redirect route based on role
+        $defaultRedirectRoute = match ($user->role) {
             'superadmin' => route('superadmin.dashboard'),
             'kemahasiswaan', 'adminbem', 'adminmpm' => route('admin.dashboard'),
-            'mahasiswa' => route('mahasiswa.dashboard'),
+            'mahasiswa' => '/', // Redirect mahasiswa to homepage if no intended URL
             default => '/',
         };
 
-        // Jika request adalah AJAX (misalnya dari Inertia), kirimkan response JSON
+        // Check if there's an intended URL (e.g., user was redirected to login from /counseling)
+        $intendedUrl = $request->session()->pull('url.intended', $defaultRedirectRoute);
+
+        // If request is AJAX (e.g., from Inertia), return JSON response
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
                 'email' => $user->email,
                 'role' => $user->role,
-                'redirect' => $redirectRoute,
+                'redirect' => $intendedUrl,
             ]);
         }
 
-        // Redirect berdasarkan role
-        return redirect($redirectRoute);
+        // Redirect to the intended URL or the default route
+        return redirect()->intended($defaultRedirectRoute);
     }
 
     /**

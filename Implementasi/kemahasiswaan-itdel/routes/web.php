@@ -6,27 +6,40 @@ use Inertia\Inertia;
 use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Application;
 use App\Http\Controllers\NewsController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\AchievementController;
-use App\Http\Controllers\KegiatanBEMController; // Tambahkan Controller Kegiatan BEM
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\KegiatanBEMController;
 
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
 
-
+// Public Routes (Accessible to Guests)
 Route::get('/', function () {
     $news = News::orderBy('created_at', 'desc')->take(3)->get();
-
-    // dd($news); // Debug: Pastikan `news` berisi array
-
     return Inertia::render('Home', [
-        'news' => $news
+        'news' => $news,
     ]);
 })->name('home');
 
+Route::get('/newsguest', [NewsController::class, 'guestIndex'])->name('news.guest.index');
+Route::get('/news/{news_id}', [NewsController::class, 'show'])->name('news.show');
+Route::get('/announcementguest', [AnnouncementController::class, 'guestIndex'])->name('announcement.guest.index');
 
-// Login Routeda
+// Counseling Routes (Accessible to Guests and Mahasiswa)
+Route::get('/counseling', [CounselingController::class, 'index'])->name('counseling.index');
+Route::post('/counseling', [CounselingController::class, 'store'])->name('counseling.store');
+
+// Login Route
 Route::get('/login', function () {
     if (Auth::check()) {
         $user = Auth::user();
@@ -41,7 +54,7 @@ Route::get('/login', function () {
             case 'adminmpm':
                 return redirect()->route('admin.dashboard');
             case 'mahasiswa':
-                return redirect()->route('mahasiswa.dashboard');
+                return redirect('/'); // Redirect mahasiswa to homepage
             default:
                 return redirect('/');
         }
@@ -52,161 +65,134 @@ Route::get('/login', function () {
     ]);
 })->middleware('guest')->name('login');
 
+// Authenticated Routes
 Route::middleware(['auth'])->group(function () {
-    // Superadmin routes
-    Route::middleware(['role:superadmin'])->prefix('superadmin')->group(function () {
+    // Superadmin Routes
+    Route::prefix('superadmin')->middleware(['role:superadmin'])->group(function () {
         Route::get('/dashboard', function () {
             return Inertia::render('SuperAdmin/Dashboard', [
                 'auth' => [
-                    'user' => Auth::user()
-                ]
+                    'user' => Auth::user(),
+                ],
             ]);
         })->name('superadmin.dashboard');
-
-        // Add other superadmin specific routes here
     });
 
-    // Consolidated Admin Dashboard for Kemahasiswaan, AdminBEM, AdminMPM
-    Route::middleware(['role:kemahasiswaan,adminbem,adminmpm'])->prefix('admin')->group(function () {
-        // Dashboard route - accessible to all admin roles
+    // Admin Routes (Kemahasiswaan, AdminBEM, AdminMPM)
+    Route::prefix('admin')->name('admin.')->middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
+        // Admin Dashboard
         Route::get('/dashboard', function () {
             $user = Auth::user();
             $role = strtolower($user->role);
-
-            // Get menu items and permissions for the role
             $menuItems = RoleHelper::getNavigationMenu($role);
             $permissions = RoleHelper::getRolePermissions($role);
-
-            // Hitung total mahasiswa
             $totalMahasiswa = User::where('role', 'mahasiswa')->count();
 
             return Inertia::render('Admin/Dashboard', [
                 'auth' => [
-                    'user' => $user
+                    'user' => $user,
                 ],
                 'userRole' => $role,
                 'permissions' => $permissions,
                 'menu' => $menuItems,
-                'totalMahasiswa' => $totalMahasiswa // Kirim ke frontend
+                'totalMahasiswa' => $totalMahasiswa,
             ]);
-        })->name('admin.dashboard');
+        })->name('dashboard');
 
-        // Feature-specific routes with permission checks
+        // Feature-Specific Routes with Permission Checks
         Route::middleware(['feature:berita'])->group(function () {
             Route::get('/berita', function () {
                 return Inertia::render('Admin/Berita', [
                     'auth' => [
-                        'user' => Auth::user()
-                    ]
+                        'user' => Auth::user(),
+                    ],
                 ]);
-            })->name('admin.berita');
+            })->name('berita');
         });
 
         Route::middleware(['feature:pengumuman'])->group(function () {
             Route::get('/pengumuman', function () {
                 return Inertia::render('Admin/Pengumuman', [
                     'auth' => [
-                        'user' => Auth::user()
-                    ]
+                        'user' => Auth::user(),
+                    ],
                 ]);
-            })->name('admin.pengumuman');
+            })->name('pengumuman');
         });
 
         Route::middleware(['feature:layanan'])->group(function () {
             Route::get('/layanan', function () {
                 return Inertia::render('Admin/Layanan', [
                     'auth' => [
-                        'user' => Auth::user()
-                    ]
+                        'user' => Auth::user(),
+                    ],
                 ]);
-            })->name('admin.layanan');
+            })->name('layanan');
         });
 
         Route::middleware(['feature:kegiatan'])->group(function () {
             Route::get('/kegiatan', function () {
                 return Inertia::render('Admin/Kegiatan', [
                     'auth' => [
-                        'user' => Auth::user()
-                    ]
+                        'user' => Auth::user(),
+                    ],
                 ]);
-            })->name('admin.kegiatan');
+            })->name('kegiatan');
         });
 
         Route::middleware(['feature:organisasi'])->group(function () {
             Route::get('/organisasi', function () {
                 return Inertia::render('Admin/Organisasi', [
                     'auth' => [
-                        'user' => Auth::user()
-                    ]
+                        'user' => Auth::user(),
+                    ],
                 ]);
-            })->name('admin.organisasi');
+            })->name('organisasi');
+        });
+
+        // News Routes (Kemahasiswaan, AdminBEM)
+        Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
+            Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+            Route::get('/news/add', [NewsController::class, 'create'])->name('news.create');
+            Route::post('/news', [NewsController::class, 'store'])->name('news.store');
+            Route::get('/news/edit/{news_id}', [NewsController::class, 'edit'])->name('news.edit');
+            Route::put('/news/{news_id}', [NewsController::class, 'update'])->name('news.update');
+            Route::delete('/news/{news_id}', [NewsController::class, 'destroy'])->name('news.destroy');
+
+            // Announcement Routes
+            Route::get('/announcement', [AnnouncementController::class, 'index'])->name('announcement.index');
+            Route::get('/announcement/add', [AnnouncementController::class, 'create'])->name('announcement.create');
+            Route::post('/announcement', [AnnouncementController::class, 'store'])->name('announcement.store');
+            Route::get('/announcement/edit/{announcement}', [AnnouncementController::class, 'edit'])->name('announcement.edit');
+            Route::put('/announcement/{announcement}', [AnnouncementController::class, 'update'])->name('announcement.update');
+            Route::delete('/announcement/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
+        });
+
+        // Achievement Routes (Kemahasiswaan Only)
+        Route::middleware(['role:kemahasiswaan'])->group(function () {
+            Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+            Route::get('/achievements/add', [AchievementController::class, 'create'])->name('achievements.create');
+            Route::post('/achievements', [AchievementController::class, 'store'])->name('achievements.store');
+            Route::get('/achievements/edit/{achievement}', [AchievementController::class, 'edit'])->name('achievements.edit');
+            Route::put('/achievements/{achievement}', [AchievementController::class, 'update'])->name('achievements.update');
+            Route::delete('/achievements/{achievement}', [AchievementController::class, 'destroy'])->name('achievements.destroy');
+
+            Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
+            Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');
+
+        });
+
+
+        // Kegiatan BEM Routes (AdminBEM Only)
+        Route::prefix('bem')->middleware(['role:adminbem'])->group(function () {
+            Route::get('/kegiatan', [KegiatanBEMController::class, 'index'])->name('bem.kegiatan');
+            Route::post('/kegiatan', [KegiatanBEMController::class, 'store'])->name('bem.kegiatan.store');
+            Route::get('/kegiatan/{id}', [KegiatanBEMController::class, 'show'])->name('bem.kegiatan.show');
+            Route::put('/kegiatan/{id}', [KegiatanBEMController::class, 'update'])->name('bem.kegiatan.update');
+            Route::delete('/kegiatan/{id}', [KegiatanBEMController::class, 'destroy'])->name('bem.kegiatan.destroy');
         });
     });
-
-    // 🔥 Tambahkan CRUD Kegiatan untuk Admin BEMf
-    Route::middleware(['role:adminbem'])->prefix('admin/bem')->group(function () {
-        Route::get('/kegiatan', [KegiatanBEMController::class, 'index'])->name('admin.bem.kegiatan');
-        Route::post('/kegiatan', [KegiatanBEMController::class, 'store'])->name('admin.bem.kegiatan.store');
-        Route::get('/kegiatan/{id}', [KegiatanBEMController::class, 'show'])->name('admin.bem.kegiatan.show');
-        Route::put('/kegiatan/{id}', [KegiatanBEMController::class, 'update'])->name('admin.bem.kegiatan.update');
-        Route::delete('/kegiatan/{id}', [KegiatanBEMController::class, 'destroy'])->name('admin.bem.kegiatan.destroy');
-    });
-
-    Route::middleware(['auth'])->group(function () {
-        Route::prefix('admin')->name('admin.')->group(function () {
-            Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
-                // Halaman daftar berita
-                Route::get('/news', [NewsController::class, 'index'])->name('news.index');
-                // Halaman tambah berita
-                Route::get('/news/add', [NewsController::class, 'create'])->name('news.create');
-                // Menambahkan berita baru
-                Route::post('/news', [NewsController::class, 'store'])->name('news.store');
-                // Halaman edit berita
-                Route::get('/news/edit/{news_id}', [NewsController::class, 'edit'])->name('news.edit');
-                // Update berita
-                Route::put('/news/{news_id}', [NewsController::class, 'update'])->name('news.update');
-                // Hapus berita
-                Route::delete('/news/{news_id}', [NewsController::class, 'destroy'])->name('news.destroy');
-
-                Route::get('/announcement', [AnnouncementController::class, 'index'])->name('announcement.index');
-                Route::get('/announcement/add', [AnnouncementController::class, 'create'])->name('announcement.create');
-                Route::post('/announcement', [AnnouncementController::class, 'store'])->name('announcement.store');
-                Route::get('/announcement/edit/{announcement}', [AnnouncementController::class, 'edit'])->name('announcement.edit');
-                Route::put('/announcement/{announcement}', [AnnouncementController::class, 'update'])->name('announcement.update');
-                Route::delete('/announcement/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
-            });
-        });
-    });
-
-    Route::middleware(['auth'])->group(function () {
-        Route::prefix('admin')->name('admin.')->group(function () {
-            Route::middleware(['role:kemahasiswaan'])->group(function () {
-                // Halaman daftar prestasi
-                Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
-                // Halaman tambah prestasi
-                Route::get('/achievements/add', [AchievementController::class, 'create'])->name('achievements.create');
-                // Menambahkan prestasi baru
-                Route::post('/achievements', [AchievementController::class, 'store'])->name('achievements.store');
-                // Halaman edit prestasi
-                Route::get('/achievements/edit/{achievement}', [AchievementController::class, 'edit'])->name('achievements.edit');
-                // Update prestasi
-                Route::put('/achievements/{achievement}', [AchievementController::class, 'update'])->name('achievements.update');
-                // Hapus prestasi
-                Route::delete('/achievements/{achievement}', [AchievementController::class, 'destroy'])->name('achievements.destroy');
-            });
-        });
-    });
-    
-
-
 });
 
-
-Route::get('/newsguest', [NewsController::class, 'guestIndex'])->name('news.guest.index');
-Route::get('/news/{news_id}', [NewsController::class, 'show'])->name('news.show');
-
-Route::get('/announcementguest', [AnnouncementController::class, 'guestIndex'])->name('announcement');
-
-// Import file auth routes
+// Import Authentication Routes
 require __DIR__ . '/auth.php';
-

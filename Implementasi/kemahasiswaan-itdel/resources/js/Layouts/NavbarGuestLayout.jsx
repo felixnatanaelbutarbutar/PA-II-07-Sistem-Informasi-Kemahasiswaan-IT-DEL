@@ -162,7 +162,7 @@ const NavbarGuestLayout = () => {
                                             </div>
                                         </Link>
                                         <Link
-                                            href="#"
+                                            href="/counseling"
                                             className="dropdown-item block border-l-4 border-transparent px-4 py-3 text-sm text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700"
                                             onClick={() => setLayananDropdownOpen(false)}
                                         >
@@ -403,7 +403,7 @@ const NavbarGuestLayout = () => {
                                             Beasiswa
                                         </Link>
                                         <Link
-                                            href="#"
+                                            href="/counseling"
                                             className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                             onClick={() => {
                                                 setLayananDropdownOpen(false);

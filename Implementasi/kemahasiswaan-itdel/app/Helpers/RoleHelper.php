@@ -31,6 +31,7 @@ class RoleHelper
                 'beasiswa'=> true,
                 'news'=> true,
                 'achievements'=> true,
+                'counseling'=>true,
             ],
             'adminbem' => [
                 'berita' => false,
@@ -40,6 +41,8 @@ class RoleHelper
                 'organisasi' => false,
                 'news'=> true,
                 'achievements'=> false,
+                'counseling'=>false,
+
 
             ],
             'adminmpm' => [
@@ -50,6 +53,7 @@ class RoleHelper
                 'organisasi' => true,
                 'news'=> false,
                 'achievements'=> false,
+                'counseling'=>false,
             ],
         ];
 
@@ -141,6 +145,14 @@ class RoleHelper
                 'name' => 'Prestasi',
                 'route' => 'admin.achievements.index',
                 'icon' => 'award',
+                'visible' => true,
+            ];
+        }
+        if ($permissions['counseling'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Konseling',
+                'route' => 'admin.counseling.index',
+                'icon' => 'heart',
                 'visible' => true,
             ];
         }
