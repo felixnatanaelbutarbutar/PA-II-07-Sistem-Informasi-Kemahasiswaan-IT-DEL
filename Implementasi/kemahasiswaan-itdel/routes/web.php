@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\News;
+use App\Models\NewsCategory;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Helpers\RoleHelper;
@@ -12,22 +13,18 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\KegiatanBEMController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
 
 // Public Routes (Accessible to Guests)
 Route::get('/', function () {
-    $news = News::orderBy('created_at', 'desc')->take(3)->get();
+    $news = News::with('category') // Eager-load the category relationship
+        ->orderBy('created_at', 'desc')
+        ->take(4)
+        ->get();
+    $categories = NewsCategory::all();
+
     return Inertia::render('Home', [
         'news' => $news,
+        'categories' => $categories,
     ]);
 })->name('home');
 

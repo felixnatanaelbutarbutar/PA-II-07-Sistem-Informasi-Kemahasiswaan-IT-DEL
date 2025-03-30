@@ -53,7 +53,8 @@ class NewsController extends Controller
     }
 
     // Menyimpan berita baru
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -173,13 +174,13 @@ class NewsController extends Controller
     {
         $user = Auth::user();
         $role = strtolower($user->role);
-    
+
         // Ambil berita berdasarkan ID
         $news = News::with('category')->where('news_id', $news_id)->firstOrFail();
         $categories = NewsCategory::all();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
-    
+
         return Inertia::render('Admin/News/edit', [
             'auth' => ['user' => $user],
             'userRole' => $role,
@@ -197,6 +198,15 @@ class NewsController extends Controller
         return Inertia::render('News', [
             'newsItems' => $newsItems,
             'categories' => $categories,
+        ]);
+    }
+
+    public function show($news_id)
+    {
+        $news = News::with('category')->findOrFail($news_id);
+
+        return Inertia::render('NewsDetail', [
+            'news' => $news,
         ]);
     }
 }
