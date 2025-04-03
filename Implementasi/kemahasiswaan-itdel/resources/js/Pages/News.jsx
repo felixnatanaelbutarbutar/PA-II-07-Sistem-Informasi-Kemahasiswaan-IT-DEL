@@ -2,30 +2,67 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { useState, useEffect } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 
-export default function News({ newsItems, categories }) {
+export default function News() {
+    const [newsItems, setNewsItems] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('Semua');
     const [currentPage, setCurrentPage] = useState(1);
     const [featuredNews, setFeaturedNews] = useState(null);
     const [sidebarNews, setSidebarNews] = useState([]);
+    const [error, setError] = useState(null);
 
     const categoryList = ['Semua', ...categories.map(cat => cat.category_name)];
     const itemsPerPage = 4;
 
+    // Ambil data dari API saat komponen dimuat
     useEffect(() => {
-        // Set featured news (either marked as featured or the most recent one)
-        const featured = newsItems.find(news => news.isFeatured) || 
-                        (newsItems.length > 0 ? {...newsItems[0], isFeatured: true} : null);
-        setFeaturedNews(featured);
+        // Ambil daftar berita
+        fetch('http://localhost:8000/api/news')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil data berita');
+                }
+                return response.json();
+            })
+            .then(data => setNewsItems(data))
+            .catch(error => {
+                console.error('Error fetching news:', error);
+                setError('Gagal memuat berita. Silakan coba lagi nanti.');
+            });
 
-        // Get 5 news items for the sidebar, excluding the featured one
-        const sidebarItems = [...newsItems]
-            .filter(news => news.news_id !== (featured?.news_id || 0))
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 5);
-        setSidebarNews(sidebarItems);
+        // Ambil daftar kategori
+        fetch('http://localhost:8000/api/news-categories')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil data kategori');
+                }
+                return response.json();
+            })
+            .then(data => setCategories(data))
+            .catch(error => {
+                console.error('Error fetching categories:', error);
+                setError('Gagal memuat kategori. Silakan coba lagi nanti.');
+            });
+    }, []);
+
+    // Set featured news dan sidebar news setelah newsItems berubah
+    useEffect(() => {
+        if (newsItems.length > 0) {
+            // Set featured news (either marked as featured or the most recent one)
+            const featured = newsItems.find(news => news.isFeatured) || 
+                            (newsItems.length > 0 ? {...newsItems[0], isFeatured: true} : null);
+            setFeaturedNews(featured);
+
+            // Get 5 news items for the sidebar, excluding the featured one
+            const sidebarItems = [...newsItems]
+                .filter(news => news.news_id !== (featured?.news_id || 0))
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5);
+            setSidebarNews(sidebarItems);
+        }
     }, [newsItems]);
 
     // Filter news based on search and category
@@ -215,6 +252,11 @@ export default function News({ newsItems, categories }) {
             background: '#f0f0f0',
             cursor: 'not-allowed',
         },
+        errorMessage: {
+            textAlign: 'center',
+            color: 'red',
+            padding: '20px',
+        },
     };
 
     return (
@@ -222,6 +264,13 @@ export default function News({ newsItems, categories }) {
             <NavbarGuestLayout />
             <div style={styles.body}>
                 <div style={styles.container}>
+                    {/* Tampilkan pesan error jika ada */}
+                    {error && (
+                        <div style={styles.errorMessage}>
+                            {error}
+                        </div>
+                    )}
+
                     {/* Search and Filter Section */}
                     <div style={styles.searchFilterContainer}>
                         <input
@@ -259,7 +308,7 @@ export default function News({ newsItems, categories }) {
                                 <div style={styles.heroMainTitle}>{featuredNews.title}</div>
                             </div>
                             <div style={styles.heroSidebar}>
-                                {sidebarNews.map((news, index) => (
+                                {sidebarNews.map((news) => (
                                     <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
                                         <div style={styles.heroSidebarNewsCard}>
                                             <img

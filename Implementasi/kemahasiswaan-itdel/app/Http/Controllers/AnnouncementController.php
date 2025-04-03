@@ -14,16 +14,6 @@ use Illuminate\Support\Facades\Log;
 
 class AnnouncementController extends Controller
 {
-    // public function guestIndex()
-    // {
-    //     $newsItems = News::with('category')->orderBy('created_at', 'desc')->get();
-    //     $categories = NewsCategory::all();
-
-    //     return Inertia::render('News', [
-    //         'newsItems' => $newsItems,
-    //         'categories' => $categories,
-    //     ]);
-    // }
     public function guestIndex()
     {
         $announcements = Announcement::with('category')->get();
@@ -55,22 +45,17 @@ class AnnouncementController extends Controller
 
     private function generateAnnouncementId()
     {
-        // Ambil ID terakhir dari database berdasarkan urutan terbesar
         $lastAnnouncement = Announcement::orderBy('announcement_id', 'desc')->first();
 
         if ($lastAnnouncement) {
-            // Ambil angka dari ID terakhir dan tambahkan 1
             $lastIdNumber = (int) substr($lastAnnouncement->announcement_id, 3);
             $newIdNumber = $lastIdNumber + 1;
         } else {
-            // Jika belum ada data, mulai dari 1
             $newIdNumber = 1;
         }
 
-        // Format ID baru (contoh: ANC001, ANC002, ...)
-        return 'ANC' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
+        return 'anc' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
     }
-
 
     public function store(Request $request)
     {
@@ -97,7 +82,6 @@ class AnnouncementController extends Controller
             'updated_by' => Auth::id(),
         ]);
 
-        // Ambil ulang data
         $announcements = Announcement::with('category')->get();
         $categories = AnnouncementCategory::all();
         $menuItems = RoleHelper::getNavigationMenu($role);
@@ -192,6 +176,17 @@ class AnnouncementController extends Controller
             'announcement' => $announcement->load('category'),
             'categories' => $categories,
             'menu' => $menuItems,
+        ]);
+    }
+
+    public function show($announcement_id)
+    {
+        $announcement = Announcement::with('category')
+            ->where('announcement_id', $announcement_id)
+            ->firstOrFail();
+
+        return Inertia::render('AnnouncementDetail', [
+            'announcement' => $announcement,
         ]);
     }
 }

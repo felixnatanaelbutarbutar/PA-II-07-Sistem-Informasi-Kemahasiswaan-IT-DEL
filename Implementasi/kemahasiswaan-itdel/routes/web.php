@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\News;
-use App\Models\NewsCategory;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Helpers\RoleHelper;
@@ -12,28 +10,49 @@ use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\KegiatanBEMController;
-
+use App\Http\Controllers\NewsCategoryController;
 
 // Public Routes (Accessible to Guests)
 Route::get('/', function () {
-    $news = News::with('category') // Eager-load the category relationship
-        ->orderBy('created_at', 'desc')
-        ->take(4)
-        ->get();
-    $categories = NewsCategory::all();
-
-    return Inertia::render('Home', [
-        'news' => $news,
-        'categories' => $categories,
-    ]);
+    return Inertia::render('Home', );
 })->name('home');
 
-Route::get('/newsguest', [NewsController::class, 'guestIndex'])->name('news.guest.index');
-Route::get('/news/{news_id}', [NewsController::class, 'show'])->name('news.show');
-Route::get('/announcementguest', [AnnouncementController::class, 'guestIndex'])->name('announcement.guest.index');
+Route::get('/newsguest', function () {
+    return Inertia::render('News');
+})->name('news.guest.index');
+
+Route::get('/news/{news_id}', function ($news_id) {
+    return Inertia::render('NewsDetail', [
+        'news_id' => $news_id
+    ]);
+})->name('news.show');
+// Route::get('/news-categories', [NewsCategoryController::class, 'index']);
+
+Route::get('/announcementguest', function () {
+    return Inertia::render('Announcement');
+})->name('announcement.guest.index');
+
+Route::get('/announcement/{announcement_id}', function () {
+    return Inertia::render('AnnouncementDetail');
+})->name('announcement.show');
+
+Route::get('/counseling', function () {
+    return Inertia::render('Counseling');
+})->name('counseling.index');
+
+Route::get('/counselings/{counseling_id}', function () {
+    return Inertia::render('CounselingDetail');
+})->name('counseling.show');
+
+Route::get('/achievements', function () {
+    return Inertia::render('Achievement');
+})->name('achievements.index');
+
+Route::get('/achievements/{achievement_id}', function () {
+    return Inertia::render('AchievementDetail');
+})->name('achievements.show');
 
 // Counseling Routes (Accessible to Guests and Mahasiswa)
-Route::get('/counseling', [CounselingController::class, 'index'])->name('counseling.index');
 Route::post('/counseling', [CounselingController::class, 'store'])->name('counseling.store');
 
 // Login Route
@@ -176,9 +195,7 @@ Route::middleware(['auth'])->group(function () {
 
             Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
             Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');
-
         });
-
 
         // Kegiatan BEM Routes (AdminBEM Only)
         Route::prefix('bem')->middleware(['role:adminbem'])->group(function () {

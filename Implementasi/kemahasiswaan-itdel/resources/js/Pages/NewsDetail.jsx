@@ -1,11 +1,83 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link } from '@inertiajs/react';
-import { usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
 import FooterLayout from '@/Layouts/FooterLayout';
+import { useState, useEffect } from 'react';
 
 export default function NewsDetail() {
-    const { news } = usePage().props;
+    const { news_id } = usePage().props; // Ambil news_id dari rute Inertia.js
+    const [news, setNews] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Ambil data berita dari API
+    useEffect(() => {
+        if (!news_id) {
+            setError('ID berita tidak ditemukan.');
+            setLoading(false);
+            return;
+        }
+
+        fetch(`http://localhost:8000/api/news/${news_id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil data berita');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data berita dari API:', data);
+                setNews(data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error('Error fetching news detail:', error);
+                setError('Gagal memuat detail berita. Silakan coba lagi nanti.');
+                setLoading(false);
+            });
+    }, [news_id]);
+
+    if (loading) {
+        return (
+            <GuestLayout>
+                <NavbarGuestLayout />
+                <div className="news-detail py-12 bg-gray-50">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <p className="text-center text-gray-500">Memuat...</p>
+                    </div>
+                </div>
+                <FooterLayout />
+            </GuestLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <GuestLayout>
+                <NavbarGuestLayout />
+                <div className="news-detail py-12 bg-gray-50">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <p className="text-center text-red-500">{error}</p>
+                    </div>
+                </div>
+                <FooterLayout />
+            </GuestLayout>
+        );
+    }
+
+    if (!news) {
+        return (
+            <GuestLayout>
+                <NavbarGuestLayout />
+                <div className="news-detail py-12 bg-gray-50">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <p className="text-center text-gray-500">Berita tidak ditemukan.</p>
+                    </div>
+                </div>
+                <FooterLayout />
+            </GuestLayout>
+        );
+    }
 
     return (
         <GuestLayout>
@@ -78,7 +150,7 @@ export default function NewsDetail() {
                             </div>
                         )}
 
-                        {/* Perbaikan: Gunakan dangerouslySetInnerHTML untuk render HTML */}
+                        {/* Render HTML content */}
                         <div className="prose prose-lg text-gray-700" dangerouslySetInnerHTML={{ __html: news.content }}></div>
                     </div>
                 </div>

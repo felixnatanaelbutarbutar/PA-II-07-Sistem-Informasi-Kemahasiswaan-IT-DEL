@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     {
         // Tambah user Kemahasiswaan
         User::create([
-            'name' => 'Kemahasiswaan Admin',
+            'name' => 'Kemahasiswaan',
             'email' => 'kemahasiswaan@example.com',
             'password' => Hash::make('password'),
             'role' => 'kemahasiswaan',
@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
 
         // Tambah user Mahasiswa
         User::create([
-            'name' => 'Mahasiswa User',
+            'name' => 'Mahasiswa',
             'email' => 'mahasiswa@example.com',
             'password' => Hash::make('password'),
             'role' => 'mahasiswa',

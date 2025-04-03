@@ -1,31 +1,65 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
 import { Head, Link } from '@inertiajs/react';
-import $ from 'jquery';
 import { useEffect, useRef, useState } from 'react';
 import FooterLayout from '@/Layouts/FooterLayout';
 
-export default function Home({ news = [], categories }) {
-    const chartContainerRef = useRef(null);
-    const [layananDropdownOpen, setLayananDropdownOpen] = useState(false);
-    const [organisasiDropdownOpen, setOrganisasiDropdownOpen] = useState(false);
-    const layananDropdownRef = useRef(null);
-    const organisasiDropdownRef = useRef(null);
+export default function Home() {
     const swiperElRef = useRef(null);
-    const categoryList = ['Semua', ...categories.map(cat => cat.category_name)];
+    const [news, setNews] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [announcements, setAnnouncements] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
+    // Ambil data dari API saat komponen dimuat
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const newsResponse = await fetch('http://localhost:8000/api/news?per_page=4');
+                if (!newsResponse.ok) {
+                    throw new Error('Gagal mengambil data berita');
+                }
+                const newsData = await newsResponse.json();
+                console.log('News Data:', newsData); // Tambahkan logging
+                setNews(newsData.data || []);
+    
+                const categoriesResponse = await fetch('http://localhost:8000/api/news-categories');
+                if (!categoriesResponse.ok) {
+                    throw new Error('Gagal mengambil data kategori');
+                }
+                const categoriesData = await categoriesResponse.json();
+                console.log('Categories Data:', categoriesData); // Tambahkan logging
+                setCategories(categoriesData);
+    
+                const announcementsResponse = await fetch('http://localhost:8000/api/announcements?per_page=4');
+                if (!announcementsResponse.ok) {
+                    throw new Error('Gagal mengambil data pengumuman');
+                }
+                const announcementsData = await announcementsResponse.json();
+                console.log('Announcements Data:', announcementsData); // Tambahkan logging
+                setAnnouncements(announcementsData.data || []);
+            } catch (err) {
+                console.error('Error fetching data:', err); // Tambahkan logging untuk error
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+    
+        fetchData();
+    }, []);
 
     // Initialize Swiper
     useEffect(() => {
         const swiperStyles = document.createElement('link');
         swiperStyles.rel = 'stylesheet';
-        swiperStyles.href =
-            'https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css';
+        swiperStyles.href = 'https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css';
         document.head.appendChild(swiperStyles);
 
         const swiperScript = document.createElement('script');
-        swiperScript.src =
-            'https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js';
+        swiperScript.src = 'https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js';
         swiperScript.async = true;
         document.body.appendChild(swiperScript);
 
@@ -70,59 +104,6 @@ export default function Home({ news = [], categories }) {
         };
     }, []);
 
-    // Close dropdowns when clicking outside
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (
-                layananDropdownRef.current &&
-                !layananDropdownRef.current.contains(event.target)
-            ) {
-                setLayananDropdownOpen(false);
-            }
-
-            if (
-                organisasiDropdownRef.current &&
-                !organisasiDropdownRef.current.contains(event.target)
-            ) {
-                setOrganisasiDropdownOpen(false);
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [layananDropdownRef, organisasiDropdownRef]);
-
-    useEffect(() => {
-        // Load Font Awesome CSS
-        const linkElement = document.createElement('link');
-        linkElement.rel = 'stylesheet';
-        linkElement.href =
-            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
-        document.head.appendChild(linkElement);
-
-        // Load OrgChart CSS
-        const orgchartStyle = document.createElement('link');
-        orgchartStyle.rel = 'stylesheet';
-        orgchartStyle.href =
-            'https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.1.1/css/jquery.orgchart.min.css';
-        document.head.appendChild(orgchartStyle);
-
-        // Load OrgChart JS
-        const script = document.createElement('script');
-        script.src =
-            'https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.1.1/js/jquery.orgchart.min.js';
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            document.head.removeChild(linkElement);
-            document.head.removeChild(orgchartStyle);
-            document.body.removeChild(script);
-        };
-    }, []);
-
     // Add scroll event listener for navbar
     useEffect(() => {
         const handleScroll = () => {
@@ -146,17 +127,28 @@ export default function Home({ news = [], categories }) {
         };
     }, []);
 
-    // Format date helper (to match News.jsx)
+    // Format date helper
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
 
-    // Inline styles (to match News.jsx)
+    // Inline styles
     const styles = {
+        body: {
+            fontFamily: "'Inter', sans-serif",
+            margin: 0,
+            padding: 0,
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            minHeight: '100vh',
+        },
         latestNews: {
             padding: '48px 0',
             background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
+        },
+        latestAnnouncements: {
+            padding: '48px 0',
+            background: 'linear-gradient(180deg, #e2e8f0 0%, #f8fafc 100%)',
         },
         sectionHeader: {
             maxWidth: '1280px',
@@ -183,14 +175,31 @@ export default function Home({ news = [], categories }) {
             margin: '0 auto',
             padding: '0 16px',
         },
+        announcementGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '20px',
+            maxWidth: '1280px',
+            margin: '0 auto',
+            padding: '0 16px',
+        },
         newsCard: {
-            background: '#fff',
+            background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '10px',
             overflow: 'hidden',
             boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
             transition: 'transform 0.3s, box-shadow 0.3s',
+            backdropFilter: 'blur(10px)',
         },
-        newsCardHover: {
+        announcementCard: {
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            transition: 'transform 0.3s, box-shadow 0.3s',
+            backdropFilter: 'blur(10px)',
+        },
+        cardHover: {
             transform: 'translateY(-4px)',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
         },
@@ -199,31 +208,49 @@ export default function Home({ news = [], categories }) {
             height: '192px',
             overflow: 'hidden',
         },
-        newsCardImg: {
+        announcementCardImgContainer: {
+            position: 'relative',
+            height: '192px',
+            overflow: 'hidden',
+        },
+        cardImg: {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
             transition: 'transform 0.5s ease',
         },
-        newsCardImgHover: {
+        cardImgHover: {
             transform: 'scale(1.05)',
         },
-        newsCardCategory: {
+        cardIconContainer: {
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f3f4f6',
+        },
+        cardIcon: {
+            width: '48px',
+            height: '48px',
+            color: '#6b7280',
+        },
+        cardCategory: {
             position: 'absolute',
             top: '0',
             right: '0',
-            background: '#2563eb',
+            background: 'linear-gradient(45deg, #007bff, #00c4ff)',
             color: '#fff',
             padding: '4px 12px',
             fontSize: '12px',
             borderBottomLeftRadius: '8px',
         },
-        newsCardContent: {
+        cardContent: {
             padding: '24px',
             display: 'flex',
             flexDirection: 'column',
         },
-        newsCardTitle: {
+        cardTitle: {
             fontSize: '20px',
             fontWeight: '600',
             color: '#1f2937',
@@ -233,7 +260,7 @@ export default function Home({ news = [], categories }) {
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
         },
-        newsCardDescription: {
+        cardDescription: {
             fontSize: '14px',
             color: '#4b5563',
             marginBottom: '16px',
@@ -242,19 +269,19 @@ export default function Home({ news = [], categories }) {
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
         },
-        newsCardDate: {
+        cardDate: {
             display: 'flex',
             alignItems: 'center',
             fontSize: '14px',
             color: '#6b7280',
             marginBottom: '16px',
         },
-        newsCardDateIcon: {
+        cardDateIcon: {
             width: '16px',
             height: '16px',
             marginRight: '4px',
         },
-        newsCardButton: {
+        cardButton: {
             marginTop: 'auto',
             display: 'inline-block',
             background: '#2563eb',
@@ -265,7 +292,7 @@ export default function Home({ news = [], categories }) {
             textDecoration: 'none',
             transition: 'background 0.3s',
         },
-        newsCardButtonHover: {
+        cardButtonHover: {
             background: '#1d4ed8',
         },
         emptyState: {
@@ -275,9 +302,10 @@ export default function Home({ news = [], categories }) {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '48px',
-            background: '#fff',
+            background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '8px',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(10px)',
         },
         emptyStateIcon: {
             width: '64px',
@@ -310,12 +338,27 @@ export default function Home({ news = [], categories }) {
         viewAllButtonHover: {
             background: '#d1d5db',
         },
+        loadingState: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '300px',
+        },
+        errorMessage: {
+            textAlign: 'center',
+            color: '#e53e3e',
+            padding: '20px',
+            background: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            marginBottom: '20px',
+        },
     };
 
     return (
         <GuestLayout>
             <Head title="Beranda" />
-            <NavbarGuestLayout></NavbarGuestLayout>
+            <NavbarGuestLayout />
 
             {/* Hero Carousel */}
             <div className="swiper-container" ref={swiperElRef}>
@@ -452,111 +495,167 @@ export default function Home({ news = [], categories }) {
                 </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+                <div style={styles.errorMessage}>
+                    {error}
+                </div>
+            )}
+
             {/* Latest News Section */}
             <div style={styles.latestNews}>
                 {/* Section Header */}
                 <div style={styles.sectionHeader}>
                     <h2 style={styles.sectionTitle}>Berita Terbaru</h2>
-                    {/* <p style={styles.sectionSubtitle}>Ikuti kabar terbaru dari kami</p> */}
                 </div>
 
                 {/* News Grid */}
-                <div style={styles.newsGrid}>
-                    {news.length > 0 ? (
-                        news.map((item) => (
-                            <Link
-                                key={item.news_id}
-                                href={`/news/${item.news_id}`}
-                                style={{ textDecoration: 'none' }}
-                            >
-                                <div
-                                    style={styles.newsCard}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = styles.newsCardHover.transform;
-                                        e.currentTarget.style.boxShadow = styles.newsCardHover.boxShadow;
-                                        e.currentTarget.querySelector('img').style.transform =
-                                            styles.newsCardImgHover.transform;
-                                        e.currentTarget.querySelector('a').style.background =
-                                            styles.newsCardButtonHover.background;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'none';
-                                        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
-                                        e.currentTarget.querySelector('img').style.transform = 'none';
-                                        e.currentTarget.querySelector('a').style.background =
-                                            styles.newsCardButton.background;
-                                    }}
-                                >
-                                    {/* Image Container */}
-                                    <div style={styles.newsCardImgContainer}>
-                                        <img
-                                            style={styles.newsCardImg}
-                                            src={item.image ? `/storage/${item.image}` : 'https://via.placeholder.com/300x150'}
-                                            alt={item.title}
-                                        />
-                                        <div style={styles.newsCardCategory}>
-                                            {item.category ? item.category.category_name : 'Uncategorized'}
-                                        </div>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div style={styles.newsCardContent}>
-                                        <h3 style={styles.newsCardTitle}>{item.title}</h3>
-                                        <p style={styles.newsCardDescription}>
-                                            {item.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...'}
-                                        </p>
-
-                                        {/* Date */}
-                                        <div style={styles.newsCardDate}>
-                                            <svg
-                                                style={styles.newsCardDateIcon}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                />
-                                            </svg>
-                                            {formatDate(item.created_at)}
-                                        </div>
-
-                                        {/* Read More Button */}
-                                        <Link
-                                            href={`/news/${item.news_id}`}
-                                            style={styles.newsCardButton}
-                                        >
-                                            Baca Selengkapnya
-                                        </Link>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))
-                    ) : (
-                        <div style={styles.emptyState}>
-                            <svg
-                                style={styles.emptyStateIcon}
-                                fill="none"
+                {isLoading ? (
+                    <div style={styles.loadingState}>
+                        <svg
+                            className="animate-spin h-10 w-10 text-blue-500"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
                                 stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                />
-                            </svg>
-                            <h3 style={styles.emptyStateTitle}>Tidak ada berita</h3>
-                            <p style={styles.emptyStateText}>Silakan periksa kembali nanti.</p>
-                        </div>
-                    )}
-                </div>
+                                strokeWidth="4"
+                            />
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
+                        </svg>
+                    </div>
+                ) : (
+                    <div style={styles.newsGrid}>
+                        {news.length > 0 ? (
+                            news.map((item) => (
+                                <Link
+                                    key={item.news_id}
+                                    href={`/news/${item.news_id}`}
+                                    style={{ textDecoration: 'none' }}
+                                >
+                                    <div
+                                        style={styles.newsCard}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = styles.cardHover.transform;
+                                            e.currentTarget.style.boxShadow = styles.cardHover.boxShadow;
+                                            const img = e.currentTarget.querySelector('img');
+                                            if (img) img.style.transform = styles.cardImgHover.transform;
+                                            e.currentTarget.querySelector('a').style.background =
+                                                styles.cardButtonHover.background;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'none';
+                                            e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+                                            const img = e.currentTarget.querySelector('img');
+                                            if (img) img.style.transform = 'none';
+                                            e.currentTarget.querySelector('a').style.background =
+                                                styles.cardButton.background;
+                                        }}
+                                    >
+                                        {/* Image Container */}
+                                        <div style={styles.newsCardImgContainer}>
+                                            {item.image ? (
+                                                <img
+                                                    style={styles.cardImg}
+                                                    src={`/storage/${item.image}`}
+                                                    alt={item.title}
+                                                />
+                                            ) : item.file ? (
+                                                <div style={styles.cardIconContainer}>
+                                                    <svg style={styles.cardIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                            ) : (
+                                                <div style={styles.cardIconContainer}>
+                                                    <svg style={styles.cardIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                            <div style={styles.cardCategory}>
+                                                {item.category ? item.category.category_name : 'Uncategorized'}
+                                            </div>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div style={styles.cardContent}>
+                                            <h3 style={styles.cardTitle}>{item.title}</h3>
+                                            <p style={styles.cardDescription}>
+                                                {item.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...'}
+                                            </p>
+
+                                            {/* Date */}
+                                            <div style={styles.cardDate}>
+                                                <svg
+                                                    style={styles.cardDateIcon}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                {formatDate(item.created_at)}
+                                            </div>
+
+                                            {/* Read More Button */}
+                                            <Link
+                                                href={`/news/${item.news_id}`}
+                                                style={styles.cardButton}
+                                            >
+                                                Baca Selengkapnya
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            <div style={styles.emptyState}>
+                                <svg
+                                    style={styles.emptyStateIcon}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                    />
+                                </svg>
+                                <h3 style={styles.emptyStateTitle}>Tidak ada berita</h3>
+                                <p style={styles.emptyStateText}>Silakan periksa kembali nanti.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* View All News Button */}
                 <div style={styles.viewAllButtonContainer}>
@@ -575,7 +674,179 @@ export default function Home({ news = [], categories }) {
                 </div>
             </div>
 
-            <FooterLayout></FooterLayout>
-        </GuestLayout>
+            {/* Latest Announcements Section */}
+            <div style={styles.latestAnnouncements}>
+                {/* Section Header */}
+                <div style={styles.sectionHeader}>
+                    <h2 style={styles.sectionTitle}>Pengumuman Terbaru</h2>
+                </div>
+
+                {/* Announcements Grid */}
+                {isLoading ? (
+                    <div style={styles.loadingState}>
+                        <svg
+                            className="animate-spin h-10 w-10 text-blue-500"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                            />
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
+                        </svg>
+                    </div>
+                ) : (
+                    <div style={styles.announcementGrid}>
+                        {announcements.length > 0 ? (
+                            announcements.map((item) => (
+                                <Link
+                                    key={item.announcement_id}
+                                    href={`/announcement/${item.announcement_id}`}
+                                    style={{ textDecoration: 'none' }}
+                                >
+                                    <div
+                                        style={styles.announcementCard}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = styles.cardHover.transform;
+                                            e.currentTarget.style.boxShadow = styles.cardHover.boxShadow;
+                                            const img = e.currentTarget.querySelector('img');
+                                            if (img) img.style.transform = styles.cardImgHover.transform;
+                                            e.currentTarget.querySelector('a').style.background =
+                                                styles.cardButtonHover.background;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'none';
+                                            e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+                                            const img = e.currentTarget.querySelector('img');
+                                            if (img) img.style.transform = 'none';
+                                            e.currentTarget.querySelector('a').style.background =
+                                                styles.cardButton.background;
+                                        }}
+                                    >
+                                        {/* Image Container */}
+                                        <div style={styles.announcementCardImgContainer}>
+                                            {item.file && item.file.match(/\.(jpeg|jpg|png|gif)$/i) ? (
+                                                <img
+                                                    style={styles.cardImg}
+                                                    src={`/storage/${item.file}`}
+                                                    alt={item.title}
+                                                />
+                                            ) : item.file ? (
+                                                <div style={styles.cardIconContainer}>
+                                                    <svg style={styles.cardIcon} fill="none" stroke="currentColor" viewBox="0 0 24 10">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                            ) : (
+                                                <div style={styles.cardIconContainer}>
+                                                    <svg style={styles.cardIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                            <div style={styles.cardCategory}>
+                                                {item.category ? item.category.category_name : 'Uncategorized'}
+                                            </div>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div style={styles.cardContent}>
+                                            <h3 style={styles.cardTitle}>{item.title}</h3>
+                                            <p style={styles.cardDescription}>
+                                                {item.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...'}
+                                            </p>
+
+                                            {/* Date */}
+                                            <div style={styles.cardDate}>
+                                                <svg
+                                                    style={styles.cardDateIcon}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                {formatDate(item.created_at)}
+                                            </div>
+
+                                            {/* Read More Button */}
+                                            <Link
+                                                href={`/announcement/${item.announcement_id}`}
+                                                style={styles.cardButton}
+                                            >
+                                                Baca Selengkapnya
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            <div style={styles.emptyState}>
+                                <svg
+                                    style={styles.emptyStateIcon}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                    />
+                                </svg>
+                                <h3 style={styles.emptyStateTitle}>Tidak ada pengumuman</h3>
+                                <p style={styles.emptyStateText}>Silakan periksa kembali nanti.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* View All Announcements Button */}
+                <div style={styles.viewAllButtonContainer}>
+                    <Link
+                        href="/announcementguest"
+                        style={styles.viewAllButton}
+                        onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = styles.viewAllButtonHover.background)
+                        }
+                        onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = styles.viewAllButton.background)
+                        }
+                    >
+                        Lihat Semua Pengumuman
+                    </Link>
+                </div>
+            </div>
+
+            <FooterLayout />
+        </GuestLayout >
     );
 }

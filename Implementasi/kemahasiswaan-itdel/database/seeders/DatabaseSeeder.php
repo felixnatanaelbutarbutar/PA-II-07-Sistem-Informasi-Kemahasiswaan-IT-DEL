@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             NewsCategorySeeder::class,
             AnnouncementCategorySeeder::class,
-            UserSeeder::class
+            UserSeeder::class,
+            AchievementTypesSeeder::class
         ]);
     }
 }
