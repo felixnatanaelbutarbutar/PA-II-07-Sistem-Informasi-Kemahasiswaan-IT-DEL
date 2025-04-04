@@ -55,6 +55,11 @@ Route::get('/achievements/{achievement_id}', function () {
 // Counseling Routes (Accessible to Guests and Mahasiswa)
 Route::post('/counseling', [CounselingController::class, 'store'])->name('counseling.store');
 
+// Tambahkan rute untuk chatbot
+Route::get('/chatbot', function () {
+    return Inertia::render('Chatbot');
+})->name('chatbot.index');
+
 // Login Route
 Route::get('/login', function () {
     if (Auth::check()) {

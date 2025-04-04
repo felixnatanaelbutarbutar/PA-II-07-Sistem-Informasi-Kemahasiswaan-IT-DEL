@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
             NewsCategorySeeder::class,
             AnnouncementCategorySeeder::class,
             UserSeeder::class,
-            AchievementTypesSeeder::class
+            AchievementTypesSeeder::class,
+            ChatbotRulesSeeder::class,
         ]);
     }
 }

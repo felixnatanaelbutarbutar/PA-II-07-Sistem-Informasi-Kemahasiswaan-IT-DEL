@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\Api\NewsCategoryController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AnnouncementCategoryController;
+use App\Http\Controllers\Api\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,3 +32,6 @@ Route::get('/news-categories', [NewsCategoryController::class, 'index']);
 Route::get('/announcements', [AnnouncementController::class, 'index']);
 Route::get('/announcements/{announcement_id}', [AnnouncementController::class, 'show']);
 Route::get('/announcement-categories', [AnnouncementCategoryController::class, 'index']);
+
+// Route untuk Chatbot
+Route::post('/chatbot', [ChatbotController::class, 'chat']);
