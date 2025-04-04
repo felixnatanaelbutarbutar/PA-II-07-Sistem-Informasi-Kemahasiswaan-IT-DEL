@@ -36,13 +36,18 @@ Route::get('/announcement/{announcement_id}', function () {
     return Inertia::render('AnnouncementDetail');
 })->name('announcement.show');
 
-Route::get('/counseling', function () {
-    return Inertia::render('Counseling');
-})->name('counseling.index');
+// Route::get('/counseling', function () {
+//     return Inertia::render('Counseling');
+// })->name('counseling.index');
 
-Route::get('/counselings/{counseling_id}', function () {
-    return Inertia::render('CounselingDetail');
-})->name('counseling.show');
+// Route::get('/counselings/{counseling_id}', function () {
+//     return Inertia::render('CounselingDetail');
+// })->name('counseling.show');
+
+
+// Counseling Routes (Accessible to Guests and Mahasiswa)
+Route::get('/counseling', [CounselingController::class, 'index'])->name('counseling.index');
+Route::post('/counseling', [CounselingController::class, 'store'])->name('counseling.store');
 
 Route::get('/achievements', function () {
     return Inertia::render('Achievement');
