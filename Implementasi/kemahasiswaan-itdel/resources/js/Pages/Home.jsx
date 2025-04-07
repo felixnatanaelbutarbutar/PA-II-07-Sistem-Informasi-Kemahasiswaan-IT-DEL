@@ -382,7 +382,7 @@ export default function Home() {
                         <div
                             className="carousel-slide"
                             style={{
-                                backgroundImage: 'url("/assets/images/slide.svg")',
+                                backgroundImage: 'url("/assets/images/slide2.svg")',
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',
@@ -396,7 +396,7 @@ export default function Home() {
                         <div
                             className="carousel-slide"
                             style={{
-                                backgroundImage: 'url("/assets/images/slide.svg")',
+                                backgroundImage: 'url("/assets/images/slide3.svg")',
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',
@@ -832,7 +832,7 @@ export default function Home() {
                 {/* View All Announcements Button */}
                 <div style={styles.viewAllButtonContainer}>
                     <Link
-                        href="/announcementguest"
+                        href="/announcement"
                         style={styles.viewAllButton}
                         onMouseEnter={(e) =>
                             (e.currentTarget.style.background = styles.viewAllButtonHover.background)

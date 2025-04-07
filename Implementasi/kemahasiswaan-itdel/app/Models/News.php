@@ -28,4 +28,8 @@ class News extends Model
     {
         return $this->belongsTo(NewsCategory::class, 'category_id', 'category_id');
     }
+    public function getRouteKeyName()
+    {
+        return 'news_id';
+    }
 }

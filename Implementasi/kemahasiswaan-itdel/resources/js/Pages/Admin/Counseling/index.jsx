@@ -8,6 +8,8 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
 
     console.log("User Role di AdminLayout:", userRole);
 
+    console.log('Counselings Data:', counselings);
+
     // Handle status change
     const handleStatusChange = (counselingId, newStatus) => {
         setStatusUpdating((prev) => ({ ...prev, [counselingId]: true }));
@@ -31,6 +33,7 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
             }
         );
     };
+    console.log("Flash message:", flash)
 
     return (
         <AdminLayout
@@ -185,7 +188,9 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
                         <table className="table">
                             <thead>
                                 <tr>
-                                    <th>Nama Mahasiswa</th>
+                                    <th>NIM</th>
+                                    <th>Nama</th>
+                                    <th>Asrama</th>
                                     <th>Masalah</th>
                                     <th>Nomor Telepon</th>
                                     <th>Tanggal Pengajuan</th>
@@ -196,7 +201,9 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
                             <tbody>
                                 {counselings.data.map((counseling) => (
                                     <tr key={counseling.id}>
+                                        <td>{counseling.user.nim || '-'}</td>
                                         <td>{counseling.user.name}</td>
+                                        <td>{counseling.user.asrama || '-'}</td>
                                         <td>{counseling.issue}</td>
                                         <td>{counseling.noTelephone}</td>
                                         <td>
@@ -254,7 +261,7 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
                                     href={link.url}
                                     className={`px-3 py-1 mx-1 rounded ${link.active
                                             ? 'bg-blue-500 text-white'
-                                            : 'bg-gray-200 text-gray-700'
+                                        : 'bg-gray-200 text-gray-700'
                                         } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                 />

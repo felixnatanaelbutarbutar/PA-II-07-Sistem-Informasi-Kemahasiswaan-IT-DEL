@@ -44,13 +44,18 @@ class CounselingController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        // Transform the data to ensure all fields are present
+        // Transform the data to include all necessary user fields
         $counselings->getCollection()->transform(function ($counseling) {
             return [
                 'id' => $counseling->id,
                 'user' => [
                     'id' => $counseling->user->id,
                     'name' => $counseling->user->name,
+                    'nim' => $counseling->user->nim,
+                    'asrama' => $counseling->user->asrama,
+                    'prodi' => $counseling->user->prodi,
+                    'fakultas' => $counseling->user->fakultas,
+                    'angkatan' => $counseling->user->angkatan,
                 ],
                 'issue' => $counseling->issue,
                 'noTelephone' => $counseling->noTelephone,
@@ -79,7 +84,7 @@ class CounselingController extends Controller
      * Store a new counseling request (for mahasiswa).
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\RedirectResponse
+    * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
@@ -112,7 +117,7 @@ class CounselingController extends Controller
      *
      * @param \Illuminate\Http\Request $request
      * @param int $id
-     * @return void
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $id)
     {
@@ -128,7 +133,7 @@ class CounselingController extends Controller
         $counseling->status = $request->status;
         $counseling->save();
 
-        // Store the flash message in the session
-        $request->session()->flash('success', 'Status permintaan konseling berhasil diperbarui.');
+        return redirect()->route('admin.counseling.index')
+            ->with('success', 'Status permintaan konseling berhasil diperbarui.');
     }
 }

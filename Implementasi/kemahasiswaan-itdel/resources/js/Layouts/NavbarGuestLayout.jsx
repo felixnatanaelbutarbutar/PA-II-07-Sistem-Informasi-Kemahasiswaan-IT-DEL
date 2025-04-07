@@ -105,7 +105,7 @@ const NavbarGuestLayout = () => {
                                 Berita
                             </Link>
                             <Link
-                                href="/announcementguest"
+                                href="/announcement"
                                 className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/announcementguest') ? 'nav-item-active' : 'transition-colors hover:text-white'
                                     }`}
                             >

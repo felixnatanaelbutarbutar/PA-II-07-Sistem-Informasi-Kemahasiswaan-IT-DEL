@@ -15,23 +15,25 @@ class RoleHelper
         $role = strtolower($role);
 
         $rolePermissions = [
-            // 'superadmin' => [
-            //     'pengumuman' => true,
-            //     'layanan' => true,
-            //     'kegiatan' => true,
-            //     'organisasi' => true,
-            //     'beasiswa'=> true,
-            //     'news'=> true,
-            // ],
+            'superadmin' => [
+                'pengumuman' => true,
+                'layanan' => true,
+                'kegiatan' => true,
+                'organisasi' => true,
+                'beasiswa' => true,
+                'news' => true,
+                'achievements' => true,
+                'counseling' => true,
+            ],
             'kemahasiswaan' => [
                 'pengumuman' => true,
                 'layanan' => true,
                 'kegiatan' => false,
                 'organisasi' => false,
-                'beasiswa'=> true,
-                'news'=> true,
-                'achievements'=> true,
-                'counseling'=>true,
+                'beasiswa' => true,
+                'news' => true,
+                'achievements' => true,
+                'counseling' => true,
             ],
             'adminbem' => [
                 'berita' => false,
@@ -39,11 +41,9 @@ class RoleHelper
                 'layanan' => true,
                 'kegiatan' => true,
                 'organisasi' => false,
-                'news'=> true,
-                'achievements'=> false,
-                'counseling'=>false,
-
-
+                'news' => true,
+                'achievements' => false,
+                'counseling' => false,
             ],
             'adminmpm' => [
                 'berita' => false,
@@ -51,9 +51,19 @@ class RoleHelper
                 'layanan' => true,
                 'kegiatan' => false,
                 'organisasi' => true,
-                'news'=> false,
-                'achievements'=> false,
-                'counseling'=>false,
+                'news' => false,
+                'achievements' => false,
+                'counseling' => false,
+            ],
+            'mahasiswa' => [
+                'pengumuman' => false,
+                'layanan' => false,
+                'kegiatan' => false,
+                'organisasi' => false,
+                'beasiswa' => false,
+                'news' => false,
+                'achievements' => false,
+                'counseling' => true, // Mahasiswa hanya bisa akses counseling
             ],
         ];
 
@@ -84,15 +94,20 @@ class RoleHelper
         $role = strtolower($role);
         $permissions = self::getRolePermissions($role);
 
+        // Menu untuk superadmin, kemahasiswaan, adminbem, adminmpm
         $menuItems = [
             [
                 'name' => 'Dashboard',
-                'route' => 'admin.dashboard',
+                'route' => $role === 'superadmin' ? 'superadmin.dashboard' : 'admin.dashboard',
                 'icon' => 'home',
                 'visible' => true,
             ]
         ];
 
+        // Menu untuk mahasiswa (tanpa dashboard admin)
+        if ($role === 'mahasiswa') {
+            $menuItems = [];
+        }
 
         if ($permissions['pengumuman'] ?? false) {
             $menuItems[] = [
@@ -130,7 +145,6 @@ class RoleHelper
             ];
         }
 
-        // Tambahkan menu Berita jika user memiliki akses ke "news"
         if ($permissions['news'] ?? false) {
             $menuItems[] = [
                 'name' => 'Berita',
@@ -139,7 +153,7 @@ class RoleHelper
                 'visible' => true,
             ];
         }
-        
+
         if ($permissions['achievements'] ?? false) {
             $menuItems[] = [
                 'name' => 'Prestasi',
@@ -148,10 +162,11 @@ class RoleHelper
                 'visible' => true,
             ];
         }
+
         if ($permissions['counseling'] ?? false) {
             $menuItems[] = [
                 'name' => 'Konseling',
-                'route' => 'admin.counseling.index',
+                'route' => $role === 'mahasiswa' ? 'counseling.index' : 'admin.counseling.index',
                 'icon' => 'heart',
                 'visible' => true,
             ];
@@ -160,4 +175,3 @@ class RoleHelper
         return $menuItems;
     }
 }
-

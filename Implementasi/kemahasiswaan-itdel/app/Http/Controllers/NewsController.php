@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use App\Helpers\RoleHelper;
-
+use Illuminate\Support\Facades\Log;
 
 class NewsController extends Controller
 {
@@ -25,12 +25,16 @@ class NewsController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
+        // Debugging flash message
+        $flashSuccess = session('success');
+        Log::info('Flash message in index: ' . ($flashSuccess ?? 'No flash message'));
+
         return Inertia::render('Admin/News/index', [
             'auth' => [
                 'user' => $user
             ],
             'userRole' => $role,
-            'permissions' => $permissions, // Perbaikan di sini
+            'permissions' => $permissions,
             'news' => $news,
             'categories' => $categories,
             'menu' => $menuItems,
@@ -85,25 +89,10 @@ class NewsController extends Controller
             'updated_by' => Auth::id(),
         ]);
 
-        // Ambil ulang data
-        $news = News::with('category')->get();
-        $categories = NewsCategory::all();
-        $menuItems = RoleHelper::getNavigationMenu($role);
-        $permissions = RoleHelper::getRolePermissions($role);
-
-        // Redirect ke index dengan data lengkap
-        return redirect()->route('admin.news.index')->with([
-            'success' => 'Berita berhasil ditambahkan.',
-            'auth' => ['user' => $user],
-            'userRole' => $role,
-            'permissions' => $permissions,
-            'news' => $news,
-            'categories' => $categories,
-            'menu' => $menuItems,  // ✅ Pastikan menu dikirim ke index
-        ]);
+        // Redirect ke index dengan flash message
+        return redirect()->route('admin.news.index')
+            ->with('success', 'Berita berhasil ditambahkan.');
     }
-
-
 
     // Mengupdate berita
     public function update(Request $request, $news_id)
@@ -137,21 +126,27 @@ class NewsController extends Controller
         return redirect()->route('admin.news.index')->with('success', 'Berita berhasil diperbarui.');
     }
 
-
     // Menghapus berita
     public function destroy($news_id)
     {
-        $news = News::findOrFail($news_id);
+        try {
+            $news = News::findOrFail($news_id);
 
-        // Hapus gambar jika ada
-        if ($news->image) {
-            Storage::disk('public')->delete($news->image);
+            // Hapus gambar jika ada
+            if ($news->image) {
+                Storage::disk('public')->delete($news->image);
+            }
+
+            $news->delete();
+
+            // Redirect dengan flash message
+            return redirect()->route('admin.news.index')->with('success', 'Berita berhasil dihapus.');
+        } catch (\Exception $e) {
+            // Redirect dengan flash message untuk error
+            return redirect()->route('admin.news.index')->with('error', 'Gagal menghapus berita: ' . $e->getMessage());
         }
-
-        $news->delete();
-
-        return redirect()->back()->with('success', 'Berita berhasil dihapus.');
     }
+
     public function create()
     {
         $user = Auth::user();
@@ -165,11 +160,10 @@ class NewsController extends Controller
             'userRole' => $role,
             'permissions' => $permissions,
             'categories' => $categories,
-            'menu' => $menuItems, // ✅ Pastikan menu dikirim ke add.jsx
+            'menu' => $menuItems,
         ]);
     }
 
-    // Method to display the edit form
     public function edit($news_id)
     {
         $user = Auth::user();
@@ -185,11 +179,12 @@ class NewsController extends Controller
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
-            'news' => $news,  // ✅ Kirim data berita spesifik ke frontend
+            'news' => $news,
             'categories' => $categories,
             'menu' => $menuItems,
         ]);
     }
+
     public function guestIndex()
     {
         $newsItems = News::with('category')->orderBy('created_at', 'desc')->get();

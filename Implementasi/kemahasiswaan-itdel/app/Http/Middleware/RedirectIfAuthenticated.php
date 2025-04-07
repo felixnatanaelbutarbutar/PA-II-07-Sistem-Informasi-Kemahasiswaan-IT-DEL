@@ -5,9 +5,15 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class RedirectIfAuthenticated
 {
+    public function __construct()
+    {
+        Log::info('RedirectIfAuthenticated middleware instantiated');
+    }
+
     public function handle(Request $request, Closure $next, ...$guards)
     {
         $guards = empty($guards) ? [null] : $guards;
@@ -29,20 +35,14 @@ class RedirectIfAuthenticated
         return $next($request);
     }
 
-    /**
-     * Redirect mahasiswa ke halaman terakhir yang diakses atau halaman default.
-     */
     protected function redirectMahasiswa(Request $request)
     {
-        // Cek apakah ada URL yang tersimpan di session
         if ($request->session()->has('url.intended')) {
             $intendedUrl = $request->session()->get('url.intended');
-            // Hapus URL dari session setelah digunakan
             $request->session()->forget('url.intended');
             return redirect($intendedUrl);
         }
 
-        // Jika tidak ada URL yang tersimpan, arahkan ke halaman default (misalnya, counseling)
-        return redirect()->route('counseling.index'); // Ganti dengan rute yang sesuai
+        return redirect()->route('counseling.index');
     }
 }

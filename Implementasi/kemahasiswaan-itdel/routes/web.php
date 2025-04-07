@@ -11,10 +11,11 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\KegiatanBEMController;
 use App\Http\Controllers\NewsCategoryController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 // Public Routes (Accessible to Guests)
 Route::get('/', function () {
-    return Inertia::render('Home', );
+    return Inertia::render('Home');
 })->name('home');
 
 Route::get('/newsguest', function () {
@@ -26,24 +27,14 @@ Route::get('/news/{news_id}', function ($news_id) {
         'news_id' => $news_id
     ]);
 })->name('news.show');
-// Route::get('/news-categories', [NewsCategoryController::class, 'index']);
 
-Route::get('/announcementguest', function () {
+Route::get('/announcement', function () {
     return Inertia::render('Announcement');
 })->name('announcement.guest.index');
 
 Route::get('/announcement/{announcement_id}', function () {
     return Inertia::render('AnnouncementDetail');
 })->name('announcement.show');
-
-// Route::get('/counseling', function () {
-//     return Inertia::render('Counseling');
-// })->name('counseling.index');
-
-// Route::get('/counselings/{counseling_id}', function () {
-//     return Inertia::render('CounselingDetail');
-// })->name('counseling.show');
-
 
 // Counseling Routes (Accessible to Guests and Mahasiswa)
 Route::get('/counseling', [CounselingController::class, 'index'])->name('counseling.index');
@@ -56,9 +47,6 @@ Route::get('/achievements', function () {
 Route::get('/achievements/{achievement_id}', function () {
     return Inertia::render('AchievementDetail');
 })->name('achievements.show');
-
-// Counseling Routes (Accessible to Guests and Mahasiswa)
-Route::post('/counseling', [CounselingController::class, 'store'])->name('counseling.store');
 
 // Tambahkan rute untuk chatbot
 Route::get('/chatbot', function () {
@@ -80,7 +68,7 @@ Route::get('/login', function () {
             case 'adminmpm':
                 return redirect()->route('admin.dashboard');
             case 'mahasiswa':
-                return redirect('/'); // Redirect mahasiswa to homepage
+                return redirect()->route('counseling.index'); // Redirect mahasiswa ke halaman counseling
             default:
                 return redirect('/');
         }
@@ -90,6 +78,9 @@ Route::get('/login', function () {
         'status' => session('status'),
     ]);
 })->middleware('guest')->name('login');
+
+// Tambahkan rute POST untuk menangani autentikasi
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login');
 
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
@@ -106,7 +97,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin Routes (Kemahasiswaan, AdminBEM, AdminMPM)
     Route::prefix('admin')->name('admin.')->middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
-        // Admin Dashboard
         Route::get('/dashboard', function () {
             $user = Auth::user();
             $role = strtolower($user->role);
@@ -114,9 +104,19 @@ Route::middleware(['auth'])->group(function () {
             $permissions = RoleHelper::getRolePermissions($role);
             $totalMahasiswa = User::where('role', 'mahasiswa')->count();
 
+            // Ambil data pengguna dari session (data dari API CIS)
+            $apiUser = session('api_user', [
+                'user_id' => $user->id,
+                'user_name' => $user->username,
+                'email' => $user->email,
+                'role' => $role,
+                'status' => 1,
+                'jabatan' => []
+            ]);
+
             return Inertia::render('Admin/Dashboard', [
                 'auth' => [
-                    'user' => $user,
+                    'user' => $apiUser, // Kirim data dari API CIS
                 ],
                 'userRole' => $role,
                 'permissions' => $permissions,
@@ -178,30 +178,15 @@ Route::middleware(['auth'])->group(function () {
 
         // News Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
-            Route::get('/news', [NewsController::class, 'index'])->name('news.index');
-            Route::get('/news/add', [NewsController::class, 'create'])->name('news.create');
-            Route::post('/news', [NewsController::class, 'store'])->name('news.store');
-            Route::get('/news/edit/{news_id}', [NewsController::class, 'edit'])->name('news.edit');
-            Route::put('/news/{news_id}', [NewsController::class, 'update'])->name('news.update');
-            Route::delete('/news/{news_id}', [NewsController::class, 'destroy'])->name('news.destroy');
+            Route::resource('news', NewsController::class)->except(['show']);
 
             // Announcement Routes
-            Route::get('/announcement', [AnnouncementController::class, 'index'])->name('announcement.index');
-            Route::get('/announcement/add', [AnnouncementController::class, 'create'])->name('announcement.create');
-            Route::post('/announcement', [AnnouncementController::class, 'store'])->name('announcement.store');
-            Route::get('/announcement/edit/{announcement}', [AnnouncementController::class, 'edit'])->name('announcement.edit');
-            Route::put('/announcement/{announcement}', [AnnouncementController::class, 'update'])->name('announcement.update');
-            Route::delete('/announcement/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
+            Route::resource('announcement', AnnouncementController::class)->except(['show']);
         });
 
         // Achievement Routes (Kemahasiswaan Only)
         Route::middleware(['role:kemahasiswaan'])->group(function () {
-            Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
-            Route::get('/achievements/add', [AchievementController::class, 'create'])->name('achievements.create');
-            Route::post('/achievements', [AchievementController::class, 'store'])->name('achievements.store');
-            Route::get('/achievements/edit/{achievement}', [AchievementController::class, 'edit'])->name('achievements.edit');
-            Route::put('/achievements/{achievement}', [AchievementController::class, 'update'])->name('achievements.update');
-            Route::delete('/achievements/{achievement}', [AchievementController::class, 'destroy'])->name('achievements.destroy');
+            Route::resource('achievements', AchievementController::class)->except(['show']);
 
             Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
             Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');

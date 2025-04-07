@@ -13,15 +13,20 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('username')->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['superadmin', 'kemahasiswaan', 'adminbem', 'adminmpm', 'mahasiswa'])->default('kemahasiswaan');
+            $table->string('nim')->nullable(); // NIM, opsional untuk mahasiswa
+            $table->string('asrama')->nullable(); // Asrama, opsional untuk mahasiswa
+            $table->string('prodi')->nullable(); // Prodi, opsional untuk mahasiswa
+            $table->string('fakultas')->nullable(); // Fakultas, opsional untuk mahasiswa
+            $table->string('angkatan')->nullable(); // Angkatan, opsional untuk mahasiswa
             $table->rememberToken();
             $table->timestamps();
         });
-
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

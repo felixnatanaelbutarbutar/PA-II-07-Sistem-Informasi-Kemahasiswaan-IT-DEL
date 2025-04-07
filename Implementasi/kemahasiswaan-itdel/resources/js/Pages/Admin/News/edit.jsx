@@ -5,6 +5,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import axios from 'axios';
 
+
 export default function Edit({ auth, permissions, userRole, menu, categories, news }) {
     if (!auth?.user || !news) {
         return <div className="flex items-center justify-center h-screen">
@@ -33,7 +34,7 @@ export default function Edit({ auth, permissions, userRole, menu, categories, ne
             
             return () => clearTimeout(timer);
         }
-    }, [notification]);
+    }, [notification]); 
 
     const handleSubmit = async (e) => {
         e.preventDefault();

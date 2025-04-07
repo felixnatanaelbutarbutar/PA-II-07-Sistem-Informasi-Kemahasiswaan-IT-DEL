@@ -16,10 +16,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'username',
         'name',
         'email',
         'password',
         'role',
+        'nim',        // Tambahkan NIM (opsional, hanya untuk mahasiswa)
+        'asrama',     // Tambahkan asrama (opsional, hanya untuk mahasiswa)
+        'prodi',      // Tambahkan prodi (opsional, hanya untuk mahasiswa)
+        'fakultas',   // Tambahkan fakultas (opsional, hanya untuk mahasiswa)
+        'angkatan',   // Tambahkan angkatan (opsional, hanya untuk mahasiswa)
     ];
 
     /**

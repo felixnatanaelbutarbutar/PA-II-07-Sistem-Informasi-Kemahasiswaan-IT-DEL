@@ -68,10 +68,4 @@ class Kernel extends HttpKernel
         'role' => \App\Http\Middleware\CheckRole::class,
         'feature' => \App\Http\Middleware\CheckFeaturePermission::class,
     ];
-
-    protected $routeMiddleware = [
-        'auth' => \App\Http\Middleware\Authenticate::class,
-        'role' => \App\Http\Middleware\RoleMiddleware::class, // Pastikan ini ada
-    ];
-    
-} 
+}

@@ -60,7 +60,7 @@ export default function AdminLayout({
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                                 <span className="text-white font-bold text-lg">A</span>
                             </div>
-                            <h2 className="text-xl font-bold text-zinc-800 dark:text-white">Admin Panel</h2>
+                            <h2 className="text-xl font-bold text-zinc-800 dark:text-white">Kemahasiswaan Institut Teknologi Del</h2>
                         </div>
                     </div>
 
