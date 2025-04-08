@@ -13,36 +13,30 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Tambah user Kemahasiswaan
         User::create([
-            'name' => 'Kemahasiswaan',
-            'email' => 'kemahasiswaan@example.com',
-            'password' => Hash::make('password'),
-            'role' => 'kemahasiswaan',
-        ]);
-
-        // Tambah user Admin BEM
-        User::create([
-            'name' => 'Admin BEM',
-            'email' => 'adminbem@example.com',
-            'password' => Hash::make('password'),
-            'role' => 'adminbem',
-        ]);
-
-        // Tambah user Admin MPM
-        User::create([
+            'username' => 'adminmpm',
             'name' => 'Admin MPM',
-            'email' => 'adminmpm@example.com',
-            'password' => Hash::make('password'),
+            'email' => 'adminmpm@del.ac.id',
+            'password' => Hash::make('password123'),
             'role' => 'adminmpm',
+            'nim' => null,
+            'asrama' => null,
+            'prodi' => null,
+            'fakultas' => null,
+            'angkatan' => null,
         ]);
 
-        // Tambah user Mahasiswa
         User::create([
-            'name' => 'Mahasiswa',
-            'email' => 'mahasiswa@example.com',
-            'password' => Hash::make('password'),
-            'role' => 'mahasiswa',
+            'username' => 'adminbem',
+            'name' => 'Admin BEM',
+            'email' => 'adminbem@del.ac.id',
+            'password' => Hash::make('password123'),
+            'role' => 'adminbem',
+            'nim' => null,
+            'asrama' => null,
+            'prodi' => null,
+            'fakultas' => null,
+            'angkatan' => null,
         ]);
     }
 }

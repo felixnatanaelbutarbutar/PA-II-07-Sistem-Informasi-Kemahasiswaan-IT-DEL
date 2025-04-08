@@ -13,6 +13,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -32,7 +33,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi input sesuai dengan API CIS
+        // Validasi input
         $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
@@ -40,6 +41,49 @@ class AuthenticatedSessionController extends Controller
 
         Log::info('Login Attempt:', ['username' => $request->username]);
 
+        // Cek apakah user ada di database lokal dan memiliki role adminmpm atau adminbem
+        $user = User::where('username', $request->username)->first();
+
+        if ($user && in_array($user->role, ['adminmpm', 'adminbem']) && Hash::check($request->password, $user->password)) {
+            // Autentikasi lokal untuk adminmpm dan adminbem
+            Log::info('Local Authentication Successful:', ['username' => $user->username, 'role' => $user->role]);
+
+            // Login pengguna ke session Laravel
+            Auth::login($user, $request->filled('remember'));
+            Log::info('User Logged In:', ['user_id' => $user->id]);
+
+            // Regenerate session
+            $request->session()->regenerate();
+
+            // Tentukan redirect berdasarkan role
+            $defaultRedirectRoute = match ($user->role) {
+                'superadmin' => route('superadmin.dashboard'),
+                'kemahasiswaan', 'adminbem', 'adminmpm' => route('admin.dashboard'),
+                'mahasiswa' => route('counseling.index'),
+                default => '/',
+            };
+
+            Log::info('Redirect Route:', ['route' => $defaultRedirectRoute]);
+
+            // Check if there's an intended URL
+            $intendedUrl = $request->session()->pull('url.intended', $defaultRedirectRoute);
+            Log::info('Intended URL:', ['url' => $intendedUrl]);
+
+            // Jika request adalah AJAX, kembalikan JSON
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'username' => $user->username,
+                    'role' => $user->role,
+                    'redirect' => $intendedUrl,
+                ]);
+            }
+
+            // Redirect ke intended URL atau default route
+            return redirect()->intended($defaultRedirectRoute);
+        }
+
+        // Jika bukan adminmpm atau adminbem, lanjutkan autentikasi via API
         try {
             // Buat instance Guzzle Client
             $client = new Client();
@@ -60,6 +104,7 @@ class AuthenticatedSessionController extends Controller
 
             // Kirim request ke API CIS untuk login
             $response = $client->post($apiUrl, [
+                'verify' => false, // Nonaktifkan verifikasi SSL
                 'form_params' => [
                     'username' => $request->username,
                     'password' => $request->password,
@@ -93,6 +138,7 @@ class AuthenticatedSessionController extends Controller
                 'kaprodi' => 'kemahasiswaan',
                 'logistik' => 'kemahasiswaan',
                 'koordinator' => 'kemahasiswaan',
+                'authenticated user' => 'kemahasiswaan',
             ];
 
             // Tentukan role pengguna
@@ -121,6 +167,7 @@ class AuthenticatedSessionController extends Controller
                 Log::info('Fetching mahasiswa data from:', ['url' => $mahasiswaApiUrl]);
 
                 $mahasiswaResponse = $client->get($mahasiswaApiUrl, [
+                    'verify' => false, // Nonaktifkan verifikasi SSL
                     'headers' => [
                         'Authorization' => 'Bearer ' . $token,
                         'Accept' => 'application/json',

@@ -22,6 +22,7 @@ class RoleHelper
                 'organisasi' => true,
                 'beasiswa' => true,
                 'news' => true,
+                'newscategory' => true, // Tambahkan untuk superadmin
                 'achievements' => true,
                 'counseling' => true,
             ],
@@ -32,6 +33,7 @@ class RoleHelper
                 'organisasi' => false,
                 'beasiswa' => true,
                 'news' => true,
+                'newscategory' => true,
                 'achievements' => true,
                 'counseling' => true,
             ],
@@ -42,6 +44,7 @@ class RoleHelper
                 'kegiatan' => true,
                 'organisasi' => false,
                 'news' => true,
+                'newscategory' => false, // Tidak ada akses untuk adminbem
                 'achievements' => false,
                 'counseling' => false,
             ],
@@ -52,6 +55,7 @@ class RoleHelper
                 'kegiatan' => false,
                 'organisasi' => true,
                 'news' => false,
+                'newscategory' => false, // Tidak ada akses untuk adminmpm
                 'achievements' => false,
                 'counseling' => false,
             ],
@@ -62,8 +66,9 @@ class RoleHelper
                 'organisasi' => false,
                 'beasiswa' => false,
                 'news' => false,
+                'newscategory' => false, // Tidak ada akses untuk mahasiswa
                 'achievements' => false,
-                'counseling' => true, // Mahasiswa hanya bisa akses counseling
+                'counseling' => true,
             ],
         ];
 
@@ -149,6 +154,15 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Berita',
                 'route' => 'admin.news.index',
+                'icon' => 'newspaper',
+                'visible' => true,
+            ];
+        }
+
+        if ($permissions['newscategory'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Kategori Berita',
+                'route' => 'admin.news-category.index',
                 'icon' => 'newspaper',
                 'visible' => true,
             ];

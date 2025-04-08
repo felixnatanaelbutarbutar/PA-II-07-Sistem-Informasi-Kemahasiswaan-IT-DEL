@@ -6,13 +6,13 @@ use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\AspirationController;
 use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\AchievementController;
-use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\KegiatanBEMController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\AspirationController;
 
 // Public Routes (Accessible to Guests)
 Route::get('/', function () {
@@ -121,7 +121,7 @@ Route::middleware(['auth'])->group(function () {
 
             return Inertia::render('Admin/Dashboard', [
                 'auth' => [
-                    'user' => $apiUser, // Kirim data dari API CIS
+                    'user' => $user, // Kirim data dari API CIS
                 ],
                 'userRole' => $role,
                 'permissions' => $permissions,
@@ -200,6 +200,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
             Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
             Route::delete('/aspiration/{id}', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
+
+            Route::get('/news-category', [NewsCategoryController::class, 'index'])->name('news-category.index');
+            Route::get('/news-category/create', [NewsCategoryController::class, 'create'])->name('news-category.create');
+            Route::post('/news-category', [NewsCategoryController::class, 'store'])->name('news-category.store');
+            Route::get('/news-category/{category_id}/edit', [NewsCategoryController::class, 'edit'])->name('news-category.edit');
+            Route::put('/news-category/{category_id}', [NewsCategoryController::class, 'update'])->name('news-category.update');
+            Route::delete('/news-category/{category_id}', [NewsCategoryController::class, 'destroy'])->name('news-category.destroy');
         });
 
         // Kegiatan BEM Routes (AdminBEM Only)

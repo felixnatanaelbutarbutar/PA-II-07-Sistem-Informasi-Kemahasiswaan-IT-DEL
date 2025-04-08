@@ -2,24 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class NewsCategory extends Model
 {
-    use HasFactory;
-
-    protected $table = 'news_categories';
     protected $primaryKey = 'category_id';
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
-        'category_id', 'category_name', 'description', 'created_by', 'updated_by'
+        'category_id',
+        'category_name',
+        'description',
+        'created_by',
+        'updated_by',
     ];
 
-    public function news()
+    protected $casts = [
+        'created_by' => 'integer', // Cast ke integer karena tipe data sekarang bigint
+        'updated_by' => 'integer', // Cast ke integer karena tipe data sekarang bigint
+    ];
+
+    public function creator()
     {
-        return $this->hasMany(News::class, 'category_id');
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by', 'id');
     }
 }

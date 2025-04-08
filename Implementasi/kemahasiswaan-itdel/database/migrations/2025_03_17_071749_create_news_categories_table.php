@@ -11,8 +11,8 @@ return new class extends Migration {
             $table->string('category_id', 10)->primary();
             $table->string('category_name', 100)->unique();
             $table->text('description');
-            $table->uuid('created_by')->nullable();
-            $table->uuid('updated_by')->nullable();
+            $table->bigInteger('created_by')->nullable();
+            $table->bigInteger('updated_by')->nullable();
             $table->timestamps();
         });
     }
