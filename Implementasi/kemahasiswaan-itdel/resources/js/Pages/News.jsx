@@ -19,7 +19,6 @@ export default function News() {
 
     // Ambil data dari API saat komponen dimuat
     useEffect(() => {
-        // Ambil daftar berita
         fetch('http://localhost:8000/api/news')
             .then(response => {
                 if (!response.ok) {
@@ -27,13 +26,17 @@ export default function News() {
                 }
                 return response.json();
             })
-            .then(data => setNewsItems(data))
+            .then(data => {
+                console.log('Data Berita dari API:', data);
+                // Pastikan data adalah array
+                const newsArray = Array.isArray(data) ? data : data.data || [];
+                setNewsItems(newsArray);
+            })
             .catch(error => {
                 console.error('Error fetching news:', error);
                 setError('Gagal memuat berita. Silakan coba lagi nanti.');
             });
 
-        // Ambil daftar kategori
         fetch('http://localhost:8000/api/news-categories')
             .then(response => {
                 if (!response.ok) {
@@ -41,7 +44,10 @@ export default function News() {
                 }
                 return response.json();
             })
-            .then(data => setCategories(data))
+            .then(data => {
+                console.log('Data Kategori dari API:', data);
+                setCategories(data);
+            })
             .catch(error => {
                 console.error('Error fetching categories:', error);
                 setError('Gagal memuat kategori. Silakan coba lagi nanti.');
@@ -51,12 +57,10 @@ export default function News() {
     // Set featured news dan sidebar news setelah newsItems berubah
     useEffect(() => {
         if (newsItems.length > 0) {
-            // Set featured news (either marked as featured or the most recent one)
             const featured = newsItems.find(news => news.isFeatured) || 
                             (newsItems.length > 0 ? {...newsItems[0], isFeatured: true} : null);
             setFeaturedNews(featured);
 
-            // Get 5 news items for the sidebar, excluding the featured one
             const sidebarItems = [...newsItems]
                 .filter(news => news.news_id !== (featured?.news_id || 0))
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -66,15 +70,15 @@ export default function News() {
     }, [newsItems]);
 
     // Filter news based on search and category
-    const filteredNews = newsItems.filter((news) => {
+    const filteredNews = Array.isArray(newsItems) ? newsItems.filter((news) => {
         const matchesSearch =
             news.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             news.content.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory =
             selectedCategory === 'Semua' ||
             categories.find(cat => cat.category_id === news.category_id)?.category_name === selectedCategory;
-        return matchesSearch && matchesCategory && news.news_id !== (featuredNews?.news_id || 0);
-    });
+        return matchesSearch && matchesCategory;
+    }) : [];
 
     // Pagination logic
     const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
@@ -88,7 +92,7 @@ export default function News() {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
-
+    
     const styles = {
         body: {
             fontFamily: 'Arial, sans-serif',
@@ -307,7 +311,7 @@ export default function News() {
                                 </div>
                                 <div style={styles.heroMainTitle}>{featuredNews.title}</div>
                             </div>
-                            <div style={styles.heroSidebar}>
+                            {/* <div style={styles.heroSidebar}>
                                 {sidebarNews.map((news) => (
                                     <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
                                         <div style={styles.heroSidebarNewsCard}>
@@ -323,7 +327,7 @@ export default function News() {
                                         </div>
                                     </Link>
                                 ))}
-                            </div>
+                            </div> */}
                         </div>
                     )}
 

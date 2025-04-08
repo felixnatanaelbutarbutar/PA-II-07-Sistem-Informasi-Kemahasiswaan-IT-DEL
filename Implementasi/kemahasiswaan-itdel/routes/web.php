@@ -12,6 +12,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\KegiatanBEMController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\AspirationController;
 
 // Public Routes (Accessible to Guests)
 Route::get('/', function () {
@@ -52,6 +53,10 @@ Route::get('/achievements/{achievement_id}', function () {
 Route::get('/chatbot', function () {
     return Inertia::render('Chatbot');
 })->name('chatbot.index');
+
+// Routes untuk sisi mahasiswa/guest
+Route::get('/aspiration', [AspirationController::class, 'index'])->name('aspiration.index');
+Route::post('/aspiration', [AspirationController::class, 'store'])->name('aspiration.store');
 
 // Login Route
 Route::get('/login', function () {
@@ -190,6 +195,11 @@ Route::middleware(['auth'])->group(function () {
 
             Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
             Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');
+
+            // Routes untuk sisi admin (kemahasiswaan)
+            Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
+            Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
+            Route::delete('/aspiration/{id}', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
         });
 
         // Kegiatan BEM Routes (AdminBEM Only)

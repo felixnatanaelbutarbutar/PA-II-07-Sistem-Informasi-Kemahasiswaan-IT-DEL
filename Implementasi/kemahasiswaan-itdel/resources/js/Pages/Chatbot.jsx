@@ -6,12 +6,30 @@ import { useState, useEffect, useRef } from 'react';
 
 export default function Chatbot() {
     const [messages, setMessages] = useState([
-        { role: 'bot', content: 'Halo! Saya chatbot layanan kampus. Silakan tanyakan tentang beasiswa, organisasi, atau kegiatan kampus.' }
+        {
+            role: 'bot',
+            content:
+                'Hai! Selamat datang di layanan chatbot IT Del! Aku siap membantumu mencari informasi tentang beasiswa, organisasi, dan kegiatan kampus. Ada yang bisa kubantu? Kalau kamu punya pertanyaan tentang cara berprestasi di kelas, aku bisa memberikan beberapa tips umum, tapi untuk strategi belajar yang lebih spesifik dan disesuaikan dengan program studimu, lebih baik kamu berkonsultasi dengan dosen wali atau kakak tingkatmu. Berikut beberapa tips umum untuk berprestasi di kelas: <br />* **Rajin Mengikuti Perkuliahan:** Kehadiran dan fokus di kelas sangat penting. Catat poin-poin penting dan ajukan pertanyaan jika ada yang kurang jelas. <br />* **Aktif Berpartisipasi:** Jangan ragu untuk',
+        },
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+
+    // Fungsi untuk mem-parsing Markdown sederhana
+    const parseMarkdown = (text) => {
+        // Ganti **teks** dengan <strong>teks</strong>
+        let parsedText = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            // Ganti <br /> dengan tag HTML yang sesuai
+            .replace(/<br \/>/g, '<br />');
+
+        // Ganti baris baru (\n) dengan <br />
+        parsedText = parsedText.replace(/\n/g, '<br />');
+
+        return parsedText;
+    };
 
     // Fungsi untuk menggulir ke pesan terbaru
     const scrollToBottom = () => {
@@ -28,12 +46,12 @@ export default function Chatbot() {
     const sendMessage = async (e) => {
         e.preventDefault();
         if (!input.trim()) return;
-    
+
         const userMessage = { role: 'user', content: input };
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
-    
+
         try {
             const response = await fetch('http://localhost:8000/api/chatbot', {
                 method: 'POST',
@@ -42,22 +60,28 @@ export default function Chatbot() {
                 },
                 body: JSON.stringify({ message: userMessage.content }),
             });
-    
+
             const data = await response.json();
-    
+
             if (data.status === 'success') {
                 const botMessage = { role: 'bot', content: data.reply };
                 setTimeout(() => {
                     setMessages((prev) => [...prev, botMessage]);
                 }, 500); // Tambahkan efek delay untuk terasa lebih natural
             } else {
-                const errorMessage = { role: 'bot', content: `Maaf, terjadi kesalahan: ${data.message}` };
+                const errorMessage = {
+                    role: 'bot',
+                    content: `Maaf, terjadi kesalahan: ${data.message}`,
+                };
                 setTimeout(() => {
                     setMessages((prev) => [...prev, errorMessage]);
                 }, 500);
             }
         } catch (error) {
-            const errorMessage = { role: 'bot', content: 'Maaf, saya tidak dapat terhubung ke server. Silakan coba lagi nanti.' };
+            const errorMessage = {
+                role: 'bot',
+                content: 'Maaf, saya tidak dapat terhubung ke server. Silakan coba lagi nanti.',
+            };
             setTimeout(() => {
                 setMessages((prev) => [...prev, errorMessage]);
             }, 500);
@@ -77,13 +101,13 @@ export default function Chatbot() {
             background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
         },
         header: {
-            textAlign: 'center', 
-            fontSize: '28px', 
-            fontWeight: 'bold', 
+            textAlign: 'center',
+            fontSize: '28px',
+            fontWeight: 'bold',
             marginBottom: '25px',
             color: '#1e3a8a',
             textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            fontFamily: 'system-ui, -apple-system, sans-serif',
         },
         chatBox: {
             background: 'rgba(255, 255, 255, 0.95)',
@@ -124,8 +148,8 @@ export default function Chatbot() {
             alignSelf: 'flex-start',
         },
         timestamp: {
-            fontSize: '12px', 
-            color: '#6b7280', 
+            fontSize: '12px',
+            color: '#6b7280',
             marginTop: '4px',
             alignSelf: 'flex-end',
         },
@@ -190,7 +214,7 @@ export default function Chatbot() {
         },
         sendIcon: {
             marginLeft: '8px',
-        }
+        },
     };
 
     const getTime = () => {
@@ -204,42 +228,46 @@ export default function Chatbot() {
             <NavbarGuestLayout />
 
             <div style={styles.container}>
-                <h1 style={styles.header}>
-                    Chatbot Layanan Kampus
-                </h1>
+                <h1 style={styles.header}>Chatbot Layanan Kampus</h1>
 
                 <div style={styles.chatBox}>
                     {messages.map((message, index) => (
-                        <div
-                            key={index}
-                            style={styles.messageWrapper}
-                        >
+                        <div key={index} style={styles.messageWrapper}>
                             <div
                                 style={{
                                     ...styles.messageBubble,
-                                    ...(message.role === 'user' ? styles.userMessage : styles.botMessage),
+                                    ...(message.role === 'user'
+                                        ? styles.userMessage
+                                        : styles.botMessage),
+                                }}
+                                dangerouslySetInnerHTML={{
+                                    __html:
+                                        message.role === 'bot'
+                                            ? parseMarkdown(message.content)
+                                            : message.content,
+                                }}
+                            />
+                            <div
+                                style={{
+                                    ...styles.timestamp,
+                                    textAlign: message.role === 'user' ? 'right' : 'left',
+                                    alignSelf:
+                                        message.role === 'user' ? 'flex-end' : 'flex-start',
                                 }}
                             >
-                                {message.content}
-                            </div>
-                            <div style={{
-                                ...styles.timestamp,
-                                textAlign: message.role === 'user' ? 'right' : 'left',
-                                alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start'
-                            }}>
                                 {getTime()}
                             </div>
                         </div>
                     ))}
-                    
+
                     {isLoading && (
                         <div style={styles.loadingDots}>
-                            <div style={{...styles.dot, animationDelay: '0s'}}></div>
-                            <div style={{...styles.dot, animationDelay: '0.2s'}}></div>
-                            <div style={{...styles.dot, animationDelay: '0.4s'}}></div>
+                            <div style={{ ...styles.dot, animationDelay: '0s' }}></div>
+                            <div style={{ ...styles.dot, animationDelay: '0.2s' }}></div>
+                            <div style={{ ...styles.dot, animationDelay: '0.4s' }}></div>
                         </div>
                     )}
-                    
+
                     <div ref={messagesEndRef} />
                 </div>
 
@@ -265,20 +293,43 @@ export default function Chatbot() {
                             ...(isLoading ? styles.buttonDisabled : {}),
                         }}
                         disabled={isLoading}
-                        onMouseEnter={(e) => !isLoading && Object.assign(e.currentTarget.style, styles.buttonHover)}
+                        onMouseEnter={(e) =>
+                            !isLoading && Object.assign(e.currentTarget.style, styles.buttonHover)
+                        }
                         onMouseLeave={(e) => {
                             if (!isLoading) {
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+                                e.currentTarget.style.background =
+                                    'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
                                 e.currentTarget.style.transform = 'none';
-                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(37, 99, 235, 0.3)';
+                                e.currentTarget.style.boxShadow =
+                                    '0 2px 4px rgba(37, 99, 235, 0.3)';
                             }
                         }}
                     >
                         {isLoading ? 'Mengirim...' : 'Kirim'}
                         {!isLoading && (
-                            <svg style={styles.sendIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <svg
+                                style={styles.sendIcon}
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M22 2L11 13"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                                <path
+                                    d="M22 2L15 22L11 13L2 9L22 2Z"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
                             </svg>
                         )}
                     </button>
