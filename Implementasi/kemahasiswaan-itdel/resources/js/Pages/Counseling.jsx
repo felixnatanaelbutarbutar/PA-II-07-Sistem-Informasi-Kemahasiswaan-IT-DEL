@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';
 
 export default function Counseling({ auth }) {
@@ -78,7 +78,7 @@ export default function Counseling({ auth }) {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayout />
+            <NavbarGuestLayoutPage />
             <Head title="Formulir Konseling" />
 
             {/* CSS Styles */}
