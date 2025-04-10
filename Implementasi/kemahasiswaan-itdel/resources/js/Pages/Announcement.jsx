@@ -1,5 +1,5 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
@@ -322,7 +322,7 @@ export default function Announcement() {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayout />
+             <NavbarGuestLayoutPage />
             <Head title="Pengumuman" />
             <div style={styles.body}>
                 <div style={styles.container}>
