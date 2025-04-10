@@ -15,8 +15,8 @@ const FooterLayout = () => {
                     <div className="flex flex-col items-start">
                         <div className="mb-4">
                             <img
-                                src="/img/logofooter.png" // Replace with your actual logo path
-                                alt="Kemahasiswaan IT Del Logo"
+                                src="/assets/images/logo/logo-removebg.png"
+                                alt="Logo"
                                 className="h-12 w-auto"
                             />
                         </div>

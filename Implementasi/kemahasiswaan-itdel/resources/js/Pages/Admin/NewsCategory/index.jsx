@@ -8,6 +8,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
     const [notificationType, setNotificationType] = useState('success');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [categoryIdToDelete, setCategoryIdToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (flash) {
@@ -37,10 +38,33 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
 
     const confirmDelete = () => {
         if (categoryIdToDelete) {
-            router.delete(route('admin.news-category.destroy', categoryIdToDelete), {
-                onFinish: () => {
+            setIsDeleting(true);
+            console.log('Category ID to delete:', categoryIdToDelete);
+            const deleteRoute = route('admin.news-category.destroy', categoryIdToDelete);
+            console.log('Delete Route:', deleteRoute);
+            router.post(deleteRoute, {}, {
+                preserveState: true,
+                preserveScroll: true,
+                onError: (errors) => {
+                    console.log('Delete Error:', errors);
+                    setNotificationMessage('Gagal menghapus kategori: ' + (errors.error || 'Terjadi kesalahan.'));
+                    setNotificationType('error');
+                    setShowNotification(true);
+                    setIsDeleting(false);
                     setShowDeleteModal(false);
                     setCategoryIdToDelete(null);
+                },
+                onSuccess: () => {
+                    console.log('Delete Success');
+                    setNotificationMessage('Kategori berhasil dihapus!');
+                    setNotificationType('success');
+                    setShowNotification(true);
+                    setIsDeleting(false);
+                    setShowDeleteModal(false);
+                    setCategoryIdToDelete(null);
+                },
+                onFinish: () => {
+                    setIsDeleting(false);
                 },
             });
         }
@@ -136,17 +160,19 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                             <button
                                 onClick={cancelDelete}
                                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                disabled={isDeleting}
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={confirmDelete}
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"
+                                disabled={isDeleting}
                             >
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
-                                Hapus
+                                {isDeleting ? 'Menghapus...' : 'Hapus'}
                             </button>
                         </div>
                     </div>
@@ -216,6 +242,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                                         <button
                                             onClick={() => handleDeleteClick(category.category_id)}
                                             className="text-red-600 hover:text-red-700 transition"
+                                            disabled={isDeleting}
                                         >
                                             Hapus
                                         </button>

@@ -90,15 +90,15 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('l
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
     // Superadmin Routes
-    Route::prefix('superadmin')->middleware(['role:superadmin'])->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('SuperAdmin/Dashboard', [
-                'auth' => [
-                    'user' => Auth::user(),
-                ],
-            ]);
-        })->name('superadmin.dashboard');
-    });
+    // Route::prefix('superadmin')->middleware(['role:superadmin'])->group(function () {
+    //     Route::get('/dashboard', function () {
+    //         return Inertia::render('SuperAdmin/Dashboard', [
+    //             'auth' => [
+    //                 'user' => Auth::user(),
+    //             ],
+    //         ]);
+    //     })->name('superadmin.dashboard');
+    // });
 
     // Admin Routes (Kemahasiswaan, AdminBEM, AdminMPM)
     Route::prefix('admin')->name('admin.')->middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
@@ -141,15 +141,15 @@ Route::middleware(['auth'])->group(function () {
             })->name('berita');
         });
 
-        Route::middleware(['feature:pengumuman'])->group(function () {
-            Route::get('/pengumuman', function () {
-                return Inertia::render('Admin/Pengumuman', [
-                    'auth' => [
-                        'user' => Auth::user(),
-                    ],
-                ]);
-            })->name('pengumuman');
-        });
+        // Route::middleware(['feature:pengumuman'])->group(function () {
+        //     Route::get('/pengumuman', function () {
+        //         return Inertia::render('Admin/Pengumuman', [
+        //             'auth' => [
+        //                 'user' => Auth::user(),
+        //             ],
+        //         ]);
+        //     })->name('pengumuman');
+        // });
 
         Route::middleware(['feature:layanan'])->group(function () {
             Route::get('/layanan', function () {
@@ -181,41 +181,39 @@ Route::middleware(['auth'])->group(function () {
             })->name('organisasi');
         });
 
-        // News Routes (Kemahasiswaan, AdminBEM)
+        // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
-            Route::resource('news', NewsController::class)->except(['show']);
+            Route::resource('news', NewsController::class)->except(['show', 'destroy', 'update']);
+            Route::post('news/{news}/update', [NewsController::class, 'update'])->name('news.update');
+            Route::post('news/{news}/delete', [NewsController::class, 'destroy'])->name('news.destroy');
 
-            // Announcement Routes
-            Route::resource('announcement', AnnouncementController::class)->except(['show']);
+            Route::resource('announcement', AnnouncementController::class)->except(['show', 'destroy', 'update']);
+            Route::post('announcement/{announcement}/update', [AnnouncementController::class, 'update'])->name('announcement.update');
+            Route::post('announcement/{announcement}/delete', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
         });
 
-        // Achievement Routes (Kemahasiswaan Only)
+        // Achievement, News Category, Counseling, and Aspiration Routes (Kemahasiswaan Only)
         Route::middleware(['role:kemahasiswaan'])->group(function () {
-            Route::resource('achievements', AchievementController::class)->except(['show']);
+            Route::resource('achievements', AchievementController::class)->except(['show', 'destroy', 'update']);
+            Route::post('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
+            Route::post('achievements/{achievement}/delete', [AchievementController::class, 'destroy'])->name('achievements.destroy');
+
+            Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
+            Route::post('news-category/{news_category}/update', [NewsCategoryController::class, 'update'])->name('news-category.update');
+            Route::post('news-category/{news_category}/delete', [NewsCategoryController::class, 'destroy'])->name('news-category.destroy');
 
             Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
             Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');
 
-            // Routes untuk sisi admin (kemahasiswaan)
-            Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
-            Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
-            Route::delete('/aspiration/{id}', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
-
-            Route::get('/news-category', [NewsCategoryController::class, 'index'])->name('news-category.index');
-            Route::get('/news-category/create', [NewsCategoryController::class, 'create'])->name('news-category.create');
-            Route::post('/news-category', [NewsCategoryController::class, 'store'])->name('news-category.store');
-            Route::get('/news-category/{category_id}/edit', [NewsCategoryController::class, 'edit'])->name('news-category.edit');
-            Route::put('/news-category/{category_id}', [NewsCategoryController::class, 'update'])->name('news-category.update');
-            Route::delete('/news-category/{category_id}', [NewsCategoryController::class, 'destroy'])->name('news-category.destroy');
+            Route::resource('aspiration', AspirationController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+            Route::post('aspiration/{aspiration}/delete', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
         });
 
         // Kegiatan BEM Routes (AdminBEM Only)
-        Route::prefix('bem')->middleware(['role:adminbem'])->group(function () {
-            Route::get('/kegiatan', [KegiatanBEMController::class, 'index'])->name('bem.kegiatan');
-            Route::post('/kegiatan', [KegiatanBEMController::class, 'store'])->name('bem.kegiatan.store');
-            Route::get('/kegiatan/{id}', [KegiatanBEMController::class, 'show'])->name('bem.kegiatan.show');
-            Route::put('/kegiatan/{id}', [KegiatanBEMController::class, 'update'])->name('bem.kegiatan.update');
-            Route::delete('/kegiatan/{id}', [KegiatanBEMController::class, 'destroy'])->name('bem.kegiatan.destroy');
+        Route::prefix('bem')->name('bem.')->middleware(['role:adminbem'])->group(function () {
+            Route::resource('kegiatan', KegiatanBEMController::class)->except(['create', 'edit', 'destroy', 'update']);
+            Route::post('kegiatan/{kegiatan}/update', [KegiatanBEMController::class, 'update'])->name('kegiatan.update');
+            Route::post('kegiatan/{kegiatan}/delete', [KegiatanBEMController::class, 'destroy'])->name('kegiatan.destroy');
         });
     });
 });

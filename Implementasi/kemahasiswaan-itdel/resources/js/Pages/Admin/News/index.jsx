@@ -46,7 +46,22 @@ export default function Index({ auth, permissions, userRole, menu }) {
 
     const confirmDelete = () => {
         if (newsIdToDelete) {
-            router.delete(route("admin.news.destroy", newsIdToDelete), {
+            const deleteRoute = route("admin.news.destroy", newsIdToDelete);
+            console.log('Delete Route:', deleteRoute);
+
+            router.post(deleteRoute, {}, {
+                onSuccess: () => {
+                    console.log('Delete Success');
+                    setNotificationMessage('Berita berhasil dihapus!');
+                    setNotificationType('success');
+                    setShowNotification(true);
+                },
+                onError: (errors) => {
+                    console.log('Delete Error:', errors);
+                    setNotificationMessage('Gagal menghapus berita: ' + (errors.error || 'Terjadi kesalahan.'));
+                    setNotificationType('error');
+                    setShowNotification(true);
+                },
                 onFinish: () => {
                     setShowDeleteModal(false);
                     setNewsIdToDelete(null);

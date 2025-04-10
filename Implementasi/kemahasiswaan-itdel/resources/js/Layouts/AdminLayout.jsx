@@ -8,12 +8,10 @@ import {
     ChevronDown,
     Sun,
     Moon,
-    Settings,
-    Calendar,
-    Users,
     Newspaper,
     Award,
-    Heart
+    Heart,
+    ChevronRight,
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -24,18 +22,16 @@ export default function AdminLayout({
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
+    const [expandedMenu, setExpandedMenu] = useState(null);
     const { url } = usePage();
 
     // Icon mapping from RoleHelper to lucide-react
     const iconMap = {
         home: LayoutDashboard,
         bell: Bell,
-        gear: Settings,
-        calendar: Calendar,
-        organization: Users,
         newspaper: Newspaper,
         award: Award,
-        heart: Heart
+        heart: Heart,
     };
 
     // Initialize dark mode based on localStorage or system preference
@@ -79,18 +75,50 @@ export default function AdminLayout({
         },
     ];
 
-    const menuItems = navigation.length > 0
-        ? navigation
-        : defaultNavigation;
+    const menuItems = navigation.length > 0 ? navigation : defaultNavigation;
+
+    // Debugging: Log menu items to inspect structure
+    console.log('Navigation Menu Items:', menuItems);
+
+    // Fungsi untuk memeriksa apakah rute ada di Ziggy
+    const isRouteValid = (routeName) => {
+        if (!routeName) {
+            console.warn('Route name is undefined or null');
+            return false;
+        }
+        try {
+            const routeUrl = route(routeName);
+            if (!routeUrl) {
+                console.warn(`Route URL is undefined for route name: ${routeName}`);
+                return false;
+            }
+            console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
+            return true;
+        } catch (e) {
+            console.error(`Error checking route for ${routeName}:`, e);
+            return false;
+        }
+    };
 
     const isActive = (routeName) => {
+        if (!routeName) {
+            console.warn('Route name is undefined or null in isActive');
+            return false;
+        }
+        if (!isRouteValid(routeName)) {
+            return false;
+        }
         try {
             const routeUrl = route(routeName);
             return url.startsWith(routeUrl);
         } catch (e) {
-            console.error('Route checking error:', e);
+            console.error(`Route checking error for ${routeName}:`, e);
             return false;
         }
+    };
+
+    const toggleSubmenu = (index) => {
+        setExpandedMenu(expandedMenu === index ? null : index);
     };
 
     return (
@@ -120,13 +148,96 @@ export default function AdminLayout({
                     {/* Navigation Menu */}
                     <nav className="flex-1 px-4 py-6 space-y-1">
                         {menuItems.map((item, index) => {
-                            const isActiveRoute = isActive(item.route);
+                            const hasSubmenu = item.submenu && item.submenu.length > 0;
+                            const isOpen = expandedMenu === index;
                             const Icon = item.icon && iconMap[item.icon] ? iconMap[item.icon] : null;
-                            
+
+                            if (hasSubmenu) {
+                                // Menu dengan submenu (dropdown)
+                                const isSubmenuActive = item.submenu.some(subItem => {
+                                    if (!subItem.route) {
+                                        console.warn(`Submenu item "${subItem.name}" has no route defined.`);
+                                        return false;
+                                    }
+                                    return isActive(subItem.route);
+                                });
+
+                                return (
+                                    <div key={index}>
+                                        <button
+                                            onClick={() => toggleSubmenu(index)}
+                                            className={`
+                                                flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group
+                                                ${isSubmenuActive
+                                                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                                                    : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-zinc-900 dark:hover:text-white'}
+                                            `}
+                                        >
+                                            <div className="flex items-center">
+                                                {Icon && (
+                                                    <span className="mr-3">
+                                                        <Icon className={`h-5 w-5 transition-all duration-200 ${isSubmenuActive ? 'text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400'}`} />
+                                                    </span>
+                                                )}
+                                                <span className={`font-medium tracking-wide ${isSubmenuActive ? '' : 'group-hover:translate-x-1'} transition-transform duration-200`}>
+                                                    {item.name}
+                                                </span>
+                                            </div>
+                                            <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''} ${isSubmenuActive ? 'text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400'}`} />
+                                        </button>
+
+                                        {/* Submenu */}
+                                        {isOpen && (
+                                            <div className="pl-8 space-y-1 mt-1">
+                                                {item.submenu.map((subItem, subIndex) => {
+                                                    if (!subItem.route) {
+                                                        console.warn(`Submenu item "${subItem.name}" has no route defined.`);
+                                                        return null;
+                                                    }
+                                                    if (!isRouteValid(subItem.route)) {
+                                                        console.warn(`Skipping submenu item "${subItem.name}" due to invalid route: ${subItem.route}`);
+                                                        return null;
+                                                    }
+                                                    const isSubItemActive = isActive(subItem.route);
+                                                    const routeUrl = route(subItem.route);
+                                                    return (
+                                                        <Link
+                                                            key={subIndex}
+                                                            href={routeUrl}
+                                                            className={`
+                                                                flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 group
+                                                                ${isSubItemActive
+                                                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                                                    : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-blue-600 dark:hover:text-blue-400'}
+                                                            `}
+                                                        >
+                                                            <span className={`font-medium ${isSubItemActive ? '' : 'group-hover:translate-x-1'} transition-transform duration-200`}>
+                                                                {subItem.name}
+                                                            </span>
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+
+                            // Menu tanpa submenu
+                            if (!item.route) {
+                                console.warn(`Menu item "${item.name}" has no route defined.`);
+                                return null;
+                            }
+                            if (!isRouteValid(item.route)) {
+                                console.warn(`Skipping menu item "${item.name}" due to invalid route: ${item.route}`);
+                                return null;
+                            }
+                            const isActiveRoute = isActive(item.route);
+                            const routeUrl = route(item.route);
                             return (
                                 <Link
                                     key={index}
-                                    href={route(item.route)}
+                                    href={routeUrl}
                                     className={`
                                         flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group
                                         ${isActiveRoute
@@ -193,7 +304,9 @@ export default function AdminLayout({
                             </button>
 
                             <h1 className="text-lg font-semibold text-zinc-800 dark:text-white hidden lg:block">
-                                {menuItems.find(item => isActive(item.route))?.name || 'Dashboard'}
+                                {menuItems.find(item => item.route && isActive(item.route))?.name || 
+                                 menuItems.find(item => item.submenu?.some(sub => isActive(sub.route)))?.name || 
+                                 'Dashboard'}
                             </h1>
                         </div>
 
@@ -239,13 +352,6 @@ export default function AdminLayout({
                                         <p className="text-xs text-zinc-500 dark:text-zinc-400">{user?.email || 'user@example.com'}</p>
                                     </div>
                                     <div className="py-1">
-                                        <Link
-                                            href="#"
-                                            className="flex items-center px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-sm text-zinc-700 dark:text-zinc-300"
-                                        >
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            Settings
-                                        </Link>
                                         <Link
                                             href={route('logout')}
                                             method="post"

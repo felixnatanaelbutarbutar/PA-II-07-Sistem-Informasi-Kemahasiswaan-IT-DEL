@@ -43,9 +43,28 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
         console.log('User info:', auth.user);
     }, [auth.user]);
 
+    // Fungsi untuk memeriksa apakah rute valid
+    const isRouteValid = (routeName) => {
+        if (!routeName) {
+            console.warn('Route name is undefined or null');
+            return false;
+        }
+        try {
+            const routeUrl = route(routeName);
+            if (!routeUrl) {
+                console.warn(`Route URL is undefined for route name: ${routeName}`);
+                return false;
+            }
+            console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
+            return true;
+        } catch (e) {
+            console.error(`Error checking route for ${routeName}:`, e);
+            return false;
+        }
+    };
+
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
-
             <Head title="Admin Dashboard" />
 
             <div className="py-10">
@@ -92,31 +111,39 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {menu
                                 .filter((item) => item.name !== 'Dashboard')
-                                .map((item, index) => (
-                                    <Link
-                                        key={index}
-                                        href={route(item.route)}
-                                        className="group flex items-center rounded-xl bg-gray-50 p-4 shadow-sm transition-all duration-200 hover:bg-gray-100 hover:shadow-md hover:-translate-y-1"
-                                    >
-                                        <div className="mr-4 rounded-full bg-blue-500 p-3 text-white">
-                                            {item.icon && iconMap[item.icon] ? (
-                                                React.createElement(iconMap[item.icon], {
-                                                    className: 'h-5 w-5'
-                                                })
-                                            ) : (
-                                                <LayoutDashboard className="h-5 w-5" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition">
-                                                {item.name}
-                                            </h3>
-                                            <p className="text-sm text-gray-600">
-                                                Kelola {item.name.toLowerCase()}
-                                            </p>
-                                        </div>
-                                    </Link>
-                                ))}
+                                .map((item, index) => {
+                                    // Lewati item yang tidak memiliki route (misalnya item dengan submenu)
+                                    if (!item.route || !isRouteValid(item.route)) {
+                                        console.warn(`Skipping menu item "${item.name}" in Dashboard due to invalid or missing route: ${item.route}`);
+                                        return null;
+                                    }
+
+                                    return (
+                                        <Link
+                                            key={index}
+                                            href={route(item.route)}
+                                            className="group flex items-center rounded-xl bg-gray-50 p-4 shadow-sm transition-all duration-200 hover:bg-gray-100 hover:shadow-md hover:-translate-y-1"
+                                        >
+                                            <div className="mr-4 rounded-full bg-blue-500 p-3 text-white">
+                                                {item.icon && iconMap[item.icon] ? (
+                                                    React.createElement(iconMap[item.icon], {
+                                                        className: 'h-5 w-5'
+                                                    })
+                                                ) : (
+                                                    <LayoutDashboard className="h-5 w-5" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition">
+                                                    {item.name}
+                                                </h3>
+                                                <p className="text-sm text-gray-600">
+                                                    Kelola {item.name.toLowerCase()}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
                         </div>
                     </div>
                 </div>
