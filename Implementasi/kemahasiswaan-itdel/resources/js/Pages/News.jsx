@@ -335,7 +335,8 @@ export default function News() {
                     <div style={styles.newsGrid}>
                         {paginatedNews.length > 0 ? (
                             paginatedNews.map((news) => (
-                                <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
+                                <Link 
+                                key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
                                     <div style={styles.newsCard}>
                                         <img
                                             style={styles.newsCardImg}

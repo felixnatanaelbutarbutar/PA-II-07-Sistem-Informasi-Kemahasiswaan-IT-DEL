@@ -99,7 +99,7 @@ export default function Chatbot() {
             margin: '0 auto',
             padding: '40px 20px',
             minHeight: '90vh',
-            background: 'linear-gradient(135deg, #f0f4ff 0%, #d4e0ff 100%)',
+            background: 'linear-gradient(135deg,rgb(255, 255, 255) 0%,rgb(255, 255, 255) 100%)',
             fontFamily: '"Nunito", system-ui, -apple-system, sans-serif',
         },
         header: {

@@ -205,8 +205,10 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
             Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');
 
-            Route::resource('aspiration', AspirationController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
-            Route::post('aspiration/{aspiration}/delete', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
+            // Routes untuk sisi admin (kemahasiswaan)
+            Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
+            Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
+            Route::delete('/aspiration/{id}', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
         });
 
         // Kegiatan BEM Routes (AdminBEM Only)

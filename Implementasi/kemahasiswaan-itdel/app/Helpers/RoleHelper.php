@@ -30,6 +30,7 @@ class RoleHelper
                 'newscategory' => true,
                 'achievements' => true,
                 'counseling' => true,
+                'aspiration' => true,
             ],
             'adminbem' => [
                 'pengumuman' => true,
@@ -37,6 +38,8 @@ class RoleHelper
                 'newscategory' => false,
                 'achievements' => false,
                 'counseling' => false,
+                'aspiration' => false,
+
             ],
             'adminmpm' => [
                 'pengumuman' => true,
@@ -44,6 +47,8 @@ class RoleHelper
                 'newscategory' => false,
                 'achievements' => false,
                 'counseling' => false,
+                'aspiration' => true,
+
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -52,6 +57,7 @@ class RoleHelper
                 'newscategory' => false,
                 'achievements' => false,
                 'counseling' => true,
+                'aspiration' => false,
             ],
         ];
 
@@ -148,6 +154,15 @@ class RoleHelper
                 'name' => 'Konseling',
                 'route' => $role === 'mahasiswa' ? 'counseling.index' : 'admin.counseling.index',
                 'icon' => 'heart',
+                'visible' => true,
+            ];
+        }
+        
+        if ($permissions['aspiration'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Aspirasi',
+                'route' => 'admin.aspiration.index',
+                'icon' => 'award',
                 'visible' => true,
             ];
         }

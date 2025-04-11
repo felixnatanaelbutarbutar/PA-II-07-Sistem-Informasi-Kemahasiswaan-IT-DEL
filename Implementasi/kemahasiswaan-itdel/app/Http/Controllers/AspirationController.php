@@ -3,99 +3,75 @@
 namespace App\Http\Controllers;
 
 use App\Models\Aspiration;
+use App\Models\AspirationCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Helpers\RoleHelper;
 
 class AspirationController extends Controller
 {
-    /**
-     * Display the aspiration form page for guests and mahasiswa.
-     */
     public function index()
     {
-        $user = Auth::user();
+        $categories = AspirationCategory::all();
 
         return Inertia::render('Aspiration', [
-            'auth' => [
-                'user' => $user,
-                'isMahasiswa' => $user && $user->role === 'mahasiswa',
-            ],
+            'categories' => $categories,
         ]);
     }
 
-    /**
-     * Display a listing of aspiration requests for admin (kemahasiswaan role).
-     */
     public function indexAdmin()
     {
         $user = Auth::user();
         $role = strtolower($user->role);
+        $categories = AspirationCategory::all();
 
-        $aspirations = Aspiration::with('user')
+        $aspirations = Aspiration::with(['user', 'category'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-
-        $aspirations->getCollection()->transform(function ($aspiration) {
-            return [
-                'id' => $aspiration->id,
-                'user' => [
-                    'id' => $aspiration->user ? $aspiration->user->id : null,
-                    'name' => $aspiration->user ? $aspiration->user->name : 'Unknown',
-                ],
-                'story' => $aspiration->story,
-                'noTelephone' => $aspiration->noTelephone,
-                'created_at' => $aspiration->created_at,
-                'updated_at' => $aspiration->updated_at,
-            ];
-        });
 
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
         return Inertia::render('Admin/Aspiration/index', [
             'auth' => [
-                'user' => $user,
+                'user' => $user
             ],
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
+            'categories' => $categories,
             'aspirations' => $aspirations,
         ]);
     }
 
-    /**
-     * Store a new aspiration request (for mahasiswa only).
-     */
     public function store(Request $request)
     {
-        $user = Auth::user();
-
-        if (!$user || $user->role !== 'mahasiswa') {
-            return redirect()->route('login')->with('error', 'Anda harus login sebagai mahasiswa untuk mengirimkan cerita aspirasi.');
-        }
-
         $validated = $request->validate([
             'story' => 'required|string|max:1000',
-            'noTelephone' => 'required|string|max:15|regex:/^[0-9+()-]+$/',
+            'category_id' => 'required|exists:aspiration_categories,id',
+            'image' => 'nullable|image|max:2048',
         ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('aspirations', 'public');
+        }
 
         Aspiration::create([
-            'requestBy' => $user->id,
+            'requestBy' => null, // Set null karena pengguna tidak perlu login
             'story' => $validated['story'],
-            'noTelephone' => $validated['noTelephone'],
+            'category_id' => $validated['category_id'],
+            'image' => $imagePath,
         ]);
 
-        return redirect()->route('aspiration.index')->with('success', 'Cerita aspirasi berhasil dikirim.');
+        return redirect()->route('aspiration.index')->with('success', 'Aspirasi berhasil dikirim.');
     }
 
-    /**
-     * Display the details of an aspiration request.
-     */
     public function show($id)
     {
-        $aspiration = Aspiration::with('user')->findOrFail($id);
+        $aspiration = Aspiration::with(['user', 'category'])->findOrFail($id);
 
         $user = Auth::user();
         $role = strtolower($user->role);
@@ -103,34 +79,22 @@ class AspirationController extends Controller
         $permissions = RoleHelper::getRolePermissions($role);
 
         return Inertia::render('Admin/Aspiration/Show', [
-            'auth' => [
-                'user' => $user,
-            ],
+            'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
-            'aspiration' => [
-                'id' => $aspiration->id,
-                'user' => [
-                    'id' => $aspiration->user ? $aspiration->user->id : null,
-                    'name' => $aspiration->user ? $aspiration->user->name : 'Unknown',
-                ],
-                'story' => $aspiration->story,
-                'noTelephone' => $aspiration->noTelephone,
-                'created_at' => $aspiration->created_at,
-                'updated_at' => $aspiration->updated_at,
-            ],
+            'aspiration' => $aspiration,
         ]);
     }
 
-    /**
-     * Delete an aspiration request (admin only).
-     */
     public function destroy($id)
     {
         $aspiration = Aspiration::findOrFail($id);
+        if ($aspiration->image) {
+            Storage::disk('public')->delete($aspiration->image);
+        }
         $aspiration->delete();
 
-        return redirect()->route('admin.aspiration.index')->with('success', 'Cerita aspirasi berhasil dihapus.');
+        return redirect()->route('admin.aspiration.index')->with('success', 'Aspirasi berhasil dihapus.');
     }
 }

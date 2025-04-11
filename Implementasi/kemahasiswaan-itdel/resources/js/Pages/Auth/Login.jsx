@@ -19,10 +19,8 @@ export default function Login({ status, canResetPassword }) {
         post(route('login'), {
             onSuccess: () => {
                 reset('password');
-                // Redirect akan ditangani oleh rute Laravel
             },
             onError: () => {
-                // Focus on the first field with an error
                 if (errors.username) {
                     document.getElementById('username').focus();
                 } else if (errors.password) {
@@ -62,6 +60,13 @@ export default function Login({ status, canResetPassword }) {
                             </div>
                         )}
 
+                        {/* NOTIFIKASI ERROR LOGIN */}
+                        {loginAttempted && (errors.username || errors.password) && (
+                            <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm font-medium text-red-700">
+                                Username atau Password salah. Silakan coba lagi.
+                            </div>
+                        )}
+
                         <form onSubmit={submit} className="space-y-8">
                             <div className="relative">
                                 <TextInput
@@ -74,9 +79,7 @@ export default function Login({ status, canResetPassword }) {
                                             ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                             : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500'
                                     }`}
-                                    onChange={(e) =>
-                                        setData('username', e.target.value)
-                                    }
+                                    onChange={(e) => setData('username', e.target.value)}
                                     required
                                     autoFocus
                                 />
@@ -86,19 +89,14 @@ export default function Login({ status, canResetPassword }) {
                                 >
                                     Username
                                 </label>
-                                <InputError
-                                    message={errors.username}
-                                    className="mt-1 text-xs"
-                                />
+                                <InputError message={errors.username} className="mt-1 text-xs" />
                             </div>
 
                             <div className="relative">
                                 <div className="relative">
                                     <TextInput
                                         id="password"
-                                        type={
-                                            showPassword ? 'text' : 'password'
-                                        }
+                                        type={showPassword ? 'text' : 'password'}
                                         name="password"
                                         value={data.password}
                                         className={`peer block h-[70px] w-full rounded-lg border bg-transparent px-4 pt-6 text-lg transition-colors ${
@@ -106,9 +104,7 @@ export default function Login({ status, canResetPassword }) {
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                 : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500'
                                         }`}
-                                        onChange={(e) =>
-                                            setData('password', e.target.value)
-                                        }
+                                        onChange={(e) => setData('password', e.target.value)}
                                         required
                                     />
                                     <label
@@ -120,9 +116,7 @@ export default function Login({ status, canResetPassword }) {
                                     <button
                                         type="button"
                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-500"
-                                        onClick={() =>
-                                            setShowPassword(!showPassword)
-                                        }
+                                        onClick={() => setShowPassword(!showPassword)}
                                     >
                                         <svg
                                             className="h-6 w-6 transition-colors"
@@ -130,33 +124,41 @@ export default function Login({ status, canResetPassword }) {
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="1.5"
-                                                d={
-                                                    showPassword
-                                                        ? 'M3 3l18 18M10.5 10.677a2 2 0 002.823 2.823'
-                                                        : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                                                }
-                                            />
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="1.5"
-                                                d={
-                                                    showPassword
-                                                        ? 'M17.25 17.25A9.956 9.956 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.32 5.18'
-                                                        : 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542-7-4.477 0-8.268-2.943-9.542-7z'
-                                                }
-                                            />
+                                            {showPassword ? (
+                                                <>
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="1.5"
+                                                        d="M3 3l18 18M10.5 10.677a2 2 0 002.823 2.823"
+                                                    />
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="1.5"
+                                                        d="M17.25 17.25A9.956 9.956 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029"
+                                                    />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="1.5"
+                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                    />
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="1.5"
+                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                    />
+                                                </>
+                                            )}
                                         </svg>
                                     </button>
                                 </div>
-                                <InputError
-                                    message={errors.password}
-                                    className="mt-1 text-xs"
-                                />
+                                <InputError message={errors.password} className="mt-1 text-xs" />
                             </div>
 
                             <div className="flex items-center">
@@ -170,10 +172,7 @@ export default function Login({ status, canResetPassword }) {
                                     }
                                     className="h-5 w-5 rounded-md border-gray-300 text-blue-900 transition-colors focus:ring-2 focus:ring-blue-500"
                                 />
-                                <label
-                                    htmlFor="remember"
-                                    className="ml-2 block text-base text-gray-700"
-                                >
+                                <label htmlFor="remember" className="ml-2 block text-base text-gray-700">
                                     Ingat Saya
                                 </label>
                             </div>
@@ -214,22 +213,25 @@ export default function Login({ status, canResetPassword }) {
                             </div>
                         </form>
 
-                        <div className="mt-8 w-full rounded-lg bg-gray-50 p-4">
-                            <div className="text-center">
-                                <p className="text-sm text-gray-600">
-                                    Lupa Password?{' '}
-                                    <Link
-                                        href={route('password.request')}
-                                        className="font-medium text-[#001B3F] transition-colors hover:text-blue-900"
-                                    >
-                                        Reset Password
-                                    </Link>
-                                </p>
+                        {canResetPassword && (
+                            <div className="mt-8 w-full rounded-lg bg-gray-50 p-4">
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-600">
+                                        Lupa Password?{' '}
+                                        <Link
+                                            href={route('password.request')}
+                                            className="font-medium text-[#001B3F] transition-colors hover:text-blue-900"
+                                        >
+                                            Reset Password
+                                        </Link>
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
         </div>
     );
 }
+    
