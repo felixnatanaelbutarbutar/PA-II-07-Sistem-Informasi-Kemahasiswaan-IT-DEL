@@ -227,13 +227,12 @@ const NavbarGuestLayout = () => {
                                                     BEM (Badan Eksekutif Mahasiswa)
                                                 </div>
                                                 <div className="mt-2">
-                                                    <Link href="#" className="mega-menu-item">
-                                                        Profil BEM
+                                                    <Link href="/bem" className="mega-menu-item">
                                                     </Link>
-                                                    <Link href="#" className="mega-menu-item">
+                                                    <Link href="/bem" className="mega-menu-item">
                                                         Struktur Organisasi
                                                     </Link>
-                                                    <Link href="#" className="mega-menu-item">
+                                                    <Link href="/bem" className="mega-menu-item">
                                                         Program Kerja
                                                     </Link>
                                                     <Link href="#" className="mega-menu-item">

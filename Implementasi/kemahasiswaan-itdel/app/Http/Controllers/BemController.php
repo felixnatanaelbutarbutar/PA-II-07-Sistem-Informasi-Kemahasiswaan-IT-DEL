@@ -12,15 +12,12 @@ use Illuminate\Support\Facades\Log;
 
 class BemController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $bem = BEM::first();
+        $bem = BEM::with(['creator', 'updater'])->first();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -39,14 +36,12 @@ class BemController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $user = Auth::user();
         $role = strtolower($user->role);
 
+        $bemExists = BEM::exists();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -58,117 +53,99 @@ class BemController extends Controller
             'permissions' => $permissions,
             'menu' => $menuItems,
             'navigation' => $menuItems,
+            'bemExists' => $bemExists,
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // Debugging: Log semua data yang diterima dari request
         Log::info('Request data:', $request->all());
         Log::info('Request files:', $request->files->all());
 
         try {
-            // Validasi bertahap
             $validated = $request->validate([
+                'introduction' => 'required|string', // Validasi untuk introduction
                 'vision' => 'required|string',
-                'mission' => 'required|string',
-                'structure' => 'required|array',
-                'structure.Ketua BEM' => 'required|array',
-                'structure.Ketua BEM.name' => 'required|string',
-                'structure.Ketua BEM.photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
-                'structure.Sekretaris' => 'required|array',
-                'structure.Sekretaris.name' => 'required|string',
-                'structure.Sekretaris.photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
-                'structure.departments' => 'nullable|array',
-                'structure.departments.*.name' => 'required|string',
-                'structure.departments.*.members' => 'nullable|array',
-                'structure.departments.*.members.*.position' => 'required|string',
-                'structure.departments.*.members.*.name' => 'required|string',
-                'structure.departments.*.members.*.photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'work_programs' => 'required|array',
-                'work_programs.*' => 'required|string',
+                'mission' => 'required|json', // Mission sekarang berupa JSON
+                'structure' => 'required|json',
+                'work_programs' => 'required|json', // Work programs memiliki description dan programs
+                'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096', // Validasi untuk logo
                 'recruitment_status' => 'required|in:OPEN,CLOSED',
+                'positions.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
+                'departments.*.members.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
             ]);
 
-            Log::info('Validation passed'); // Debugging
+            Log::info('Validation passed');
 
-            $structure = $request->input('structure');
+            $structure = json_decode($request->input('structure'), true);
 
-            // Debugging: Log struktur data sebelum diproses
-            Log::info('Structure data before processing:', $structure);
-
-            // Handle photo upload for Ketua BEM
-            if ($request->hasFile('structure.Ketua BEM.photo')) {
-                $path = $request->file('structure.Ketua BEM.photo')->store('bem_photos', 'public');
-                Log::info('Ketua BEM photo uploaded to: ' . $path);
-                $structure['Ketua BEM']['photo'] = $path;
-            } else {
-                $structure['Ketua BEM']['photo'] = null;
+            // Proses file untuk positions
+            if (!empty($structure['positions'])) {
+                foreach ($structure['positions'] as $positionIndex => &$position) {
+                    if ($request->hasFile("positions.{$positionIndex}")) {
+                        $path = $request->file("positions.{$positionIndex}")->store('bem_photos', 'public');
+                        Log::info("Position {$positionIndex} photo uploaded to: " . $path);
+                        $position['photo'] = $path;
+                    } else {
+                        $position['photo'] = null;
+                    }
+                }
             }
 
-            // Handle photo upload for Sekretaris
-            if ($request->hasFile('structure.Sekretaris.photo')) {
-                $path = $request->file('structure.Sekretaris.photo')->store('bem_photos', 'public');
-                Log::info('Sekretaris photo uploaded to: ' . $path);
-                $structure['Sekretaris']['photo'] = $path;
-            } else {
-                $structure['Sekretaris']['photo'] = null;
-            }
-
-            // Handle photo upload for department members
+            // Proses file untuk departments
             if (!empty($structure['departments'])) {
-                foreach ($structure['departments'] as $deptIndex => $department) {
+                foreach ($structure['departments'] as $deptIndex => &$department) {
                     if (!empty($department['members'])) {
-                        foreach ($department['members'] as $memberIndex => $member) {
-                            $photoKey = "structure.departments.{$deptIndex}.members.{$memberIndex}.photo";
-                            if ($request->hasFile($photoKey)) {
-                                $path = $request->file($photoKey)->store('bem_photos', 'public');
+                        foreach ($department['members'] as $memberIndex => &$member) {
+                            if ($request->hasFile("departments.{$deptIndex}.members.{$memberIndex}")) {
+                                $path = $request->file("departments.{$deptIndex}.members.{$memberIndex}")->store('bem_photos', 'public');
                                 Log::info("Department {$deptIndex} member {$memberIndex} photo uploaded to: " . $path);
-                                $structure['departments'][$deptIndex]['members'][$memberIndex]['photo'] = $path;
+                                $member['photo'] = $path;
                             } else {
-                                $structure['departments'][$deptIndex]['members'][$memberIndex]['photo'] = null;
+                                $member['photo'] = null;
                             }
                         }
                     }
                 }
             }
 
-            // Debugging: Log struktur data setelah diproses
+            // Proses file logo
+            $logoPath = null;
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('bem_logos', 'public');
+                Log::info('Logo uploaded to: ' . $logoPath);
+            }
+
             Log::info('Structure data after processing:', $structure);
 
-            // Simpan data
             BEM::create([
+                'introduction' => $request->introduction,
                 'vision' => $request->vision,
-                'mission' => $request->mission,
+                'mission' => json_decode($request->mission, true), // Simpan mission sebagai array
                 'structure' => $structure,
-                'work_programs' => $request->work_programs,
+                'work_programs' => json_decode($request->work_programs, true), // Simpan work_programs sebagai array
+                'logo' => $logoPath,
                 'recruitment_status' => $request->recruitment_status,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
             return redirect()->route('admin.bem.index')->with('success', 'Data BEM berhasil dibuat.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // Log error validasi
             Log::error('Validation failed: ' . json_encode($e->errors()));
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            // Log error lainnya
             Log::error('Error saving BEM data: ' . $e->getMessage());
             return redirect()->route('admin.bem.index')->with('error', 'Gagal membuat data BEM: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $bem = BEM::findOrFail($id);
+        $bem = BEM::with(['creator', 'updater'])->findOrFail($id);
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -184,116 +161,125 @@ class BemController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         $bem = BEM::findOrFail($id);
 
-        // Debugging: Log semua data yang diterima dari request
         Log::info('Update request data:', $request->all());
         Log::info('Update request files:', $request->files->all());
 
-        $validated = $request->validate([
-            'vision' => 'required|string',
-            'mission' => 'required|string',
-            'structure' => 'required|array',
-            'structure.Ketua BEM.name' => 'required|string',
-            'structure.Ketua BEM.photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'structure.Sekretaris.name' => 'required|string',
-            'structure.Sekretaris.photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'structure.departments' => 'nullable|array',
-            'structure.departments.*.name' => 'required|string',
-            'structure.departments.*.members' => 'nullable|array',
-            'structure.departments.*.members.*.position' => 'required|string',
-            'structure.departments.*.members.*.name' => 'required|string',
-            'structure.departments.*.members.*.photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'work_programs' => 'required|array',
-            'work_programs.*' => 'required|string',
-            'recruitment_status' => 'required|in:OPEN,CLOSED',
-        ]);
-
         try {
-            $structure = $request->input('structure');
+            $validated = $request->validate([
+                'introduction' => 'required|string',
+                'vision' => 'required|string',
+                'mission' => 'required|json',
+                'structure' => 'required|json',
+                'work_programs' => 'required|json',
+                'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'recruitment_status' => 'required|in:OPEN,CLOSED',
+                'positions.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'departments.*.members.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-            // Handle photo upload for Ketua BEM
-            if ($request->hasFile('structure.Ketua BEM.photo')) {
-                if (!empty($bem->structure['Ketua BEM']['photo'])) {
-                    Storage::disk('public')->delete($bem->structure['Ketua BEM']['photo']);
+            Log::info('Validation passed');
+
+            $structure = json_decode($request->input('structure'), true);
+
+            // Proses file untuk positions
+            if (!empty($structure['positions'])) {
+                foreach ($structure['positions'] as $positionIndex => &$position) {
+                    if ($request->hasFile("positions.{$positionIndex}")) {
+                        $oldPhoto = $bem->structure['positions'][$positionIndex]['photo'] ?? null;
+                        if ($oldPhoto) {
+                            Storage::disk('public')->delete($oldPhoto);
+                        }
+                        $path = $request->file("positions.{$positionIndex}")->store('bem_photos', 'public');
+                        Log::info("Position {$positionIndex} photo uploaded to: " . $path);
+                        $position['photo'] = $path;
+                    } else {
+                        $position['photo'] = $bem->structure['positions'][$positionIndex]['photo'] ?? null;
+                    }
                 }
-                $path = $request->file('structure.Ketua BEM.photo')->store('bem_photos', 'public');
-                $structure['Ketua BEM']['photo'] = $path;
-            } else {
-                $structure['Ketua BEM']['photo'] = $bem->structure['Ketua BEM']['photo'] ?? null;
             }
 
-            // Handle photo upload for Sekretaris
-            if ($request->hasFile('structure.Sekretaris.photo')) {
-                if (!empty($bem->structure['Sekretaris']['photo'])) {
-                    Storage::disk('public')->delete($bem->structure['Sekretaris']['photo']);
-                }
-                $path = $request->file('structure.Sekretaris.photo')->store('bem_photos', 'public');
-                $structure['Sekretaris']['photo'] = $path;
-            } else {
-                $structure['Sekretaris']['photo'] = $bem->structure['Sekretaris']['photo'] ?? null;
-            }
-
-            // Handle photo upload for department members
+            // Proses file untuk departments
             if (!empty($structure['departments'])) {
-                foreach ($structure['departments'] as $deptIndex => $department) {
+                foreach ($structure['departments'] as $deptIndex => &$department) {
                     if (!empty($department['members'])) {
-                        foreach ($department['members'] as $memberIndex => $member) {
-                            $photoKey = "structure.departments.{$deptIndex}.members.{$memberIndex}.photo";
-                            if ($request->hasFile($photoKey)) {
+                        foreach ($department['members'] as $memberIndex => &$member) {
+                            if ($request->hasFile("departments.{$deptIndex}.members.{$memberIndex}")) {
                                 $oldPhoto = $bem->structure['departments'][$deptIndex]['members'][$memberIndex]['photo'] ?? null;
                                 if ($oldPhoto) {
                                     Storage::disk('public')->delete($oldPhoto);
                                 }
-                                $path = $request->file($photoKey)->store('bem_photos', 'public');
-                                $structure['departments'][$deptIndex]['members'][$memberIndex]['photo'] = $path;
+                                $path = $request->file("departments.{$deptIndex}.members.{$memberIndex}")->store('bem_photos', 'public');
+                                Log::info("Department {$deptIndex} member {$memberIndex} photo uploaded to: " . $path);
+                                $member['photo'] = $path;
                             } else {
-                                $structure['departments'][$deptIndex]['members'][$memberIndex]['photo'] = $bem->structure['departments'][$deptIndex]['members'][$memberIndex]['photo'] ?? null;
+                                $member['photo'] = $bem->structure['departments'][$deptIndex]['members'][$memberIndex]['photo'] ?? null;
                             }
                         }
                     }
                 }
             }
 
+            // Proses file logo
+            $logoPath = $bem->logo;
+            if ($request->hasFile('logo')) {
+                // Hapus logo lama jika ada
+                if ($logoPath) {
+                    Storage::disk('public')->delete($logoPath);
+                }
+                $logoPath = $request->file('logo')->store('bem_logos', 'public');
+                Log::info('Logo updated to: ' . $logoPath);
+            }
+
+            Log::info('Structure data after processing:', $structure);
+
             $bem->update([
+                'introduction' => $request->introduction,
                 'vision' => $request->vision,
-                'mission' => $request->mission,
+                'mission' => json_decode($request->mission, true),
                 'structure' => $structure,
-                'work_programs' => $request->work_programs,
+                'work_programs' => json_decode($request->work_programs, true),
+                'logo' => $logoPath,
                 'recruitment_status' => $request->recruitment_status,
+                'updated_by' => Auth::id(),
             ]);
 
             return redirect()->route('admin.bem.index')->with('success', 'Data BEM berhasil diperbarui.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed: ' . json_encode($e->errors()));
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating BEM data: ' . $e->getMessage());
             return redirect()->route('admin.bem.index')->with('error', 'Gagal memperbarui data BEM: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
         try {
             $bem = BEM::findOrFail($id);
+            Log::info('Attempting to delete BEM with ID: ' . $id);
 
-            if (!empty($bem->structure['Ketua BEM']['photo'])) {
-                Storage::disk('public')->delete($bem->structure['Ketua BEM']['photo']);
+            // Hapus foto positions
+            if (!empty($bem->structure['positions'])) {
+                foreach ($bem->structure['positions'] as $position) {
+                    if (!empty($position['photo'])) {
+                        Log::info('Deleting position photo: ' . $position['photo']);
+                        Storage::disk('public')->delete($position['photo']);
+                    }
+                }
             }
-            if (!empty($bem->structure['Sekretaris']['photo'])) {
-                Storage::disk('public')->delete($bem->structure['Sekretaris']['photo']);
-            }
+
+            // Hapus foto members di departments
             if (!empty($bem->structure['departments'])) {
                 foreach ($bem->structure['departments'] as $department) {
                     if (!empty($department['members'])) {
                         foreach ($department['members'] as $member) {
                             if (!empty($member['photo'])) {
+                                Log::info('Deleting member photo: ' . $member['photo']);
                                 Storage::disk('public')->delete($member['photo']);
                             }
                         }
@@ -301,11 +287,28 @@ class BemController extends Controller
                 }
             }
 
+            // Hapus logo
+            if ($bem->logo) {
+                Log::info('Deleting logo: ' . $bem->logo);
+                Storage::disk('public')->delete($bem->logo);
+            }
+
             $bem->delete();
+            Log::info('BEM deleted successfully');
+
             return redirect()->route('admin.bem.index')->with('success', 'Data BEM berhasil dihapus.');
         } catch (\Exception $e) {
             Log::error('Error deleting BEM data: ' . $e->getMessage());
             return redirect()->route('admin.bem.index')->with('error', 'Gagal menghapus data BEM: ' . $e->getMessage());
         }
+    }
+
+    public function show()
+    {
+        $bem = BEM::first();
+
+        return Inertia::render('BEM', [
+            'bem' => $bem,
+        ]);
     }
 }

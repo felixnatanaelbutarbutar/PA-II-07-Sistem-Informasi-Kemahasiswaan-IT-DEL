@@ -10,11 +10,15 @@ return new class extends Migration
     {
         Schema::create('bem', function (Blueprint $table) {
             $table->id();
+            $table->text('introduction')->nullable(); // Kolom untuk perkenalan tentang BEM
             $table->text('vision')->nullable();
-            $table->text('mission')->nullable();
+            $table->json('mission')->nullable(); // Ubah mission menjadi JSON untuk menyimpan array
             $table->json('structure')->nullable(); // Struktur organisasi dengan foto
-            $table->json('work_programs')->nullable();
+            $table->json('work_programs')->nullable(); // Ubah work_programs menjadi JSON dengan description dan programs
+            $table->string('logo')->nullable(); // Kolom untuk menyimpan path logo
             $table->string('recruitment_status')->default('CLOSED');
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

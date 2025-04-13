@@ -12,6 +12,7 @@ import {
     Award,
     Heart,
     ChevronRight,
+    Users, // Ikon untuk Manajemen BEM (organisasi)
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -32,6 +33,7 @@ export default function AdminLayout({
         newspaper: Newspaper,
         award: Award,
         heart: Heart,
+        organization: Users, // Map 'organization' ke ikon Users
     };
 
     // Initialize dark mode based on localStorage or system preference
@@ -150,10 +152,12 @@ export default function AdminLayout({
                         {menuItems.map((item, index) => {
                             const hasSubmenu = item.submenu && item.submenu.length > 0;
                             const isOpen = expandedMenu === index;
-                            const Icon = item.icon && iconMap[item.icon] ? iconMap[item.icon] : null;
+                            const Icon = item.icon && iconMap[item.icon] ? iconMap[item.icon] : LayoutDashboard; // Fallback ke LayoutDashboard
+
+                            // Debugging ikon
+                            console.log(`Icon for ${item.name}:`, item.icon, 'Mapped Icon:', Icon ? Icon.name : 'Not found');
 
                             if (hasSubmenu) {
-                                // Menu dengan submenu (dropdown)
                                 const isSubmenuActive = item.submenu.some(subItem => {
                                     if (!subItem.route) {
                                         console.warn(`Submenu item "${subItem.name}" has no route defined.`);

@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BemController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\AspirationController;
 use App\Http\Controllers\CounselingController;
@@ -13,16 +14,6 @@ use App\Http\Controllers\KegiatanBEMController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\BemController; // Gunakan controller yang baru
-
-Route::prefix('admin')->middleware(['auth'])->group(function () {
-    Route::get('/bem', [BemController::class, 'index'])->name('admin.bem.index');
-    Route::get('/bem/create', [BemController::class, 'create'])->name('admin.bem.create');
-    Route::post('/bem', [BemController::class, 'store'])->name('admin.bem.store');
-    Route::get('/bem/{id}/edit', [BemController::class, 'edit'])->name('admin.bem.edit');
-    Route::put('/bem/{id}', [BemController::class, 'update'])->name('admin.bem.update');
-    Route::delete('/bem/{id}', [BemController::class, 'destroy'])->name('admin.bem.destroy');
-});
 
 // Public Routes (Accessible to Guests)
 Route::get('/', function () {
@@ -67,6 +58,9 @@ Route::get('/chatbot', function () {
 // Routes untuk sisi mahasiswa/guest
 Route::get('/aspiration', [AspirationController::class, 'index'])->name('aspiration.index');
 Route::post('/aspiration', [AspirationController::class, 'store'])->name('aspiration.store');
+
+// Route untuk halaman BEM (guest)
+Route::get('/bem', [BemController::class, 'show'])->name('bem.show');
 
 // Login Route
 Route::get('/login', function () {
@@ -201,12 +195,9 @@ Route::middleware(['auth'])->group(function () {
             Route::post('announcement/{announcement}/update', [AnnouncementController::class, 'update'])->name('announcement.update');
             Route::post('announcement/{announcement}/delete', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
 
-            Route::get('/bem', [BemController::class, 'index'])->name('bem.index');
-            Route::get('/bem/create', [BemController::class, 'create'])->name('bem.create');
-            Route::post('/bem', [BemController::class, 'store'])->name('bem.store');
-            Route::get('/bem/{id}/edit', [BemController::class, 'edit'])->name('bem.edit');
-            Route::put('/bem/{id}', [BemController::class, 'update'])->name('bem.update');
-            Route::delete('/bem/{id}', [BemController::class, 'destroy'])->name('bem.destroy');
+            Route::resource('bem', BemController::class)->except(['destroy', 'update']);
+            Route::post('bem/{bem}/update', [BemController::class, 'update'])->name('bem.update');
+            Route::post('bem/{bem}/delete', [BemController::class, 'destroy'])->name('bem.delete'); // Rute POST untuk hapus
         });
 
         // Achievement, News Category, Counseling, and Aspiration Routes (Kemahasiswaan Only)
@@ -227,8 +218,6 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
             Route::delete('/aspiration/{id}', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
         });
-
-        
     });
 });
 
