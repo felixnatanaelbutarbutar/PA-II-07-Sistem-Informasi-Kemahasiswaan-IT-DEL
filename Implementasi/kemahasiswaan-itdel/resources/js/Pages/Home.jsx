@@ -426,7 +426,7 @@ export default function Home() {
                         <div
                             className="carousel-slide"
                             style={{
-                                backgroundImage: 'url("/assets/images/slide2.svg")',
+                                backgroundImage: 'url("/assets/images/2.svg")',
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',
@@ -440,7 +440,21 @@ export default function Home() {
                         <div
                             className="carousel-slide"
                             style={{
-                                backgroundImage: 'url("/assets/images/slide3.svg")',
+                                backgroundImage: 'url("/assets/images/3.svg")',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                backgroundRepeat: 'no-repeat',
+                                width: '100%',
+                                height: '100%',
+                            }}
+                        />
+                    </div>
+                    {/* Slide 3 */}
+                    <div className="swiper-slide">
+                        <div
+                            className="carousel-slide"
+                            style={{
+                                backgroundImage: 'url("/assets/images/4.svg")',
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',

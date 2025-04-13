@@ -13,6 +13,16 @@ use App\Http\Controllers\KegiatanBEMController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\BemController; // Gunakan controller yang baru
+
+Route::prefix('admin')->middleware(['auth'])->group(function () {
+    Route::get('/bem', [BemController::class, 'index'])->name('admin.bem.index');
+    Route::get('/bem/create', [BemController::class, 'create'])->name('admin.bem.create');
+    Route::post('/bem', [BemController::class, 'store'])->name('admin.bem.store');
+    Route::get('/bem/{id}/edit', [BemController::class, 'edit'])->name('admin.bem.edit');
+    Route::put('/bem/{id}', [BemController::class, 'update'])->name('admin.bem.update');
+    Route::delete('/bem/{id}', [BemController::class, 'destroy'])->name('admin.bem.destroy');
+});
 
 // Public Routes (Accessible to Guests)
 Route::get('/', function () {
@@ -190,6 +200,13 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('announcement', AnnouncementController::class)->except(['show', 'destroy', 'update']);
             Route::post('announcement/{announcement}/update', [AnnouncementController::class, 'update'])->name('announcement.update');
             Route::post('announcement/{announcement}/delete', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
+
+            Route::get('/bem', [BemController::class, 'index'])->name('bem.index');
+            Route::get('/bem/create', [BemController::class, 'create'])->name('bem.create');
+            Route::post('/bem', [BemController::class, 'store'])->name('bem.store');
+            Route::get('/bem/{id}/edit', [BemController::class, 'edit'])->name('bem.edit');
+            Route::put('/bem/{id}', [BemController::class, 'update'])->name('bem.update');
+            Route::delete('/bem/{id}', [BemController::class, 'destroy'])->name('bem.destroy');
         });
 
         // Achievement, News Category, Counseling, and Aspiration Routes (Kemahasiswaan Only)
@@ -211,12 +228,7 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/aspiration/{id}', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
         });
 
-        // Kegiatan BEM Routes (AdminBEM Only)
-        Route::prefix('bem')->name('bem.')->middleware(['role:adminbem'])->group(function () {
-            Route::resource('kegiatan', KegiatanBEMController::class)->except(['create', 'edit', 'destroy', 'update']);
-            Route::post('kegiatan/{kegiatan}/update', [KegiatanBEMController::class, 'update'])->name('kegiatan.update');
-            Route::post('kegiatan/{kegiatan}/delete', [KegiatanBEMController::class, 'destroy'])->name('kegiatan.destroy');
-        });
+        
     });
 });
 

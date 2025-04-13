@@ -22,6 +22,9 @@ class RoleHelper
                 'newscategory' => true,
                 'achievements' => true,
                 'counseling' => true,
+                'bem' => true,
+
+
             ],
             'kemahasiswaan' => [
                 'pengumuman' => true,
@@ -31,6 +34,8 @@ class RoleHelper
                 'achievements' => true,
                 'counseling' => true,
                 'aspiration' => true,
+                'bem' => true,
+
             ],
             'adminbem' => [
                 'pengumuman' => true,
@@ -39,6 +44,7 @@ class RoleHelper
                 'achievements' => false,
                 'counseling' => false,
                 'aspiration' => false,
+                'bem' => true,
 
             ],
             'adminmpm' => [
@@ -48,6 +54,8 @@ class RoleHelper
                 'achievements' => false,
                 'counseling' => false,
                 'aspiration' => true,
+                'bem' => false,
+
 
             ],
             'mahasiswa' => [
@@ -58,6 +66,8 @@ class RoleHelper
                 'achievements' => false,
                 'counseling' => true,
                 'aspiration' => false,
+                'bem' => false,
+
             ],
         ];
 
@@ -166,6 +176,16 @@ class RoleHelper
                 'visible' => true,
             ];
         }
+
+        if ($permissions['bem'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Manajemen BEM',
+                'route' => 'admin.bem.index',
+                'icon' => 'organization',
+                'visible' => true,
+            ];
+        }
+
 
         return array_filter($menuItems, fn($item) => $item['visible'] ?? true);
     }
