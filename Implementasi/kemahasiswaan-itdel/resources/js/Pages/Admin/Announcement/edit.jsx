@@ -1,8 +1,33 @@
-import { useState } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import axios from 'axios';
+import Quill from 'quill';
+import ImageResize from 'quill-image-resize-module-react';
+
+// Register the ImageResize module with Quill
+Quill.register('modules/imageResize', ImageResize);
+
+// Define custom toolbar for ReactQuill
+const quillModules = {
+    toolbar: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'align': [] }, { 'align': 'center' }, { 'align': 'right' }, { 'align': 'justify' }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'indent': '-1' }, { 'indent': '+1' }],
+        ['blockquote', 'code-block'],
+        [{ 'color': [] }, { 'background': [] }],
+        ['link', 'image', 'video'],
+        ['clean'],
+    ],
+    imageResize: {
+        parchment: Quill.import('parchment'),
+        modules: ['Resize', 'DisplaySize', 'Toolbar'],
+    },
+};
 
 export default function Edit({ auth, permissions, userRole, menu, categories, announcement, flash }) {
     if (!auth?.user || !announcement) {
@@ -14,9 +39,7 @@ export default function Edit({ auth, permissions, userRole, menu, categories, an
     }
 
     const [filePreview, setFilePreview] = useState(announcement?.file ? `/storage/${announcement.file}` : null);
-    const [notification, setNotification] = useState({ show: false, type: '', message: '' });
-
-    const { data, setData, processing, errors, reset } = useForm({
+    const [data, setData] = useState({
         announcement_id: announcement.announcement_id,
         title: announcement.title,
         content: announcement.content,
@@ -24,141 +47,280 @@ export default function Edit({ auth, permissions, userRole, menu, categories, an
         file: null,
         updated_by: auth.user.id,
     });
+    const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const updateRoute = route('admin.announcement.update', announcement.announcement_id);
-        console.log('Update Route:', updateRoute);
-        console.log('Form Data:', data);
-
-        router.post(updateRoute, data, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                console.log('Update Success');
+    useEffect(() => {
+        // Handle flash messages from server
+        if (flash) {
+            if (flash.success) {
                 setNotification({
                     show: true,
                     type: 'success',
-                    message: flash?.success || 'Pengumuman berhasil diperbarui!',
+                    message: flash.success,
                 });
-                reset();
-                setFilePreview(null);
-            },
-            onError: (errors) => {
-                console.log('Update Error:', errors);
+            } else if (flash.error) {
                 setNotification({
                     show: true,
                     type: 'error',
-                    message: 'Gagal memperbarui pengumuman: ' + (errors.error || 'Periksa input Anda.'),
+                    message: flash.error,
                 });
-            },
-        });
+            }
+        }
+
+        // Auto-hide notification after 5 seconds
+        if (notification.show) {
+            const timer = setTimeout(() => {
+                setNotification({ ...notification, show: false });
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash, notification]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setErrors({});
+
+        // Client-side validation for required fields
+        const newErrors = {};
+        if (!data.title.trim()) newErrors.title = 'Judul wajib diisi.';
+        // Periksa apakah konten kosong atau hanya berisi tag HTML kosong
+        if (!data.content.trim() || data.content.replace(/<[^>]+>/g, '').trim() === '') {
+            newErrors.content = 'Konten wajib diisi.';
+        }
+        if (!data.category_id) newErrors.category_id = 'Kategori wajib dipilih.';
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setIsSubmitting(false);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('announcement_id', data.announcement_id);
+        formData.append('title', data.title);
+        formData.append('content', data.content);
+        formData.append('category_id', data.category_id);
+        formData.append('updated_by', data.updated_by);
+        if (data.file) {
+            formData.append('file', data.file);
+        }
+
+        const updateRoute = route('admin.announcement.update', announcement.announcement_id);
+        console.log('Update Route:', updateRoute);
+        console.log('Form Data:', Object.fromEntries(formData));
+
+        try {
+            await axios.post(updateRoute, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            setNotification({
+                show: true,
+                type: 'success',
+                message: 'Pengumuman berhasil diperbarui!',
+            });
+
+            // Reset the form data
+            setData({
+                announcement_id: announcement.announcement_id,
+                title: announcement.title,
+                content: announcement.content,
+                category_id: announcement.category_id,
+                file: null,
+                updated_by: auth.user.id,
+            });
+            setFilePreview(announcement?.file ? `/storage/${announcement.file}` : null);
+
+            setTimeout(() => {
+                router.visit(route('admin.announcement.index'));
+            }, 1500);
+        } catch (error) {
+            console.error('Error submitting form:', error);
+
+            if (error.response && error.response.status === 422) {
+                setErrors(error.response.data.errors);
+            } else {
+                setNotification({
+                    show: true,
+                    type: 'error',
+                    message: 'Gagal memperbarui pengumuman: ' + (error.response?.data?.message || 'Terjadi kesalahan.'),
+                });
+            }
+            setIsSubmitting(false);
+        }
     };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setData('file', file);
         if (file) {
-            if (file.type === "application/pdf") {
-                setFilePreview(URL.createObjectURL(file));
-            } else {
+            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            if (file.size > maxSizeInBytes) {
+                setErrors((prev) => ({
+                    ...prev,
+                    file: 'Ukuran file terlalu besar. Maksimal 2MB.',
+                }));
+                setData((prevData) => ({ ...prevData, file: null }));
+                setFilePreview(announcement?.file ? `/storage/${announcement.file}` : null);
+                return;
+            }
+
+            setErrors((prev) => ({ ...prev, file: undefined }));
+            setData((prevData) => ({ ...prevData, file: file }));
+            if (file.type.includes("image")) {
                 const reader = new FileReader();
                 reader.onloadend = () => setFilePreview(reader.result);
                 reader.readAsDataURL(file);
+            } else if (file.type === "application/pdf") {
+                setFilePreview(URL.createObjectURL(file));
             }
         } else {
+            setData((prevData) => ({ ...prevData, file: null }));
             setFilePreview(announcement?.file ? `/storage/${announcement.file}` : null);
         }
+    };
+
+    const handleQuillImageUpload = async (quill) => {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (file) {
+                const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+                if (file.size > maxSizeInBytes) {
+                    setNotification({
+                        show: true,
+                        type: 'error',
+                        message: 'Ukuran gambar di konten terlalu besar. Maksimal 2MB.',
+                    });
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const response = await axios.post(route('admin.announcement.upload-image'), formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                    });
+
+                    const imageUrl = response.data.url;
+                    const range = quill.getSelection(true);
+                    quill.insertEmbed(range.index, 'image', imageUrl);
+                    quill.format('align', 'center');
+                } catch (error) {
+                    console.error('Error uploading image to content:', error);
+                    setNotification({
+                        show: true,
+                        type: 'error',
+                        message: 'Gagal mengunggah gambar ke konten.',
+                    });
+                }
+            }
+        };
+    };
+
+    const quillFormats = [
+        'header',
+        'bold', 'italic', 'underline', 'strike',
+        'align', 'list', 'bullet', 'indent',
+        'blockquote', 'code-block',
+        'color', 'background',
+        'link', 'image', 'video',
+    ];
+
+    const setupQuill = (quill) => {
+        const toolbar = quill.getModule('toolbar');
+        toolbar.addHandler('image', () => handleQuillImageUpload(quill));
     };
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
             <Head title="Edit Pengumuman" />
 
-            {/* Notification */}
             {notification.show && (
                 <div
-                    className={`fixed top-4 right-4 z-50 max-w-md px-6 py-4 rounded-lg shadow-lg transition-all transform animate-slide-in-right ${
+                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
                         notification.type === 'success'
-                            ? 'bg-green-50 border-l-4 border-green-500'
-                            : 'bg-red-50 border-l-4 border-red-500'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
+                            : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
                     }`}
                 >
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
-                            {notification.type === 'success' ? (
-                                <svg
-                                    className="h-5 w-5 text-green-500"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    aria-hidden="true"
-                                >
+                            <svg
+                                className={`h-5 w-5 ${
+                                    notification.type === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                }`}
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                {notification.type === 'success' ? (
                                     <path
                                         fillRule="evenodd"
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                         clipRule="evenodd"
                                     />
-                                </svg>
-                            ) : (
-                                <svg
-                                    className="h-5 w-5 text-red-500"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    aria-hidden="true"
-                                >
+                                ) : (
                                     <path
                                         fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
                                         clipRule="evenodd"
                                     />
-                                </svg>
-                            )}
+                                )}
+                            </svg>
                         </div>
                         <div className="ml-3">
                             <p
                                 className={`text-sm font-medium ${
-                                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                                    notification.type === 'success' ? 'text-emerald-800' : 'text-rose-800'
                                 }`}
                             >
                                 {notification.message}
                             </p>
                         </div>
                         <div className="ml-auto pl-3">
-                            <div className="-mx-1.5 -my-1.5">
-                                <button
-                                    onClick={() => setNotification({ ...notification, show: false })}
-                                    className={`inline-flex rounded-md p-1.5 focus:outline-none ${
-                                        notification.type === 'success'
-                                            ? 'text-green-500 hover:bg-green-100'
-                                            : 'text-red-500 hover:bg-red-100'
-                                    }`}
+                            <button
+                                onClick={() => setNotification({ ...notification, show: false })}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notification.type === 'success'
+                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                                } focus:outline-none focus:ring-2`}
+                            >
+                                <span className="sr-only">Dismiss</span>
+                                <svg
+                                    className="h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
                                 >
-                                    <span className="sr-only">Dismiss</span>
-                                    <svg
-                                        className="h-5 w-5"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="py-10 max-w-4xl mx-auto px-4">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800">Edit Pengumuman</h1>
+            <div className="py-12 max-w-5xl mx-auto px-6 sm:px-8">
+                <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                            Edit Pengumuman
+                        </h1>
+                        <p className="text-gray-500 mt-1">Perbarui informasi pengumuman yang sudah ada</p>
+                    </div>
                     <Link
                         href={route('admin.announcement.index')}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center"
@@ -166,138 +328,160 @@ export default function Edit({ auth, permissions, userRole, menu, categories, an
                         ← Kembali
                     </Link>
                 </div>
-                <form
-                    onSubmit={handleSubmit}
-                    encType="multipart/form-data"
-                    className="bg-white rounded-xl shadow-lg p-6 space-y-6"
-                >
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Judul Pengumuman <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={data.title}
-                            onChange={(e) => setData('title', e.target.value)}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${
-                                errors.title ? 'border-red-500' : 'border-gray-300'
-                            }`}
-                            required
-                        />
-                        {errors?.title && <p className="text-red-500 text-sm">{errors.title}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Kategori <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={data.category_id}
-                            onChange={(e) => setData('category_id', e.target.value)}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${
-                                errors.category_id ? 'border-red-500' : 'border-gray-300'
-                            }`}
-                            required
-                        >
-                            <option value="">Pilih Kategori</option>
-                            {categories.map((category) => (
-                                <option key={category.category_id} value={category.category_id}>
-                                    {category.category_name}
-                                </option>
-                            ))}
-                        </select>
-                        {errors?.category_id && <p className="text-red-500 text-sm">{errors.category_id}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">File Pengumuman</label>
-                        <div className="flex items-center space-x-4">
-                            <div className="flex-1">
-                                <div className="relative border border-gray-300 rounded-lg px-4 py-3">
-                                    <input
-                                        type="file"
-                                        accept="image/*, application/pdf"
-                                        onChange={handleFileChange}
-                                        className="w-full cursor-pointer"
-                                    />
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Format yang didukung: JPG, PNG, PDF. Ukuran maksimal: 2MB
-                                </p>
-                            </div>
-                            {filePreview && (
-                                <div className="relative">
-                                    {filePreview.includes('application/pdf') || filePreview.endsWith('.pdf') ? (
-                                        <a
-                                            href={filePreview}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 mt-2 block"
-                                        >
-                                            Lihat PDF
-                                        </a>
-                                    ) : (
-                                        <img
-                                            src={filePreview}
-                                            alt="Preview"
-                                            className="w-24 h-24 object-cover rounded-lg border border-gray-300"
-                                        />
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setFilePreview(null);
-                                            setData('file', null);
-                                        }}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        {errors?.file && <p className="text-red-500 text-sm">{errors.file}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Konten Pengumuman <span className="text-red-500">*</span>
-                        </label>
-                        <div className="border border-gray-300 rounded-lg overflow-hidden">
-                            <ReactQuill
-                                value={data.content}
-                                onChange={(content) => setData('content', content)}
-                                className="bg-white"
-                                style={{ height: '300px' }}
+                <div className="bg-white rounded-xl shadow-md p-8 mb-8">
+                    <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6" noValidate>
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Judul Pengumuman <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={data.title}
+                                onChange={(e) => setData((prev) => ({ ...prev, title: e.target.value }))}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.title
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                                placeholder="Masukkan judul pengumuman"
                             />
+                            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Minimum 50 karakter</p>
-                        {errors?.content && <p className="text-red-500 text-sm">{errors.content}</p>}
-                    </div>
 
-                    <div className="flex justify-end space-x-4 pt-4 border-t">
-                        <Link
-                            href={route('admin.announcement.index')}
-                            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                        >
-                            Batal
-                        </Link>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
-                        >
-                            {processing ? (
-                                <>
-                                    <span className="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full mr-2"></span>
-                                    Memperbarui...
-                                </>
-                            ) : (
-                                'Update Pengumuman'
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Kategori <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={data.category_id}
+                                onChange={(e) => setData((prev) => ({ ...prev, category_id: e.target.value }))}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.category_id
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            >
+                                <option value="">Pilih Kategori</option>
+                                {categories.map((category) => (
+                                    <option key={category.category_id} value={category.category_id}>
+                                        {category.category_name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.category_id && (
+                                <p className="text-red-500 text-xs mt-1">{errors.category_id}</p>
                             )}
-                        </button>
-                    </div>
-                </form>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                File Pengumuman
+                            </label>
+                            <div className="flex items-center space-x-4">
+                                <div className="flex-1">
+                                    <div
+                                        className={`relative border rounded-lg px-4 py-3 ${
+                                            errors.file ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    >
+                                        <input
+                                            type="file"
+                                            accept="image/*,application/pdf"
+                                            onChange={handleFileChange}
+                                            className="w-full cursor-pointer"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Format yang didukung: JPG, PNG, PDF. Ukuran maksimal: 2MB
+                                    </p>
+                                    {errors.file && (
+                                        <p className="text-red-500 text-xs mt-1">{errors.file}</p>
+                                    )}
+                                </div>
+                                {filePreview && (
+                                    <div className="relative">
+                                        {filePreview.includes('.pdf') || filePreview.startsWith('blob:') ? (
+                                            <a
+                                                href={filePreview}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:underline block w-24 h-24 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50"
+                                            >
+                                                Lihat PDF
+                                            </a>
+                                        ) : (
+                                            <img
+                                                src={filePreview}
+                                                alt="Preview"
+                                                className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                                            />
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFilePreview(null);
+                                                setData((prev) => ({ ...prev, file: null }));
+                                            }}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Konten Pengumuman <span className="text-red-500">*</span>
+                            </label>
+                            <div
+                                className={`border rounded-lg overflow-hidden transition ${
+                                    errors.content
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            >
+                                <ReactQuill
+                                    value={data.content}
+                                    onChange={(content) => setData((prev) => ({ ...prev, content }))}
+                                    modules={quillModules}
+                                    formats={quillFormats}
+                                    onEditorCreated={setupQuill}
+                                    className="bg-white"
+                                    style={{ height: '300px' }}
+                                />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-10">Minimum 50 karakter</p>
+                            {errors.content && (
+                                <p className="text-red-500 text-xs mt-1">{errors.content}</p>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-4 pt-4 border-t">
+                            <Link
+                                href={route('admin.announcement.index')}
+                                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                            >
+                                Batal
+                            </Link>
+                            <button
+                                type="submit"
+                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <span className="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full mr-2"></span>
+                                        Memperbarui...
+                                    </>
+                                ) : (
+                                    'Update Pengumuman'
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </AdminLayout>
     );

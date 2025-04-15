@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import axios from 'axios'; // Add axios import
+import axios from 'axios';
 
 export default function Edit({ auth, userRole, permissions, menu, category, flash }) {
     const [values, setValues] = useState({
@@ -68,7 +68,7 @@ export default function Edit({ auth, userRole, permissions, menu, category, flas
         }
 
         try {
-            await axios.post(route('admin.news-category.update', category.category_id), values, {
+            await axios.post(route('admin.announcement-category.update', category.category_id), values, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -82,7 +82,7 @@ export default function Edit({ auth, userRole, permissions, menu, category, flas
 
             // Redirect after 1.5 seconds
             setTimeout(() => {
-                router.visit(route('admin.news-category.index'));
+                router.visit(route('admin.announcement-category.index'));
             }, 1500);
         } catch (error) {
             console.error('Error submitting form:', error);
@@ -102,7 +102,7 @@ export default function Edit({ auth, userRole, permissions, menu, category, flas
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
-            <Head title="Edit Kategori Berita" />
+            <Head title="Edit Kategori Pengumuman" />
 
             {/* Notification */}
             {notification.show && (
@@ -181,12 +181,12 @@ export default function Edit({ auth, userRole, permissions, menu, category, flas
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Edit Kategori Berita
+                                Edit Kategori Pengumuman
                             </h1>
-                            <p className="text-gray-500 mt-1">Perbarui informasi kategori berita</p>
+                            <p className="text-gray-500 mt-1">Perbarui informasi kategori pengumuman</p>
                         </div>
                         <Link
-                            href={route('admin.news-category.index')}
+                            href={route('admin.announcement-category.index')}
                             className="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
                         >
                             <svg

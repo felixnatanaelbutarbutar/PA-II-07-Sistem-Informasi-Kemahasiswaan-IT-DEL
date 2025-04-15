@@ -16,10 +16,13 @@ class RoleHelper
 
         $rolePermissions = [
             'superadmin' => [
-                'pengumuman' => true,
                 'beasiswa' => true,
-                'news' => true,
+                'announcementcategory' => true,
+                'announcement' => true,
                 'newscategory' => true,
+                'news' => true,
+                'scholarshipcategory' => true,
+                'scholarship' => true,
                 'achievements' => true,
                 'counseling' => true,
                 'bem' => true,
@@ -27,10 +30,13 @@ class RoleHelper
 
             ],
             'kemahasiswaan' => [
-                'pengumuman' => true,
                 'beasiswa' => true,
-                'news' => true,
+                'announcementcategory' => true,
+                'announcement' => true,
                 'newscategory' => true,
+                'news' => true,
+                'scholarshipcategory' => true,
+                'scholarship' => true,
                 'achievements' => true,
                 'counseling' => true,
                 'aspiration' => true,
@@ -123,17 +129,36 @@ class RoleHelper
             ];
         }
 
-        // Mengelompokkan Berita dan Kategori Berita dalam dropdown "Manajemen Berita"
-        if (($permissions['news'] ?? false) || ($permissions['newscategory'] ?? false)) {
+        if (($permissions['announcement'] ?? false) || ($permissions['announcementcategory'] ?? false)) {
             $newsSubmenu = [];
-
-            if ($permissions['news'] ?? false) {
+            if ($permissions['announcementcategory'] ?? false) {
                 $newsSubmenu[] = [
-                    'name' => 'Berita',
-                    'route' => 'admin.news.index',
+                    'name' => 'Kategori Pengumuman',
+                    'route' => 'admin.announcement-category.index',
                     'visible' => true,
                 ];
             }
+
+            if ($permissions['announcement'] ?? false) {
+                $newsSubmenu[] = [
+                    'name' => 'Pengumuman',
+                    'route' => 'admin.announcement.index',
+                    'visible' => true,
+                ];
+            }
+
+            $menuItems[] = [
+                'name' => 'Manajemen Pengumuman',
+                'icon' => 'newspaper',
+                'visible' => true,
+                'submenu' => $newsSubmenu,
+            ];
+        }
+
+
+        // Mengelompokkan Berita dan Kategori Berita dalam dropdown "Manajemen Berita"
+        if (($permissions['news'] ?? false) || ($permissions['newscategory'] ?? false)) {
+            $newsSubmenu = [];
 
             if ($permissions['newscategory'] ?? false) {
                 $newsSubmenu[] = [
@@ -143,8 +168,43 @@ class RoleHelper
                 ];
             }
 
+            if ($permissions['news'] ?? false) {
+                $newsSubmenu[] = [
+                    'name' => 'Berita',
+                    'route' => 'admin.news.index',
+                    'visible' => true,
+                ];
+            }
+
             $menuItems[] = [
                 'name' => 'Manajemen Berita',
+                'icon' => 'newspaper',
+                'visible' => true,
+                'submenu' => $newsSubmenu,
+            ];
+        }
+
+        if (($permissions['scholarship'] ?? false) || ($permissions['scholarshipcategory'] ?? false)) {
+            $newsSubmenu = [];
+
+            if ($permissions['scholarship'] ?? false) {
+                $newsSubmenu[] = [
+                    'name' => 'Beasiswa',
+                    'route' => 'admin.Scholarship.index',
+                    'visible' => true,
+                ];
+            }
+
+            if ($permissions['scholarshipcategory'] ?? false) {
+                $newsSubmenu[] = [
+                    'name' => 'Kategori Beasiswa',
+                    'route' => 'admin.scholarship-category.index',
+                    'visible' => true,
+                ];
+            }
+
+            $menuItems[] = [
+                'name' => 'Manajemen Beasiswa',
                 'icon' => 'newspaper',
                 'visible' => true,
                 'submenu' => $newsSubmenu,
@@ -168,7 +228,7 @@ class RoleHelper
                 'visible' => true,
             ];
         }
-        
+
         if ($permissions['aspiration'] ?? false) {
             $menuItems[] = [
                 'name' => 'Aspirasi',

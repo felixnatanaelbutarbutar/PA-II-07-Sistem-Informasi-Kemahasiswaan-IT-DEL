@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class AnnouncementCategory extends Model
+class ScholarshipCategory extends Model
 {
-    protected $table = 'announcement_categories';
     protected $primaryKey = 'category_id';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -20,8 +19,8 @@ class AnnouncementCategory extends Model
     ];
 
     protected $casts = [
-        'created_by' => 'integer', // Cast ke integer karena tipe data sekarang bigint
-        'updated_by' => 'integer', // Cast ke integer karena tipe data sekarang bigint
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     public function creator()
@@ -32,10 +31,5 @@ class AnnouncementCategory extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by', 'id');
-    }
-
-    public function announcements()
-    {
-        return $this->hasMany(Announcement::class, 'category_id', 'category_id');
     }
 }

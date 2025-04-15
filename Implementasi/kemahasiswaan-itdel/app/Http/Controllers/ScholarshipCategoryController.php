@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\NewsCategory;
+use App\Models\ScholarshipCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Log;
 
-class NewsCategoryController extends Controller
+class ScholarshipCategoryController extends Controller
 {
     public function index()
     {
@@ -19,9 +18,9 @@ class NewsCategoryController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        $categories = NewsCategory::with(['creator', 'updater'])->get();
+        $categories = ScholarshipCategory::with(['creator', 'updater'])->get();
 
-        return Inertia::render('Admin/NewsCategory/index', [
+        return Inertia::render('Admin/ScholarshipCategory/index', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -37,7 +36,7 @@ class NewsCategoryController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        return Inertia::render('Admin/NewsCategory/add', [
+        return Inertia::render('Admin/ScholarshipCategory/add', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -48,37 +47,34 @@ class NewsCategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'category_name' => 'required|string|max:255',
+            'category_name' => 'required|string|max:255|unique:scholarship_categories,category_name',
             'description' => 'nullable|string',
         ]);
-
-        $user = Auth::user();
-        $role = strtolower($user->role);
 
         $categoryId = $this->generateCategoryId();
 
         try {
-            Log::debug('Creating news category', [
+            Log::debug('Creating scholarship category', [
                 'category_id' => $categoryId,
                 'category_name' => $request->category_name,
                 'description' => $request->description,
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
-            NewsCategory::create([
+            ScholarshipCategory::create([
                 'category_id' => $categoryId,
                 'category_name' => $request->category_name,
                 'description' => $request->description,
-                'created_by' => Auth::id(), // Set created_by to the authenticated user's ID
-                'updated_by' => Auth::id(), // Set updated_by to the authenticated user's ID
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error creating news category: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to create news category: ' . $e->getMessage()])->withInput();
+            Log::error('Error creating scholarship category: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to create scholarship category: ' . $e->getMessage()])->withInput();
         }
 
-        return redirect()->route('admin.news-category.index')
+        return redirect()->route('admin.scholarship-category.index')
             ->with('success', 'Kategori berhasil ditambahkan.');
     }
 
@@ -89,9 +85,9 @@ class NewsCategoryController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        $category = NewsCategory::findOrFail($category_id);
+        $category = ScholarshipCategory::findOrFail($category_id);
 
-        return Inertia::render('Admin/NewsCategory/edit', [
+        return Inertia::render('Admin/ScholarshipCategory/edit', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -103,14 +99,14 @@ class NewsCategoryController extends Controller
     public function update(Request $request, $category_id)
     {
         $request->validate([
-            'category_name' => 'required|string|max:255',
+            'category_name' => 'required|string|max:255|unique:scholarship_categories,category_name,' . $category_id . ',category_id',
             'description' => 'nullable|string',
         ]);
 
         try {
-            $category = NewsCategory::findOrFail($category_id);
+            $category = ScholarshipCategory::findOrFail($category_id);
 
-            Log::debug('Updating news category', [
+            Log::debug('Updating scholarship category', [
                 'category_id' => $category_id,
                 'category_name' => $request->category_name,
                 'description' => $request->description,
@@ -120,28 +116,28 @@ class NewsCategoryController extends Controller
             $category->update([
                 'category_name' => $request->category_name,
                 'description' => $request->description,
-                'updated_by' => Auth::id(), // Update updated_by with the authenticated user's ID
+                'updated_by' => Auth::id(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error updating news category: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to update news category: ' . $e->getMessage()])->withInput();
+            Log::error('Error updating scholarship category: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to update scholarship category: ' . $e->getMessage()])->withInput();
         }
 
-        return redirect()->route('admin.news-category.index')
+        return redirect()->route('admin.scholarship-category.index')
             ->with('success', 'Kategori berhasil diperbarui!');
     }
 
     public function destroy($category_id)
     {
         try {
-            $category = NewsCategory::findOrFail($category_id);
+            $category = ScholarshipCategory::findOrFail($category_id);
             $category->delete();
         } catch (\Exception $e) {
-            Log::error('Error deleting news category: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to delete news category: ' . $e->getMessage()]);
+            Log::error('Error deleting scholarship category: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to delete scholarship category: ' . $e->getMessage()]);
         }
 
-        return redirect()->route('admin.news-category.index')
+        return redirect()->route('admin.scholarship-category.index')
             ->with('success', 'Kategori berhasil dihapus!');
     }
 
@@ -150,15 +146,15 @@ class NewsCategoryController extends Controller
      */
     private function generateCategoryId()
     {
-        $lastCategory = NewsCategory::latest('category_id')->first();
+        $lastCategory = ScholarshipCategory::latest('category_id')->first();
 
         if ($lastCategory) {
-            $lastIdNumber = (int) substr($lastCategory->category_id, 3);
+            $lastIdNumber = (int) substr($lastCategory->category_id, 2);
             $newIdNumber = $lastIdNumber + 1;
         } else {
             $newIdNumber = 1;
         }
 
-        return 'nc' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
+        return 'sc' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
     }
 }

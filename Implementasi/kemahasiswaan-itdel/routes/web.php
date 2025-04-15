@@ -14,6 +14,9 @@
         use App\Http\Controllers\KegiatanBEMController;
         use App\Http\Controllers\AnnouncementController;
         use App\Http\Controllers\NewsCategoryController;
+        use App\Http\Controllers\AnnouncementCategoryController;
+        use App\Http\Controllers\ScholarshipCategoryController;
+        use App\Http\Controllers\ScholarshipController;
         use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
         // Public Routes (Accessible to Guests)
@@ -66,7 +69,7 @@
         Route::get('/downloads', function () {
             return Inertia::render('Download');
         })->name('download.guest.index');
-        
+
         // Login Route
         Route::get('/login', function () {
             if (Auth::check()) {
@@ -211,6 +214,10 @@
                     Route::post('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
                     Route::post('achievements/{achievement}/delete', [AchievementController::class, 'destroy'])->name('achievements.destroy');
 
+                    Route::resource('announcement-category', AnnouncementCategoryController::class)->except(['show', 'destroy', 'update']);
+                    Route::post('announcement-category/{announcement_category}/update', [AnnouncementCategoryController::class, 'update'])->name('announcement-category.update');
+                    Route::post('announcement-category/{announcement_category}/delete', [AnnouncementCategoryController::class, 'destroy'])->name('announcement-category.destroy');
+
                     Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
                     Route::post('news-category/{news_category}/update', [NewsCategoryController::class, 'update'])->name('news-category.update');
                     Route::post('news-category/{news_category}/delete', [NewsCategoryController::class, 'destroy'])->name('news-category.destroy');
@@ -226,6 +233,15 @@
                     Route::resource('downloads', DownloadController::class)->except(['show', 'destroy', 'update']);
                     Route::post('downloads/{download}/update', [DownloadController::class, 'update'])->name('downloads.update');
                     Route::post('downloads/{download}/delete', [DownloadController::class, 'destroy'])->name('downloads.destroy');
+
+                    Route::resource('scholarship-category', ScholarshipCategoryController::class)->except(['show', 'destroy', 'update']);
+                    Route::post('scholarship-category/{scholarship_category}/update', [ScholarshipCategoryController::class, 'update'])->name('scholarship-category.update');
+                    Route::post('scholarship-category/{scholarship_category}/delete', [ScholarshipCategoryController::class, 'destroy'])->name('scholarship-category.destroy');
+
+                    // === SCHOLARSHIP ===
+                    Route::resource('scholarship', ScholarshipController::class)->except(['show', 'destroy', 'update']);
+                    Route::post('scholarship/{scholarship}/update', [ScholarshipController::class, 'update'])->name('scholarship.update');
+                    Route::post('scholarship/{scholarship}/delete', [ScholarshipController::class, 'destroy'])->name('scholarship.destroy');
 
                 });
             });

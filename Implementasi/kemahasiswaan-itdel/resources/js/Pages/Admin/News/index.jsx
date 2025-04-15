@@ -214,7 +214,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
 
                             {/* View Toggle */}
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                                <button 
+                                <button
                                     onClick={() => setIsGridView(true)}
                                     className={`p-1.5 rounded ${isGridView ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
@@ -222,7 +222,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                                     </svg>
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setIsGridView(false)}
                                     className={`p-1.5 rounded ${!isGridView ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
@@ -266,7 +266,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                 {/* Enhanced Content */}
                                 <div className="p-5 flex flex-col flex-grow">
                                     <h2 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition">{item.title}</h2>
-                                    
+
                                     {/* Date Info with Enhanced Style */}
                                     <div className="flex items-center text-sm text-gray-500 mb-3">
                                         <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -278,7 +278,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                             year: 'numeric'
                                         })}
                                     </div>
-                                    
+
                                     {/* Content Preview with Enhanced Design */}
                                     <div className="mb-4">
                                         <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
@@ -386,7 +386,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
                             {searchTerm ? "Tidak ada hasil yang cocok dengan pencarian Anda" : "Silahkan tambahkan berita baru untuk mulai mengisi konten website Anda"}
                         </p>
                         {searchTerm ? (
-                            <button 
+                            <button
                                 onClick={() => setSearchTerm("")}
                                 className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
                             >

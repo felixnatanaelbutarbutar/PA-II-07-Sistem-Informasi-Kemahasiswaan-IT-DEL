@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import axios from 'axios'; // Add this import
+import axios from 'axios';
 
 export default function Add({ auth, userRole, permissions, menu, flash }) {
     const [formData, setFormData] = useState({
@@ -64,7 +64,7 @@ export default function Add({ auth, userRole, permissions, menu, flash }) {
         }
 
         try {
-            await axios.post(route('admin.news-category.store'), formData, {
+            await axios.post(route('admin.announcement-category.store'), formData, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -84,7 +84,7 @@ export default function Add({ auth, userRole, permissions, menu, flash }) {
 
             // Redirect after 1.5 seconds
             setTimeout(() => {
-                router.visit(route('admin.news-category.index'));
+                router.visit(route('admin.announcement-category.index'));
             }, 1500);
         } catch (error) {
             console.error('Error submitting form:', error);
@@ -104,7 +104,7 @@ export default function Add({ auth, userRole, permissions, menu, flash }) {
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
-            <Head title="Tambah Kategori Berita" />
+            <Head title="Tambah Kategori Pengumuman" />
 
             {/* Notification */}
             {notification.show && (
@@ -181,12 +181,12 @@ export default function Add({ auth, userRole, permissions, menu, flash }) {
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50 flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            Tambah Kategori Berita
+                            Tambah Kategori Pengumuman
                         </h1>
-                        <p className="text-gray-500 mt-1">Buat kategori baru untuk mengelompokkan berita</p>
+                        <p className="text-gray-500 mt-1">Buat kategori baru untuk mengelompokkan pengumuman</p>
                     </div>
                     <Link
-                        href={route('admin.news-category.index')}
+                        href={route('admin.announcement-category.index')}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center"
                     >
                         ← Kembali
@@ -241,7 +241,7 @@ export default function Add({ auth, userRole, permissions, menu, flash }) {
 
                         <div className="mt-6 flex justify-end space-x-4">
                             <Link
-                                href={route('admin.news-category.index')}
+                                href={route('admin.announcement-category.index')}
                                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
                             >
                                 Batal
