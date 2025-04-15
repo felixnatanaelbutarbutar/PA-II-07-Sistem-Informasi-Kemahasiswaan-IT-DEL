@@ -1,16 +1,15 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
 export default function AnnouncementDetail() {
     const { props } = usePage();
-    const announcementId = props.announcement_id || window.location.pathname.split('/').pop(); // Ambil ID dari props atau URL
+    const announcementId = props.announcement_id || window.location.pathname.split('/').pop();
     const [announcement, setAnnouncement] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Ambil data detail pengumuman dari API
     useEffect(() => {
         const fetchAnnouncement = async () => {
             setIsLoading(true);
@@ -31,7 +30,6 @@ export default function AnnouncementDetail() {
         fetchAnnouncement();
     }, [announcementId]);
 
-    // Helper function untuk menentukan tipe file dan menampilkan dengan benar
     const renderFile = (item) => {
         if (!item || (!item.file && !item.image)) {
             return (
@@ -111,7 +109,6 @@ export default function AnnouncementDetail() {
         );
     };
 
-    // Fungsi untuk mendapatkan style responsif
     const getResponsiveStyles = () => {
         const width = window.innerWidth;
         return {
@@ -226,10 +223,8 @@ export default function AnnouncementDetail() {
         };
     };
 
-    // State untuk menyimpan styles responsif
     const [styles, setStyles] = useState(getResponsiveStyles());
 
-    // Update styles saat ukuran layar berubah
     useEffect(() => {
         const handleResize = () => {
             setStyles(getResponsiveStyles());
@@ -239,7 +234,6 @@ export default function AnnouncementDetail() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Format tanggal
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('id-ID', options);
@@ -251,14 +245,34 @@ export default function AnnouncementDetail() {
             <Head title={announcement?.title || "Detail Pengumuman"} />
             <div style={styles.body}>
                 <div style={styles.container}>
-                    {/* Error Message */}
+                    {/* Tombol Kembali */}
+                    <Link
+                        href="/announcement"
+                        className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6"
+                    >
+                        <svg
+                            className="w-5 h-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 19l-7-7 7-7"
+                            />
+                        </svg>
+                        Kembali ke Halaman Pengumuman
+                    </Link>
+
                     {error && (
                         <div style={styles.errorMessage}>
                             {error}
                         </div>
                     )}
 
-                    {/* Loading State */}
                     {isLoading ? (
                         <div style={styles.loadingState}>
                             <svg
@@ -328,10 +342,31 @@ export default function AnnouncementDetail() {
                             <p style={styles.notFoundText}>
                                 Pengumuman yang Anda cari tidak ditemukan atau telah dihapus.
                             </p>
+                            {/* Tombol Kembali di Not Found */}
+                            <Link
+                                href="/announcement"
+                                className="inline-flex items-center text-blue-600 hover:text-blue-700 mt-6"
+                            >
+                                <svg
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 19l-7-7 7-7"
+                                    />
+                                </svg>
+                                Kembali ke Halaman Pengumuman
+                            </Link>
                         </div>
                     )}
                 </div>
             </div>
         </GuestLayout>
     );
-}   
+}

@@ -86,22 +86,60 @@ const NavbarGuestLayoutPage = () => {
 
     const getBreadcrumb = () => {
         const title = getPageTitle();
-        let breadcrumb = 'Beranda';
-        
-        if (url === '/') return breadcrumb;
-
+        const breadcrumbItems = [];
+    
+        // Selalu tambahkan "Beranda" sebagai item pertama yang dapat diklik
+        breadcrumbItems.push(
+            <Link key="beranda" href="/" className="text-white hover:text-blue-200 transition-colors">
+                Beranda
+            </Link>
+        );
+    
+        if (url === '/') return breadcrumbItems;
+    
+        // Untuk halaman langsung di bawah root
         if (['/newsguest', '/announcement', '/struktur', '/kegiatan'].includes(url)) {
-            breadcrumb += ` / ${title}`;
-        } else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') || 
-                  url.startsWith('/kesehatan') || url.startsWith('/asrama')) {
-            breadcrumb += ' / Layanan Kemahasiswaan / ' + title;
-        } else if (url.startsWith('/bem') || url.startsWith('/mpm')) {
-            breadcrumb += ' / Organisasi / ' + title;
-        } else {
-            breadcrumb += ` / ${title}`;
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <Link key={title} href={url} className="text-white hover:text-blue-200 transition-colors">
+                    {title}
+                </Link>
+            );
+        } 
+        // Untuk Layanan Kemahasiswaan
+        else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') || 
+                 url.startsWith('/kesehatan') || url.startsWith('/asrama')) {
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <span key="layanan" className="text-white">Layanan Kemahasiswaan</span>,
+                <span key="separator-2" className="mx-2">/</span>,
+                <Link key={title} href={url} className="text-white hover:text-blue-200 transition-colors">
+                    {title}
+                </Link>
+            );
+        } 
+        // Untuk Organisasi
+        else if (url.startsWith('/bem') || url.startsWith('/mpm')) {
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <span key="organisasi" className="text-white">Organisasi</span>,
+                <span key="separator-2" className="mx-2">/</span>,
+                <Link key={title} href={url} className="text-white hover:text-blue-200 transition-colors">
+                    {title}
+                </Link>
+            );
+        } 
+        // Default case
+        else {
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <Link key={title} href={url} className="text-white hover:text-blue-200 transition-colors">
+                    {title}
+                </Link>
+            );
         }
-
-        return breadcrumb;
+    
+        return breadcrumbItems;
     };
 
     useEffect(() => {
@@ -696,7 +734,7 @@ const NavbarGuestLayoutPage = () => {
                                     <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg">
                                         {getPageTitle()}
                                     </h1>
-                                    <p className="mt-2 text-lg md:text-xl drop-shadow-md">
+                                    <p className="mt-2 text-lg md:text-xl drop-shadow-md flex flex-wrap justify-center gap-1">
                                         {getBreadcrumb()}
                                     </p>
                                 </div>
