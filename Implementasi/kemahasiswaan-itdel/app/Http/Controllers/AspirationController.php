@@ -78,7 +78,7 @@ class AspirationController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        return Inertia::render('Admin/Aspiration/Show', [
+        return Inertia::render('Admin/Aspiration/show', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,

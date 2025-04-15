@@ -35,6 +35,7 @@ class RoleHelper
                 'counseling' => true,
                 'aspiration' => true,
                 'bem' => true,
+                'downloads' => true,
 
             ],
             'adminbem' => [
@@ -181,6 +182,15 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Manajemen BEM',
                 'route' => 'admin.bem.index',
+                'icon' => 'organization',
+                'visible' => true,
+            ];
+        }
+
+        if ($permissions['downloads'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Unduhan',
+                'route' => 'admin.downloads.index',
                 'icon' => 'organization',
                 'visible' => true,
             ];

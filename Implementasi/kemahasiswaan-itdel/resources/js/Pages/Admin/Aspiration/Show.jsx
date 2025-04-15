@@ -8,7 +8,7 @@ export default function Show({ auth, userRole, permissions, menu, aspiration }) 
             user={auth.user}
             userRole={userRole}
             permissions={permissions}
-            menu={menu}
+            navigation={menu}
         >
             <Head title="Detail Aspirasi" />
 

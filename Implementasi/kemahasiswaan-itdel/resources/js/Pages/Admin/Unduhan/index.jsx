@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { FaEye, FaTrash, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaDownload, FaEdit, FaTrash } from 'react-icons/fa';
 
-export default function AspirationIndex({ auth, userRole, permissions, menu, aspirations, flash }) {
+export default function DownloadIndex({ auth, userRole, permissions, navigation, downloads, flash }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [aspirationToDelete, setAspirationToDelete] = useState(null);
+    const [downloadToDelete, setDownloadToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
     const [notificationType, setNotificationType] = useState('success');
 
-    // Handle flash messages for notifications
     useEffect(() => {
         if (flash) {
             if (flash.success) {
@@ -33,33 +32,33 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
         }
     }, [flash]);
 
-    const handleDelete = (aspirationId) => {
-        setAspirationToDelete(aspirationId);
+    const handleDelete = (downloadId) => {
+        setDownloadToDelete(downloadId);
         setShowDeleteModal(true);
     };
 
     const confirmDelete = () => {
-        if (aspirationToDelete) {
+        if (downloadToDelete) {
             setIsDeleting(true);
-            router.delete(route('admin.aspiration.destroy', aspirationToDelete), {
+            router.post(route('admin.downloads.destroy', downloadToDelete), {}, {
                 preserveState: true,
                 preserveScroll: true,
                 onSuccess: () => {
-                    setNotificationMessage('Aspirasi berhasil dihapus!');
+                    setNotificationMessage('File unduhan berhasil dihapus!');
                     setNotificationType('success');
                     setShowNotification(true);
                     setIsDeleting(false);
                     setShowDeleteModal(false);
-                    setAspirationToDelete(null);
+                    setDownloadToDelete(null);
                 },
                 onError: (errors) => {
-                    console.error('Error deleting aspiration:', errors);
-                    setNotificationMessage('Gagal menghapus aspirasi: ' + (errors.error || 'Terjadi kesalahan.'));
+                    console.error('Error deleting download:', errors);
+                    setNotificationMessage('Gagal menghapus file unduhan: ' + (errors.error || 'Terjadi kesalahan.'));
                     setNotificationType('error');
                     setShowNotification(true);
                     setIsDeleting(false);
                     setShowDeleteModal(false);
-                    setAspirationToDelete(null);
+                    setDownloadToDelete(null);
                 },
                 onFinish: () => {
                     setIsDeleting(false);
@@ -70,21 +69,11 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
 
     const cancelDelete = () => {
         setShowDeleteModal(false);
-        setAspirationToDelete(null);
-    };
-
-    const handleViewDetail = (aspirationId) => {
-        router.get(route('admin.aspiration.show', aspirationId), {}, {
-            onError: (errors) => {
-                console.error('Error navigating to detail:', errors);
-                setNotificationMessage('Gagal membuka detail aspirasi. Silakan coba lagi.');
-                setNotificationType('error');
-                setShowNotification(true);
-            },
-        });
+        setDownloadToDelete(null);
     };
 
     const truncateText = (text, maxLength) => {
+        if (!text) return '-';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
     };
@@ -94,9 +83,9 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
             user={auth.user}
             userRole={userRole}
             permissions={permissions}
-            navigation={menu}
+            navigation={navigation}
         >
-            <Head title="Kelola Aspirasi" />
+            <Head title="Kelola Unduhan" />
 
             {/* Notification */}
             {showNotification && (
@@ -195,7 +184,7 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                             Konfirmasi Penghapusan
                         </h3>
                         <p className="text-gray-600 text-center mb-6">
-                            Apakah Anda yakin ingin menghapus aspirasi ini? Tindakan ini tidak dapat dibatalkan.
+                            Apakah Anda yakin ingin menghapus file unduhan ini? Tindakan ini tidak dapat dibatalkan.
                         </p>
                         <div className="flex justify-center space-x-4">
                             <button
@@ -237,13 +226,12 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Manajemen Aspirasi
+                                Manajemen Unduhan
                             </h1>
-                            <p className="text-gray-500 mt-1">Kelola aspirasi yang dikirim oleh pengguna</p>
+                            <p className="text-gray-500 mt-1">Kelola file unduhan untuk website</p>
                         </div>
-                        {/* Tombol Tambah Aspirasi (opsional, hapus jika tidak diperlukan) */}
-                        {/* <Link
-                            href={route('admin.aspiration.create')}
+                        <Link
+                            href={route('admin.downloads.create')}
                             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
                         >
                             <svg
@@ -260,31 +248,28 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                 />
                             </svg>
-                            Tambah Aspirasi
-                        </Link> */}
+                            Tambah File Unduhan
+                        </Link>
                     </div>
                 </div>
 
-                {/* Tabel Aspirasi */}
-                {aspirations.data.length > 0 ? (
+                {/* Tabel Unduhan */}
+                {downloads.length > 0 ? (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Pengirim
+                                        Judul
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Kategori
+                                        Deskripsi
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Cerita
+                                        File
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Gambar
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Tanggal Dibuat
+                                        Dibuat Oleh
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
                                         Aksi
@@ -292,57 +277,39 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {aspirations.data.map((aspiration) => (
+                                {downloads.map((download) => (
                                     <tr
-                                        key={aspiration.id}
+                                        key={download.id}
                                         className="hover:bg-gray-50 transition-colors"
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {aspiration.user?.name || 'Anonim'}
+                                            {download.title}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {aspiration.category?.name || 'Tidak Ada Kategori'}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            <span title={aspiration.story}>
-                                                {truncateText(aspiration.story, 30)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {aspiration.image ? (
-                                                <img
-                                                    src={`/storage/${aspiration.image}`}
-                                                    alt="Aspiration Image"
-                                                    className="h-12 w-12 object-cover rounded-md shadow-sm"
-                                                    onError={(e) => {
-                                                        e.target.src =
-                                                            'https://via.placeholder.com/48?text=Gambar+Tidak+Tersedia';
-                                                        console.log(
-                                                            'Failed to load image:',
-                                                            `/storage/${aspiration.image}`
-                                                        );
-                                                    }}
-                                                />
-                                            ) : (
-                                                <span className="text-gray-500">Tidak Ada Gambar</span>
-                                            )}
+                                            {truncateText(download.description, 30)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {new Date(aspiration.created_at).toLocaleDateString('id-ID', {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric',
-                                            })}
+                                            <a
+                                                href={`/storage/${download.file_path}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:text-blue-700 transition"
+                                            >
+                                                Unduh File
+                                            </a>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {download.creator?.name || '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                onClick={() => handleViewDetail(aspiration.id)}
+                                            <Link
+                                                href={route('admin.downloads.edit', download.id)}
                                                 className="text-blue-600 hover:text-blue-700 transition mr-4"
                                             >
-                                                Lihat Detail
-                                            </button>
+                                                Edit
+                                            </Link>
                                             <button
-                                                onClick={() => handleDelete(aspiration.id)}
+                                                onClick={() => handleDelete(download.id)}
                                                 className="text-red-600 hover:text-red-700 transition"
                                                 disabled={isDeleting}
                                             >
@@ -373,14 +340,13 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                             </svg>
                         </div>
                         <h3 className="text-xl font-medium text-gray-700 mb-2">
-                            Tidak ada aspirasi yang tersedia
+                            Tidak ada file unduhan yang tersedia
                         </h3>
                         <p className="text-gray-500 text-center max-w-md mb-6">
-                            Belum ada aspirasi yang dikirimkan oleh pengguna.
+                            Silakan tambahkan file unduhan baru untuk memulai.
                         </p>
-                        {/* Tombol Tambah Aspirasi (opsional, hapus jika tidak diperlukan) */}
-                        {/* <Link
-                            href={route('admin.aspiration.create')}
+                        <Link
+                            href={route('admin.downloads.create')}
                             className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
                         >
                             <svg
@@ -397,60 +363,8 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                 />
                             </svg>
-                            Tambah Aspirasi Baru
-                        </Link> */}
-                    </div>
-                )}
-
-                {/* Pagination */}
-                {aspirations.data.length > 0 && (
-                    <div className="mt-6 flex justify-center items-center gap-2">
-                        {aspirations.links.map((link, index) => {
-                            if (link.label.includes('Previous')) {
-                                return (
-                                    <button
-                                        key={index}
-                                        onClick={() => link.url && router.get(link.url)}
-                                        className={`p-2 rounded-full ${
-                                            link.url
-                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700'
-                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        } transition-all duration-200 shadow-md`}
-                                        disabled={!link.url}
-                                    >
-                                        <FaChevronLeft />
-                                    </button>
-                                );
-                            } else if (link.label.includes('Next')) {
-                                return (
-                                    <button
-                                        key={index}
-                                        onClick={() => link.url && router.get(link.url)}
-                                        className={`p-2 rounded-full ${
-                                            link.url
-                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700'
-                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        } transition-all duration-200 shadow-md`}
-                                        disabled={!link.url}
-                                    >
-                                        <FaChevronRight />
-                                    </button>
-                                );
-                            } else {
-                                return (
-                                    <button
-                                        key={index}
-                                        onClick={() => link.url && router.get(link.url)}
-                                        className={`px-4 py-2 rounded-lg shadow-md ${
-                                            link.active
-                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                        } transition-all duration-200`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                );
-                            }
-                        })}
+                            Tambah File Unduhan Baru
+                        </Link>
                     </div>
                 )}
             </div>

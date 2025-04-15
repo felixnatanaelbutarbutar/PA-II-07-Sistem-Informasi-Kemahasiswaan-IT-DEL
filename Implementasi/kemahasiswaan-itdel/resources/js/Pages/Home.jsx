@@ -3,6 +3,7 @@ import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import FooterLayout from '@/Layouts/FooterLayout';
+import ChatbotWidget from '@/Layouts/Chatbot'; // Impor ChatbotWidget
 
 export default function Home() {
     const swiperElRef = useRef(null);
@@ -54,7 +55,7 @@ export default function Home() {
     // Initialize Swiper
     useEffect(() => {
         const swiperStyles = document.createElement('link');
-        swiperStyles.rel = 'stylesheet';2
+        swiperStyles.rel = 'stylesheet';
         swiperStyles.href = 'https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css';
         document.head.appendChild(swiperStyles);
 
@@ -353,50 +354,6 @@ export default function Home() {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             marginBottom: '20px',
         },
-        // Styles untuk tombol floating chat
-        chatButton: {
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-            borderRadius: '50%',
-            width: '60px',
-            height: '60px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-            transition: 'all 0.3s ease',
-            zIndex: 1000,
-        },
-        chatButtonHover: {
-            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-            transform: 'scale(1.1)',
-            boxShadow: '0 6px 16px rgba(0, 0, 0, 0.3)',
-        },
-        chatIcon: {
-            width: '28px',
-            height: '28px',
-            color: '#fff',
-        },
-        chatTooltip: {
-            position: 'absolute',
-            bottom: '70px',
-            right: '0',
-            background: '#1f2937',
-            color: '#fff',
-            padding: '8px 12px',
-            borderRadius: '6px',
-            fontSize: '14px',
-            whiteSpace: 'nowrap',
-            opacity: 0,
-            visibility: 'hidden',
-            transition: 'opacity 0.3s ease',
-        },
-        chatTooltipVisible: {
-            opacity: 1,
-            visibility: 'visible',
-        },
     };
 
     return (
@@ -449,7 +406,7 @@ export default function Home() {
                             }}
                         />
                     </div>
-                    {/* Slide 3 */}
+                    {/* Slide 4 */}
                     <div className="swiper-slide">
                         <div
                             className="carousel-slide"
@@ -801,7 +758,7 @@ export default function Home() {
                                                 />
                                             ) : item.file ? (
                                                 <div style={styles.cardIconContainer}>
-                                                    <svg style={styles.cardIcon} fill="none" stroke="currentColor" viewBox="0 0 24 10">
+                                                    <svg style={styles.cardIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path
                                                             strokeLinecap="round"
                                                             strokeLinejoin="round"
@@ -904,41 +861,8 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Floating Chat Button */}
-            <Link
-                href="/chatbot"
-                style={styles.chatButton}
-                onMouseEnter={(e) => {
-                    Object.assign(e.currentTarget.style, styles.chatButtonHover);
-                    const tooltip = e.currentTarget.querySelector('span');
-                    if (tooltip) Object.assign(tooltip.style, styles.chatTooltipVisible);
-                }}
-                onMouseLeave={(e) => {
-                    Object.assign(e.currentTarget.style, {
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        transform: 'none',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                    });
-                    const tooltip = e.currentTarget.querySelector('span');
-                    if (tooltip) Object.assign(tooltip.style, { opacity: 0, visibility: 'hidden' });
-                }}
-            >
-                <svg
-                    style={styles.chatIcon}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    />
-                </svg>
-                <span style={styles.chatTooltip}>Chatbot kemahasiswaan</span>
-            </Link>
+            {/* Tambahkan Chatbot Widget */}
+            <ChatbotWidget />
 
             <FooterLayout />
         </GuestLayout>

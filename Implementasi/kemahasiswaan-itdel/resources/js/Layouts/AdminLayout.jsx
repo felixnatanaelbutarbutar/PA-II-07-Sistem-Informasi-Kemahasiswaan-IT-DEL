@@ -137,8 +137,12 @@ export default function AdminLayout({
                     {/* Sidebar Header */}
                     <div className="flex h-20 items-center justify-between px-6 border-b dark:border-zinc-700">
                         <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
-                                <span className="text-white font-bold text-lg">A</span>
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-md">
+                                <img
+                                    src="/assets/images/logo/logo-removebg.png"
+                                    alt="Logo"
+                                    className="w-full h-full object-contain"
+                                />
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-400 dark:to-indigo-500">Kemahasiswaan</h2>
@@ -265,7 +269,7 @@ export default function AdminLayout({
                         <div className="bg-zinc-100 dark:bg-zinc-700/30 rounded-xl p-4">
                             <div className="flex justify-between items-center mb-3">
                                 <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Appearance</span>
-                                <button 
+                                <button
                                     onClick={toggleDarkMode}
                                     className="p-2 rounded-lg bg-white dark:bg-zinc-700 shadow-sm hover:shadow-md transition-all duration-200"
                                     aria-label="Toggle dark mode"
@@ -308,16 +312,16 @@ export default function AdminLayout({
                             </button>
 
                             <h1 className="text-lg font-semibold text-zinc-800 dark:text-white hidden lg:block">
-                                {menuItems.find(item => item.route && isActive(item.route))?.name || 
-                                 menuItems.find(item => item.submenu?.some(sub => isActive(sub.route)))?.name || 
-                                 'Dashboard'}
+                                {menuItems.find(item => item.route && isActive(item.route))?.name ||
+                                    menuItems.find(item => item.submenu?.some(sub => isActive(sub.route)))?.name ||
+                                    'Dashboard'}
                             </h1>
                         </div>
 
                         {/* Right Side Actions */}
                         <div className="flex items-center space-x-2">
                             {/* Dark Mode Toggle (Desktop) */}
-                            <button 
+                            <button
                                 onClick={toggleDarkMode}
                                 className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors hidden lg:block"
                                 aria-label="Toggle dark mode"
