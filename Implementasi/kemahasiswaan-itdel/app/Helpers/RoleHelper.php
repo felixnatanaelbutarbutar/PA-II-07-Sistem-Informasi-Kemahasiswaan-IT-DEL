@@ -26,8 +26,6 @@ class RoleHelper
                 'achievements' => true,
                 'counseling' => true,
                 'bem' => true,
-
-
             ],
             'kemahasiswaan' => [
                 'beasiswa' => true,
@@ -42,7 +40,6 @@ class RoleHelper
                 'aspiration' => true,
                 'bem' => true,
                 'downloads' => true,
-
             ],
             'adminbem' => [
                 'pengumuman' => true,
@@ -52,7 +49,6 @@ class RoleHelper
                 'counseling' => false,
                 'aspiration' => false,
                 'bem' => true,
-
             ],
             'adminmpm' => [
                 'pengumuman' => true,
@@ -62,8 +58,6 @@ class RoleHelper
                 'counseling' => false,
                 'aspiration' => true,
                 'bem' => false,
-
-
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -74,7 +68,6 @@ class RoleHelper
                 'counseling' => true,
                 'aspiration' => false,
                 'bem' => false,
-
             ],
         ];
 
@@ -149,12 +142,11 @@ class RoleHelper
 
             $menuItems[] = [
                 'name' => 'Manajemen Pengumuman',
-                'icon' => 'newspaper',
+                'icon' => 'bell',
                 'visible' => true,
                 'submenu' => $newsSubmenu,
             ];
         }
-
 
         // Mengelompokkan Berita dan Kategori Berita dalam dropdown "Manajemen Berita"
         if (($permissions['news'] ?? false) || ($permissions['newscategory'] ?? false)) {
@@ -205,7 +197,7 @@ class RoleHelper
 
             $menuItems[] = [
                 'name' => 'Manajemen Beasiswa',
-                'icon' => 'newspaper',
+                'icon' => 'scholarship', // Ubah ke ikon scholarship
                 'visible' => true,
                 'submenu' => $newsSubmenu,
             ];
@@ -233,7 +225,7 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Aspirasi',
                 'route' => 'admin.aspiration.index',
-                'icon' => 'award',
+                'icon' => 'aspiration', // Ubah ke ikon aspiration
                 'visible' => true,
             ];
         }
@@ -251,11 +243,10 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Unduhan',
                 'route' => 'admin.downloads.index',
-                'icon' => 'organization',
+                'icon' => 'download', // Ubah ke ikon download
                 'visible' => true,
             ];
         }
-
 
         return array_filter($menuItems, fn($item) => $item['visible'] ?? true);
     }

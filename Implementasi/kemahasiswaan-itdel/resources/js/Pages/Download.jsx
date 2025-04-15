@@ -1,16 +1,20 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';
-import ChatbotWidget from '@/Layouts/Chatbot'; // Impor ChatbotWidget
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import ChatbotWidget from '@/Layouts/Chatbot';
 
-export default function Download({ download }) {
+export default function Download({ downloads }) {
+    const truncateText = (text, maxLength) => {
+        if (!text) return '-';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    };
+
     return (
         <GuestLayout>
             <NavbarGuestLayoutPage />
-            <Head title={`Detail Unduhan - ${download.title}`} />
+            <Head title="Daftar Unduhan" />
 
             {/* CSS Styles */}
             <style>
@@ -28,119 +32,121 @@ export default function Download({ download }) {
                         flex-direction: column;
                         align-items: center;
                     }
-                    .download-section {
-                        max-width: 1000px;
-                        width: 100%;
-                        background: #ffffff;
-                        border-radius: 16px;
-                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-                        padding: 40px;
-                        margin-bottom: 40px;
-                        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+                    .header-section {
+                        backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50 max-w-7xl w-full;
                     }
-                    .download-section h2 {
-                        font-size: 28px;
+                    .header-section h1 {
+                        font-size: 2.5rem;
                         font-weight: 700;
-                        color: #1e40af;
-                        text-align: center;
-                        margin-bottom: 20px;
+                        background: linear-gradient(to right, #1e3a8a, #3b82f6);
+                        -webkit-background-clip: text;
+                        background-clip: text;
+                        color: transparent;
                     }
-                    .download-section .subheader {
-                        text-align: center;
+                    .header-section p {
                         color: #6b7280;
-                        font-size: 16px;
-                        margin-bottom: 30px;
+                        margin-top: 0.5rem;
                     }
-                    .download-details {
+                    .table-container {
+                        background: #ffffff;
+                        border-radius: 1rem;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+                        overflow: hidden;
+                        border: 1px solid rgba(229, 231, 235, 0.5);
+                        max-width: 7xl;
                         width: 100%;
-                        max-width: 600px;
-                        margin: 0 auto;
                     }
-                    .download-details .detail-item {
-                        margin-bottom: 20px;
+                    .table-header {
+                        background: linear-gradient(to right, #1e40af, #3b82f6);
+                        color: #ffffff;
                     }
-                    .download-details .detail-item label {
-                        font-weight: 600;
-                        color: #1f2937;
-                        display: block;
-                        margin-bottom: 8px;
+                    .table-header th {
+                        padding: 0.75rem 1.5rem;
+                        text-align: left;
+                        font-size: 0.75rem;
+                        font-weight: 500;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
                     }
-                    .download-details .detail-item p {
-                        font-size: 16px;
+                    .table-body tr {
+                        transition: background 0.2s ease;
+                    }
+                    .table-body tr:hover {
+                        background: #f9fafb;
+                    }
+                    .table-body td {
+                        padding: 1rem 1.5rem;
+                        white-space: nowrap;
+                        font-size: 0.875rem;
                         color: #4b5563;
-                        line-height: 1.6;
                     }
-                    .download-details .detail-item a {
+                    .table-body td:first-child {
+                        font-weight: 500;
+                        color: #1f2937;
+                    }
+                    .table-body a {
                         color: #2563eb;
-                        text-decoration: underline;
+                        text-decoration: none;
+                        font-weight: 600;
                         transition: color 0.3s ease;
                     }
-                    .download-details .detail-item a:hover {
+                    .table-body a:hover {
                         color: #1e40af;
+                        text-decoration: underline;
                     }
-                    .download-button {
-                        background: #2563eb;
-                        color: #ffffff;
-                        padding: 12px 24px;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 16px;
-                        font-weight: 600;
-                        cursor: pointer;
+                    .empty-state {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 4rem;
+                        background: #ffffff;
+                        border-radius: 1rem;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+                        border: 1px solid rgba(229, 231, 235, 0.5);
+                        max-width: 7xl;
+                        width: 100%;
+                    }
+                    .empty-state .icon-container {
+                        width: 6rem;
+                        height: 6rem;
+                        background: #dbeafe;
+                        border-radius: 50%;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        gap: 8px;
-                        width: 100%;
-                        max-width: 300px;
-                        margin: 20px auto 0;
-                        transition: background 0.3s ease, transform 0.3s ease;
+                        margin-bottom: 1.5rem;
                     }
-                    .download-button:hover {
-                        background: #1e40af;
-                        transform: translateY(-2px);
+                    .empty-state svg {
+                        width: 3rem;
+                        height: 3rem;
+                        color: #3b82f6;
                     }
-                    .back-button {
-                        background: #6b7280;
-                        color: #ffffff;
-                        padding: 12px 24px;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 16px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 8px;
-                        width: 100%;
-                        max-width: 300px;
-                        margin: 20px auto 0;
-                        transition: background 0.3s ease, transform 0.3s ease;
+                    .empty-state h3 {
+                        font-size: 1.25rem;
+                        font-weight: 500;
+                        color: #374151;
+                        margin-bottom: 0.5rem;
                     }
-                    .back-button:hover {
-                        background: #4b5563;
-                        transform: translateY(-2px);
-                    }
-                    .button-group {
-                        display: flex;
-                        justify-content: center;
-                        gap: 15px;
-                        flex-wrap: wrap;
+                    .empty-state p {
+                        color: #6b7280;
+                        text-align: center;
+                        max-width: 28rem;
                     }
                     @media (max-width: 768px) {
                         .main-container {
                             padding: 40px 15px;
                         }
-                        .download-section {
-                            padding: 30px;
+                        .header-section {
+                            padding: 1.5rem;
                         }
-                        .download-section h2 {
-                            font-size: 24px;
+                        .header-section h1 {
+                            font-size: 2rem;
                         }
-                        .button-group {
-                            flex-direction: column;
-                            align-items: center;
+                        .table-header th,
+                        .table-body td {
+                            padding: 0.5rem 1rem;
+                            font-size: 0.75rem;
                         }
                     }
                 `}
@@ -148,89 +154,68 @@ export default function Download({ download }) {
 
             {/* Main Container */}
             <div className="main-container">
-                {/* Download Detail Section */}
-                <div className="download-section">
-                    <h2>Detail Unduhan</h2>
-                    <p className="subheader">
-                        Informasi lengkap tentang file unduhan yang Anda pilih.
-                    </p>
-                    <div className="download-details">
-                        <div className="detail-item">
-                            <label>Judul</label>
-                            <p>{download.title}</p>
-                        </div>
-                        <div className="detail-item">
-                            <label>Deskripsi</label>
-                            <p>{download.description || 'Tidak ada deskripsi tersedia.'}</p>
-                        </div>
-                        <div className="detail-item">
-                            <label>File</label>
-                            <p>
-                                <a
-                                    href={`/storage/${download.file_path}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Lihat atau Unduh File
-                                </a>
-                            </p>
-                        </div>
-                        <div className="detail-item">
-                            <label>Dibuat oleh</label>
-                            <p>{download.creator?.name || 'Tidak diketahui'}</p>
-                        </div>
-                        <div className="detail-item">
-                            <label>Tanggal Dibuat</label>
-                            <p>
-                                {download.created_at
-                                    ? format(new Date(download.created_at), 'dd MMMM yyyy, HH:mm', { locale: id })
-                                    : 'Tidak diketahui'}
-                            </p>
-                        </div>
-                        <div className="detail-item">
-                            <label>Diperbarui oleh</label>
-                            <p>{download.updater?.name || 'Tidak diketahui'}</p>
-                        </div>
-                        <div className="detail-item">
-                            <label>Tanggal Diperbarui</label>
-                            <p>
-                                {download.updated_at
-                                    ? format(new Date(download.updated_at), 'dd MMMM yyyy, HH:mm', { locale: id })
-                                    : 'Tidak diketahui'}
-                            </p>
-                        </div>
-                        <div className="button-group">
-                            <a
-                                href={`/storage/${download.file_path}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="download-button"
-                            >
-                                <img
-                                    src="https://img.icons8.com/ios-filled/50/ffffff/download.png"
-                                    width="16"
-                                    height="16"
-                                    alt="Download Icon"
-                                />
-                                Unduh File
-                            </a>
-                            <Link href="/downloads" className="back-button">
-                                <img
-                                    src="https://img.icons8.com/ios-filled/50/ffffff/back.png"
-                                    width="16"
-                                    height="16"
-                                    alt="Back Icon"
-                                />
-                                Kembali ke Daftar
-                            </Link>
-                        </div>
-                    </div>
+                {/* Header */}
+                <div className="header-section">
+                    <h1>Daftar Unduhan</h1>
+                    <p>File unduhan yang tersedia untuk Anda.</p>
                 </div>
+
+                {/* Tabel Unduhan */}
+                {downloads.length > 0 ? (
+                    <div className="table-container">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="table-header">
+                                <tr>
+                                    <th>Judul</th>
+                                    <th>Deskripsi</th>
+                                    <th>File</th>
+                                    <th>File Path (Debug)</th>
+                                </tr>
+                            </thead>
+                            <tbody className="table-body">
+                                {downloads.map((download) => (
+                                    <tr key={download.id}>
+                                        <td>{download.title}</td>
+                                        <td>{truncateText(download.description, 30)}</td>
+                                        <td>
+                                            <a
+                                                href={`/storage/${download.file_path}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Unduh File
+                                            </a>
+                                        </td>
+                                        <td>{download.file_path}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div className="empty-state">
+                        <div className="icon-container">
+                            <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                />
+                            </svg>
+                        </div>
+                        <h3>Tidak ada file unduhan yang tersedia</h3>
+                        <p>Saat ini belum ada file unduhan yang dapat diakses.</p>
+                    </div>
+                )}
             </div>
 
-            {/* Chatbot Widget */}
             <ChatbotWidget />
-
             <FooterLayout />
         </GuestLayout>
     );

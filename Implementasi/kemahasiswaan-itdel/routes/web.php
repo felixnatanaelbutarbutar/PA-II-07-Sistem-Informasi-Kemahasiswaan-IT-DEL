@@ -66,9 +66,9 @@
         // Route untuk halaman BEM (guest)
         Route::get('/bem', [BemController::class, 'show'])->name('bem.show');
 
-        Route::get('/downloads', function () {
-            return Inertia::render('Download');
-        })->name('download.guest.index');
+        // Routes untuk unduhan di sisi guest
+        Route::get('/downloads', [DownloadController::class, 'guestIndex'])->name('downloads.guest.index');
+
 
         // Login Route
         Route::get('/login', function () {
@@ -242,7 +242,6 @@
                     Route::resource('scholarship', ScholarshipController::class)->except(['show', 'destroy', 'update']);
                     Route::post('scholarship/{scholarship}/update', [ScholarshipController::class, 'update'])->name('scholarship.update');
                     Route::post('scholarship/{scholarship}/delete', [ScholarshipController::class, 'destroy'])->name('scholarship.destroy');
-
                 });
             });
         });

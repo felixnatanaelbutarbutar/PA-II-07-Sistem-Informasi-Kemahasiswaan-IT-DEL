@@ -22,12 +22,28 @@ class DownloadController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return Inertia::render('Admin/Unduhan/index', [
+        return Inertia::render('Admin/Download/index', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'navigation' => $menuItems,
             'downloads' => $downloads,
+        ]);
+    }
+
+    public function guestIndex()
+    {
+        $downloads = Download::orderBy('created_at', 'desc')->get();
+
+        return Inertia::render('Download', [
+            'downloads' => $downloads->map(function ($download) {
+                return [
+                    'id' => $download->id,
+                    'title' => $download->title,
+                    'description' => $download->description,
+                    'file_path' => $download->file_path,
+                ];
+            }),
         ]);
     }
 
@@ -38,7 +54,7 @@ class DownloadController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        return Inertia::render('Admin/Unduhan/add', [
+        return Inertia::render('Admin/Download/add', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -75,7 +91,7 @@ class DownloadController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        return Inertia::render('Admin/Unduhan/edit', [
+        return Inertia::render('Admin/Download/edit', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -124,10 +140,9 @@ class DownloadController extends Controller
 
     public function show(Download $download)
     {
-        // Memuat relasi creator dan updater untuk menampilkan informasi pembuat dan pengubah
         $download->load(['creator', 'updater']);
 
-        return Inertia::render('Download', [
+        return Inertia::render('DownloadDetails', [
             'download' => $download,
         ]);
     }

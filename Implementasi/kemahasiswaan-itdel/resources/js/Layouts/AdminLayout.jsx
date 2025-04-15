@@ -13,6 +13,9 @@ import {
     Heart,
     ChevronRight,
     Users, // Ikon untuk Manajemen BEM (organisasi)
+    BookOpen, // Ikon untuk Beasiswa (simbol pendidikan)
+    Download, // Ikon untuk Unduhan
+    MessageSquare, // Ikon untuk Aspirasi (simbol komunikasi)
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -33,7 +36,10 @@ export default function AdminLayout({
         newspaper: Newspaper,
         award: Award,
         heart: Heart,
-        organization: Users, // Map 'organization' ke ikon Users
+        organization: Users,
+        scholarship: BookOpen, // Ikon untuk Beasiswa
+        download: Download, // Ikon untuk Unduhan
+        aspiration: MessageSquare, // Ikon untuk Aspirasi
     };
 
     // Initialize dark mode based on localStorage or system preference
