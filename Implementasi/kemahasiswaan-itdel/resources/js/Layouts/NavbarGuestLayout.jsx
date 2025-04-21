@@ -412,14 +412,14 @@ const NavbarGuestLayout = () => {
                                             Konseling
                                         </Link>
                                         <Link
-                                            href="#"
+                                            href="/downloads"
                                             className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                             onClick={() => {
                                                 setLayananDropdownOpen(false);
                                                 setMobileMenuOpen(false);
                                             }}
                                         >
-                                            Kesehatan
+                                            Unduhan
                                         </Link>
                                         <Link
                                             href="#"

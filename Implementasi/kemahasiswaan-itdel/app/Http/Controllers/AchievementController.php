@@ -22,6 +22,8 @@ class AchievementController extends Controller
 
         $achievements = Achievement::with('achievementType')->get();
 
+        Log::info('Achievements with Types:', $achievements->toArray());
+
         return Inertia::render('Admin/Achievement/index', [
             'auth' => ['user' => $user],
             'userRole' => $role,
@@ -186,5 +188,63 @@ class AchievementController extends Controller
 
         // Format ID baru (contoh: ACH001, ACH002, ...)
         return 'ach' . str_pad($newIdNumber, 7, '0', STR_PAD_LEFT); // Adjusted to ensure 10 characters
+    }
+
+    public function getGroupedAchievements()
+    {
+        try {
+            // Ambil data prestasi
+            $achievements = Achievement::select('category', 'medal')
+                ->get();
+
+            // Inisialisasi groupedAchievements berdasarkan kategori dan medali
+            $groupedAchievements = [
+                'International' => [
+                    'Gold' => 0,
+                    'Silver' => 0,
+                    'Bronze' => 0,
+                ],
+                'National' => [
+                    'Gold' => 0,
+                    'Silver' => 0,
+                    'Bronze' => 0,
+                ],
+                'Regional' => [
+                    'Gold' => 0,
+                    'Silver' => 0,
+                    'Bronze' => 0,
+                ],
+            ];
+
+            // Hitung jumlah prestasi per kategori dan medali
+            foreach ($achievements as $achievement) {
+                $category = $achievement->category;
+                $medal = $achievement->medal;
+
+                // Hanya proses jika category valid dan medal adalah Gold, Silver, atau Bronze
+                if (
+                    in_array($category, ['International', 'National', 'Regional']) &&
+                    in_array($medal, ['Gold', 'Silver', 'Bronze'])
+                ) {
+                    $groupedAchievements[$category][$medal]++;
+                }
+            }
+
+            return response()->json($groupedAchievements, 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching grouped achievements: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch grouped achievements'], 500);
+        }
+    }
+
+    public function guestIndex()
+    {
+        // Ambil semua data prestasi beserta tipe prestasinya
+        $achievements = Achievement::with('achievementType')->get();
+
+        // Render halaman guest menggunakan Inertia
+        return Inertia::render('Achievement', [
+            'achievements' => $achievements,
+        ]);
     }
 }

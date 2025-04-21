@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Download extends Model
+class DownloadCategory extends Model
 {
-    protected $fillable = ['title', 'description', 'file_path', 'category_id', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'description', 'created_by', 'updated_by'];
 
-    public function category()
+    public function downloads()
     {
-        return $this->belongsTo(DownloadCategory::class, 'category_id');
+        return $this->hasMany(Download::class, 'category_id');
     }
 
     public function creator()

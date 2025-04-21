@@ -6,7 +6,7 @@ export default function ChatbotWidget() {
         {
             role: 'bot',
             content:
-                'Hai! Selamat datang di layanan chatbot IT Del! Aku siap membantumu mencari informasi tentang beasiswa, organisasi, dan kegiatan kampus. Ada yang bisa kubantu? Kalau kamu punya pertanyaan tentang cara berprestasi di kelas, aku bisa memberikan beberapa tips umum, tapi untuk strategi belajar yang lebih spesifik dan disesuaikan dengan program studimu, lebih baik kamu berkonsultasi dengan dosen wali atau kakak tingkatmu. Berikut beberapa tips umum untuk berprestasi di kelas: <br />* **Rajin Mengikuti Perkuliahan:** Kehadiran dan fokus di kelas sangat penting. Catat poin-poin penting dan ajukan pertanyaan jika ada yang kurang jelas. <br />* **Aktif Berpartisipasi:** Jangan ragu untuk',
+                'Hai! Selamat datang di layanan chatbot IT Del! Aku siap membantumu mencari informasi tentang beasiswa, organisasi, dan kegiatan kampus. Ada yang bisa kubantu? Kalau kamu punya pertanyaan tentang cara berprestasi di kelas, aku bisa memberikan beberapa tips umum, tapi untuk strategi belajar yang lebih spesifik dan disesuaikan dengan program studimu, lebih baik kamu berkonsultasi dengan dosen wali atau kakak tingkatmu. ',
         },
     ]);
     const [input, setInput] = useState('');

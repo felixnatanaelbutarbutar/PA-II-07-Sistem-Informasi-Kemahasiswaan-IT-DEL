@@ -48,6 +48,14 @@ class AuthenticatedSessionController extends Controller
             // Autentikasi lokal untuk adminmpm dan adminbem
             Log::info('Local Authentication Successful:', ['username' => $user->username, 'role' => $user->role]);
 
+            // Periksa status user
+            if ($user->status === 'inactive') {
+                Log::warning('Login Failed: User is inactive', ['username' => $user->username]);
+                return back()
+                    ->withErrors(['username' => 'Akun Anda telah dinonaktifkan. Hubungi administrator.'])
+                    ->with('status', 'Akun Anda telah dinonaktifkan. Hubungi administrator.');
+            }
+
             // Login pengguna ke session Laravel
             Auth::login($user, $request->filled('remember'));
             Log::info('User Logged In:', ['user_id' => $user->id]);
@@ -95,7 +103,9 @@ class AuthenticatedSessionController extends Controller
             // Pastikan CIS_API_URL tidak kosong
             if (empty($cisApiUrl)) {
                 Log::error('CIS_API_URL is empty or not set in configuration');
-                return back()->withErrors(['username' => 'Konfigurasi server autentikasi tidak valid. Hubungi administrator.']);
+                return back()
+                    ->withErrors(['username' => 'Konfigurasi server autentikasi tidak valid. Hubungi administrator.'])
+                    ->with('status', 'Konfigurasi server autentikasi tidak valid. Hubungi administrator.');
             }
 
             // Log URL yang digunakan untuk login
@@ -119,7 +129,9 @@ class AuthenticatedSessionController extends Controller
             if (!isset($data['result']) || $data['result'] !== true || !isset($data['token']) || !isset($data['user'])) {
                 Log::error('Login Failed: Invalid API response structure');
                 $errorMessage = $data['error'] ?? 'Login gagal: username atau password salah.';
-                return back()->withErrors(['username' => $errorMessage]);
+                return back()
+                    ->withErrors(['username' => $errorMessage])
+                    ->with('status', $errorMessage);
             }
 
             // Ambil token dan data pengguna
@@ -150,7 +162,9 @@ class AuthenticatedSessionController extends Controller
             // Jika role tidak dikenali, tolak login
             if (!$userRole || !in_array($userRole, ['superadmin', 'kemahasiswaan', 'adminbem', 'adminmpm', 'mahasiswa'])) {
                 Log::error('Login Failed: Unrecognized role', ['apiRole' => $apiRole, 'userRole' => $userRole]);
-                return back()->withErrors(['username' => 'Role tidak dikenali. Hubungi administrator.']);
+                return back()
+                    ->withErrors(['username' => 'Role tidak dikenali. Hubungi administrator.'])
+                    ->with('status', 'Role tidak dikenali. Hubungi administrator.');
             }
 
             // Inisialisasi data pengguna tanpa 'name' terlebih dahulu
@@ -211,6 +225,14 @@ class AuthenticatedSessionController extends Controller
 
             Log::info('User Created/Updated:', ['user' => $user->toArray()]);
 
+            // Periksa status user
+            if ($user->status === 'inactive') {
+                Log::warning('Login Failed: User is inactive', ['username' => $user->username]);
+                return back()
+                    ->withErrors(['username' => 'Akun Anda telah dinonaktifkan. Hubungi administrator.'])
+                    ->with('status', 'Akun Anda telah dinonaktifkan. Hubungi administrator.');
+            }
+
             // Simpan data API ke session untuk digunakan di halaman lain
             $request->session()->put('api_user', $apiUser);
             Log::info('API User Data Stored in Session:', ['api_user' => $apiUser]);
@@ -261,11 +283,16 @@ class AuthenticatedSessionController extends Controller
                 $errorMessage = $errorData['message'] ?? $errorData['error'] ?? $errorMessage;
             }
             Log::error('API Request Failed:', ['error' => $e->getMessage(), 'response' => $errorData ?? null]);
-            return back()->withErrors(['username' => $errorMessage]);
+            return back()
+                ->withErrors(['username' => $errorMessage])
+                ->with('status', $errorMessage);
         } catch (\Exception $e) {
             // Tangani error lainnya
             Log::error('Login Failed:', ['error' => $e->getMessage()]);
-            return back()->withErrors(['username' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+            $errorMessage = 'Terjadi kesalahan: ' . $e->getMessage();
+            return back()
+                ->withErrors(['username' => $errorMessage])
+                ->with('status', $errorMessage);
         }
     }
 

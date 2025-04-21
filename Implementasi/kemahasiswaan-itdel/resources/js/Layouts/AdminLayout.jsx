@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
+import { Toaster } from 'react-hot-toast'; // Impor Toaster
+
 import {
     LayoutDashboard,
     Bell,

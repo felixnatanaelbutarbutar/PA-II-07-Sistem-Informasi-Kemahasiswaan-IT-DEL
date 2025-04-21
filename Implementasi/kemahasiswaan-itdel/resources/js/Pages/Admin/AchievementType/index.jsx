@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function Index({ auth, permissions, userRole, menu, achievements = [] }) {
+export default function Index({ auth, permissions, userRole, menu, achievementTypes = [] }) {
     const { flash } = usePage().props ?? {};
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest, 'asc' for oldest
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
     const [isGridView, setIsGridView] = useState(true);
-    const [isDeleting, setIsDeleting] = useState(null); // Track which achievement is being deleted
+    const [isDeleting, setIsDeleting] = useState(null); // Track which achievement type is being deleted
 
     // Handle flash messages for notifications
     useEffect(() => {
@@ -23,57 +23,33 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
         }
     }, [flash]);
 
-    // Filter and sort achievements
-    const filteredAchievements = achievements
+    // Filter and sort achievement types
+    const filteredAchievementTypes = achievementTypes
         .filter(
             (item) =>
-                item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
+                item.type_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
         )
         .sort((a, b) => {
-            const dateA = new Date(a.event_date);
-            const dateB = new Date(b.event_date);
+            const dateA = new Date(a.created_at);
+            const dateB = new Date(b.created_at);
             return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
         });
 
     // Handle delete action with loading state
     const handleDelete = (id) => {
-        if (confirm('Apakah Anda yakin ingin menghapus prestasi ini?')) {
+        if (confirm('Apakah Anda yakin ingin menghapus jenis prestasi ini?')) {
             setIsDeleting(id);
-            router.delete(route('admin.achievements.destroy', id), {
+            router.post(route('admin.achievement-type.delete', id), {}, {
                 onFinish: () => setIsDeleting(null),
                 preserveScroll: true,
             });
         }
     };
 
-    // Helper function to render medal icon
-    const renderMedalIcon = (medal) => {
-        if (!medal) return null;
-        const colors = {
-            Gold: 'text-yellow-500',
-            Silver: 'text-gray-400',
-            Bronze: 'text-amber-600',
-        };
-        return (
-            <svg
-                className={`w-5 h-5 ${colors[medal]} inline-block mr-1`}
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 110-12 6 6 0 010 12zm0-2a4 4 0 100-8 4 4 0 000 8z"
-                    clipRule="evenodd"
-                />
-            </svg>
-        );
-    };
-
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
-            <Head title="Kelola Prestasi" />
+            <Head title="Kelola Jenis Prestasi" />
 
             {/* Notification */}
             {showNotification && (
@@ -125,9 +101,9 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Manajemen Prestasi
+                                Manajemen Jenis Prestasi
                             </h1>
-                            <p className="text-gray-600 mt-1">Kelola daftar prestasi untuk website</p>
+                            <p className="text-gray-600 mt-1">Kelola daftar jenis prestasi untuk website</p>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -135,7 +111,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                             <div className="relative flex-grow md:flex-grow-0 md:w-64">
                                 <input
                                     type="text"
-                                    placeholder="Cari prestasi..."
+                                    placeholder="Cari jenis prestasi..."
                                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10 transition-all duration-300"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -186,10 +162,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
                                     onClick={() => setIsGridView(true)}
-                                    className={`p-2 rounded-md ${isGridView
+                                    className={`p-2 rounded-md ${
+                                        isGridView
                                             ? 'bg-white shadow-sm text-blue-600'
                                             : 'text-gray-500 hover:text-gray-700'
-                                        } transition-all duration-200`}
+                                    } transition-all duration-200`}
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -208,10 +185,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                 </button>
                                 <button
                                     onClick={() => setIsGridView(false)}
-                                    className={`p-2 rounded-md ${!isGridView
+                                    className={`p-2 rounded-md ${
+                                        !isGridView
                                             ? 'bg-white shadow-sm text-blue-600'
                                             : 'text-gray-500 hover:text-gray-700'
-                                        } transition-all duration-200`}
+                                    } transition-all duration-200`}
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -230,9 +208,9 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                 </button>
                             </div>
 
-                            {/* Add New Achievement Button */}
+                            {/* Add New Achievement Type Button */}
                             <Link
-                                href={route('admin.achievements.create')}
+                                href={route('admin.achievement-type.create')}
                                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg"
                             >
                                 <svg
@@ -249,7 +227,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                         d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                     />
                                 </svg>
-                                Tambah Prestasi
+                                Tambah Jenis Prestasi
                             </Link>
                         </div>
                     </div>
@@ -258,46 +236,31 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                 {/* Grid View */}
                 {isGridView ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredAchievements.map((achievement) => (
+                        {filteredAchievementTypes.map((type) => (
                             <div
-                                key={achievement.achievement_id}
+                                key={type.type_id}
                                 className="group bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-blue-200 hover:-translate-y-1"
                             >
                                 <div className="p-5 flex flex-col flex-grow">
-                                    {/* Achievement Title */}
+                                    {/* Achievement Type Title */}
                                     <h2 className="text-lg font-semibold text-gray-800 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">
-                                        {achievement.title}
+                                        {type.type_name}
                                     </h2>
 
-                                    {/* Achievement Details */}
+                                    {/* Achievement Type Details */}
                                     <div className="space-y-2 text-sm text-gray-600">
-                                        <p className="flex items-center">
-                                            <span className="font-medium text-gray-700 mr-2">Kategori:</span>
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {achievement.category}
-                                            </span>
-                                        </p>
-                                        <p className="flex items-center">
-                                            <span className="font-medium text-gray-700 mr-2">Jenis Prestasi:</span>
-                                            <span className="text-gray-600">
-                                                {achievement.achievement_type?.type_name || 'N/A'}
-                                            </span>
-                                        </p>
-                                        <p className="flex items-center">
-                                            <span className="font-medium text-gray-700 mr-2">Medali:</span>
-                                            {renderMedalIcon(achievement.medal)}
-                                            <span className="text-gray-600">
-                                                {achievement.medal || 'Tidak Ada'}
-                                            </span>
+                                        <p>
+                                            <span className="font-medium text-gray-700">ID:</span>{' '}
+                                            <span className="text-gray-600">{type.type_id}</span>
                                         </p>
                                         <p>
-                                            <span className="font-medium text-gray-700">Nama Acara:</span>{' '}
-                                            <span className="text-gray-600">{achievement.event_name}</span>
+                                            <span className="font-medium text-gray-700">Deskripsi:</span>{' '}
+                                            <span className="text-gray-600">{type.description || 'Tidak Ada'}</span>
                                         </p>
                                         <p>
-                                            <span className="font-medium text-gray-700">Tanggal Acara:</span>{' '}
+                                            <span className="font-medium text-gray-700">Dibuat Pada:</span>{' '}
                                             <span className="text-gray-600">
-                                                {new Date(achievement.event_date).toLocaleDateString('id-ID', {
+                                                {new Date(type.created_at).toLocaleDateString('id-ID', {
                                                     day: '2-digit',
                                                     month: 'long',
                                                     year: 'numeric',
@@ -309,7 +272,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                     {/* Action Buttons */}
                                     <div className="mt-5 flex space-x-3">
                                         <Link
-                                            href={route('admin.achievements.edit', achievement.achievement_id)}
+                                            href={route('admin.achievement-type.edit', type.type_id)}
                                             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 group-hover:scale-105 shadow-sm hover:shadow-md"
                                         >
                                             <svg
@@ -329,11 +292,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                             Edit
                                         </Link>
                                         <button
-                                            onClick={() => handleDelete(achievement.achievement_id)}
-                                            disabled={isDeleting === achievement.achievement_id}
+                                            onClick={() => handleDelete(type.type_id)}
+                                            disabled={isDeleting === type.type_id}
                                             className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 group-hover:scale-105 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {isDeleting === achievement.achievement_id ? (
+                                            {isDeleting === type.type_id ? (
                                                 <svg
                                                     className="w-4 h-4 mr-2 animate-spin"
                                                     fill="none"
@@ -374,75 +337,45 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                 ) : (
                     /* List View */
                     <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-                        {filteredAchievements.map((achievement, index) => (
+                        {filteredAchievementTypes.map((type, index) => (
                             <div
-                                key={achievement.achievement_id}
-                                className={`flex flex-col sm:flex-row items-start p-5 hover:bg-gray-50 transition-colors duration-200 ${index !== filteredAchievements.length - 1 ? 'border-b border-gray-100' : ''
-                                    }`}
+                                key={type.type_id}
+                                className={`flex flex-col sm:flex-row items-start p-5 hover:bg-gray-50 transition-colors duration-200 ${
+                                    index !== filteredAchievementTypes.length - 1 ? 'border-b border-gray-100' : ''
+                                }`}
                             >
                                 <div className="flex-grow">
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                                         <div className="flex-grow">
                                             <h2 className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors duration-200 mb-2">
-                                                {achievement.title}
+                                                {type.type_name}
                                             </h2>
                                             <div className="space-y-1 text-sm text-gray-600">
-                                                <p className="flex items-center">
-                                                    <span className="font-medium text-gray-700 mr-2">
-                                                        Kategori:
-                                                    </span>
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {achievement.category}
-                                                    </span>
+                                                <p>
+                                                    <span className="font-medium text-gray-700">ID:</span>{' '}
+                                                    <span className="text-gray-600">{type.type_id}</span>
                                                 </p>
-                                                <p className="flex items-center">
-                                                    <span className="font-medium text-gray-700 mr-2">
-                                                        Jenis Prestasi:
-                                                    </span>
+                                                <p>
+                                                    <span className="font-medium text-gray-700">Deskripsi:</span>{' '}
                                                     <span className="text-gray-600">
-                                                        {achievement.achievementType?.type_name || 'N/A'}
-                                                    </span>
-                                                </p>
-                                                <p className="flex items-center">
-                                                    <span className="font-medium text-gray-700 mr-2">
-                                                        Medali:
-                                                    </span>
-                                                    {renderMedalIcon(achievement.medal)}
-                                                    <span className="text-gray-600">
-                                                        {achievement.medal || 'Tidak Ada'}
+                                                        {type.description || 'Tidak Ada'}
                                                     </span>
                                                 </p>
                                                 <p>
-                                                    <span className="font-medium text-gray-700">
-                                                        Nama Acara:
-                                                    </span>{' '}
+                                                    <span className="font-medium text-gray-700">Dibuat Pada:</span>{' '}
                                                     <span className="text-gray-600">
-                                                        {achievement.event_name}
-                                                    </span>
-                                                </p>
-                                                <p>
-                                                    <span className="font-medium text-gray-700">
-                                                        Tanggal Acara:
-                                                    </span>{' '}
-                                                    <span className="text-gray-600">
-                                                        {new Date(achievement.event_date).toLocaleDateString(
-                                                            'id-ID',
-                                                            {
-                                                                day: '2-digit',
-                                                                month: 'long',
-                                                                year: 'numeric',
-                                                            }
-                                                        )}
+                                                        {new Date(type.created_at).toLocaleDateString('id-ID', {
+                                                            day: '2-digit',
+                                                            month: 'long',
+                                                            year: 'numeric',
+                                                        })}
                                                     </span>
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="flex sm:flex-col space-x-3 sm:space-x-0 sm:space-y-2 mt-4 sm:mt-0">
                                             <Link
-                                                href={route(
-                                                    'admin.achievements.edit',
-                                                    achievement.achievement_id
-                                                )}
+                                                href={route('admin.achievement-type.edit', type.type_id)}
                                                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
                                             >
                                                 <svg
@@ -462,11 +395,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                 Edit
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(achievement.achievement_id)}
-                                                disabled={isDeleting === achievement.achievement_id}
+                                                onClick={() => handleDelete(type.type_id)}
+                                                disabled={isDeleting === type.type_id}
                                                 className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                {isDeleting === achievement.achievement_id ? (
+                                                {isDeleting === type.type_id ? (
                                                     <svg
                                                         className="w-4 h-4 mr-2 animate-spin"
                                                         fill="none"
@@ -508,7 +441,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                 )}
 
                 {/* Empty State */}
-                {filteredAchievements.length === 0 && (
+                {filteredAchievementTypes.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-md border border-gray-100">
                         <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
                             <svg
@@ -527,12 +460,12 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                             </svg>
                         </div>
                         <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                            Tidak ada prestasi yang tersedia
+                            Tidak ada jenis prestasi yang tersedia
                         </h3>
                         <p className="text-gray-500 text-center max-w-md mb-6">
                             {searchTerm
                                 ? 'Tidak ada hasil yang cocok dengan pencarian Anda'
-                                : 'Silahkan tambahkan prestasi baru untuk mulai mengisi konten website Anda'}
+                                : 'Silahkan tambahkan jenis prestasi baru untuk mulai mengisi konten website Anda'}
                         </p>
                         {searchTerm ? (
                             <button
@@ -557,7 +490,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                             </button>
                         ) : (
                             <Link
-                                href={route('admin.achievements.create')}
+                                href={route('admin.achievement-type.create')}
                                 className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center shadow-md hover:shadow-lg"
                             >
                                 <svg
@@ -574,7 +507,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                         d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                     />
                                 </svg>
-                                Tambah Prestasi Baru
+                                Tambah Jenis Prestasi Baru
                             </Link>
                         )}
                     </div>

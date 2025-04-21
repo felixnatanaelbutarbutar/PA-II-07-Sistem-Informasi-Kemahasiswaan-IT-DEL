@@ -1,71 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { useState } from 'react';
 
-export default function DownloadAdd({ auth, userRole, permissions, navigation, flash }) {
+export default function DownloadAdd({ auth, userRole, permissions, navigation, categories }) {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
+        category_id: '',
         file: null,
     });
-    const [errors, setErrors] = useState({});
-    const [showNotification, setShowNotification] = useState(false);
-    const [notificationMessage, setNotificationMessage] = useState('');
-    const [notificationType, setNotificationType] = useState('success');
-
-    useEffect(() => {
-        if (flash) {
-            if (flash.success) {
-                setNotificationMessage(flash.success);
-                setNotificationType('success');
-                setShowNotification(true);
-            } else if (flash.error) {
-                setNotificationMessage(flash.error);
-                setNotificationType('error');
-                setShowNotification(true);
-            }
-
-            if (flash.success || flash.error) {
-                const timer = setTimeout(() => {
-                    setShowNotification(false);
-                }, 5000);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [flash]);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        setFormData((prev) => ({
-            ...prev,
+        setFormData({
+            ...formData,
             [name]: files ? files[0] : value,
-        }));
+        });
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
         const data = new FormData();
         data.append('title', formData.title);
         data.append('description', formData.description);
+        data.append('category_id', formData.category_id);
         if (formData.file) {
             data.append('file', formData.file);
         }
 
-        router.post(route('admin.downloads.store'), data, {
-            onError: (errors) => {
-                setErrors(errors);
-                setNotificationMessage(
-                    'Gagal menambahkan file unduhan: ' + (errors.file || errors.title || 'Terjadi kesalahan.')
-                );
-                setNotificationType('error');
-                setShowNotification(true);
-            },
-            onSuccess: () => {
-                setFormData({ title: '', description: '', file: null });
-                setErrors({});
-            },
-        });
+        router.post(route('admin.downloads.store'), data);
     };
 
     return (
@@ -77,187 +40,96 @@ export default function DownloadAdd({ auth, userRole, permissions, navigation, f
         >
             <Head title="Tambah File Unduhan" />
 
-            {/* Notification */}
-            {showNotification && (
-                <div
-                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
-                        notificationType === 'success'
-                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
-                            : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
-                    }`}
-                >
-                    <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                            <svg
-                                className={`h-5 w-5 ${
-                                    notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'
-                                }`}
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                            >
-                                {notificationType === 'success' ? (
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                        clipRule="evenodd"
-                                    />
-                                ) : (
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
-                                        clipRule="evenodd"
-                                    />
-                                )}
-                            </svg>
-                        </div>
-                        <div className="ml-3">
-                            <p
-                                className={`text-sm font-medium ${
-                                    notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
-                                }`}
-                            >
-                                {notificationMessage}
-                            </p>
-                        </div>
-                        <div className="ml-auto pl-3">
-                            <button
-                                onClick={() => setShowNotification(false)}
-                                className={`inline-flex rounded-md p-1.5 ${
-                                    notificationType === 'success'
-                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
-                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
-                                } focus:outline-none focus:ring-2`}
-                            >
-                                <span className="sr-only">Dismiss</span>
-                                <svg
-                                    className="h-5 w-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
-                {/* Header */}
-                <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Tambah File Unduhan
-                            </h1>
-                            <p className="text-gray-500 mt-1">Tambahkan file unduhan baru untuk website</p>
-                        </div>
-                        <Link
-                            href={route('admin.downloads.index')}
-                            className="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
-                        >
-                            Kembali ke Daftar
-                        </Link>
-                    </div>
-                </div>
+                <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 border border-gray-200/50">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+                        Tambah File Unduhan
+                    </h1>
 
-                {/* Form */}
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-                    <form onSubmit={handleSubmit} encType="multipart/form-data">
-                        <div className="grid grid-cols-1 gap-6">
-                            {/* Title */}
+                    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Judul <span className="text-red-500">*</span>
+                                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                                    Judul
                                 </label>
                                 <input
                                     type="text"
                                     name="title"
+                                    id="title"
                                     value={formData.title}
                                     onChange={handleChange}
-                                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
-                                        errors.title ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Masukkan judul file"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    required
                                 />
-                                {errors.title && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-                                )}
                             </div>
 
-                            {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
+                                    Kategori
+                                </label>
+                                <select
+                                    name="category_id"
+                                    id="category_id"
+                                    value={formData.category_id}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    required
+                                >
+                                    <option value="">Pilih Kategori</option>
+                                    {categories.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                                     Deskripsi
                                 </label>
                                 <textarea
                                     name="description"
+                                    id="description"
                                     value={formData.description}
                                     onChange={handleChange}
-                                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
-                                        errors.description ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Masukkan deskripsi file (opsional)"
                                     rows="4"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 />
-                                {errors.description && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-                                )}
                             </div>
 
-                            {/* File */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    File <span className="text-red-500">*</span>
+                                <label htmlFor="file" className="block text-sm font-medium text-gray-700">
+                                    File (PDF, DOC, DOCX, XLS, XLSX)
                                 </label>
                                 <input
                                     type="file"
                                     name="file"
+                                    id="file"
                                     onChange={handleChange}
-                                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition ${
-                                        errors.file ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                                     accept=".pdf,.doc,.docx,.xls,.xlsx"
+                                    required
                                 />
-                                {errors.file && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.file}</p>
-                                )}
-                                <p className="text-gray-500 text-sm mt-1">
-                                    File yang diizinkan: PDF, DOC, DOCX, XLS, XLSX (maks. 2MB).
-                                </p>
                             </div>
 
-                            {/* Submit Button */}
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => router.get(route('admin.downloads.index'))}
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    Batal
+                                </button>
                                 <button
                                     type="submit"
-                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 shadow-md"
+                                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                 >
-                                    <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                        />
-                                    </svg>
-                                    Simpan File Unduhan
+                                    Simpan
                                 </button>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </AdminLayout>

@@ -2,32 +2,34 @@ import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useState, useEffect } from 'react';
 
-export default function DownloadIndex({ auth, userRole, permissions, navigation, downloads, success }) {
+export default function OrganizationAdminIndex({ auth, userRole, permissions, navigation, admins, flash }) {
     const [showNotification, setShowNotification] = useState(false);
-    const [notificationMessage, setNotificationMessage] = useState(null);
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationType, setNotificationType] = useState('success');
 
     useEffect(() => {
-        if (success) {
-            setNotificationMessage({ type: 'success', message: success });
-            setShowNotification(true);
+        if (flash) {
+            if (flash.success) {
+                setNotificationMessage(flash.success);
+                setNotificationType('success');
+                setShowNotification(true);
+            } else if (flash.error) {
+                setNotificationMessage(flash.error);
+                setNotificationType('error');
+                setShowNotification(true);
+            }
 
-            const timer = setTimeout(() => {
-                setShowNotification(false);
-                setNotificationMessage(null);
-            }, 5000);
-
-            return () => clearTimeout(timer);
+            if (flash.success || flash.error) {
+                const timer = setTimeout(() => {
+                    setShowNotification(false);
+                }, 5000);
+                return () => clearTimeout(timer);
+            }
         }
-    }, [success]);
+    }, [flash]);
 
-    const handleDelete = (id) => {
-        if (confirm('Apakah Anda yakin ingin menghapus file ini?')) {
-            router.post(route('admin.downloads.destroy', id));
-        }
-    };
-
-    const handleDownload = (filePath) => {
-        window.open(`/storage/${filePath}`, '_blank');
+    const handleToggleStatus = (userId) => {
+        router.post(route('admin.organization-admins.toggleStatus', userId));
     };
 
     return (
@@ -37,12 +39,13 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
             permissions={permissions}
             navigation={navigation}
         >
-            <Head title="Kelola Unduhan" />
+            <Head title="Kelola Admin Organisasi" />
 
-            {showNotification && notificationMessage && (
+            {/* Notification */}
+            {showNotification && (
                 <div
                     className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
-                        notificationMessage.type === 'success'
+                        notificationType === 'success'
                             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
                             : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
                     }`}
@@ -51,13 +54,13 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
                         <div className="flex-shrink-0">
                             <svg
                                 className={`h-5 w-5 ${
-                                    notificationMessage.type === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                    notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'
                                 }`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
                             >
-                                {notificationMessage.type === 'success' ? (
+                                {notificationType === 'success' ? (
                                     <path
                                         fillRule="evenodd"
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -75,17 +78,17 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
                         <div className="ml-3">
                             <p
                                 className={`text-sm font-medium ${
-                                    notificationMessage.type === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                                    notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
                                 }`}
                             >
-                                {notificationMessage.message}
+                                {notificationMessage}
                             </p>
                         </div>
                         <div className="ml-auto pl-3">
                             <button
                                 onClick={() => setShowNotification(false)}
                                 className={`inline-flex rounded-md p-1.5 ${
-                                    notificationMessage.type === 'success'
+                                    notificationType === 'success'
                                         ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
                                         : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
                                 } focus:outline-none focus:ring-2`}
@@ -110,16 +113,17 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
             )}
 
             <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
+                {/* Header */}
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Kelola Unduhan
+                                Kelola Admin Organisasi
                             </h1>
-                            <p className="text-gray-500 mt-1">Kelola file unduhan untuk diakses pengguna</p>
+                            <p className="text-gray-500 mt-1">Kelola akun admin BEM dan MPM</p>
                         </div>
                         <Link
-                            href={route('admin.downloads.create')}
+                            href={route('admin.organization-admins.create')}
                             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
                         >
                             <svg
@@ -136,30 +140,31 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                 />
                             </svg>
-                            Tambah File
+                            Tambah Admin
                         </Link>
                     </div>
                 </div>
 
-                {downloads.length > 0 ? (
+                {/* Tabel Admin */}
+                {admins.length > 0 ? (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Judul
+                                        Username
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Kategori
+                                        Nama
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Deskripsi
+                                        Email
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Dibuat Oleh
+                                        Role
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Download
+                                        Status
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
                                         Aksi
@@ -167,55 +172,48 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {downloads.map((download) => (
-                                    <tr key={download.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-xs break-words">
-                                            {download.title}
+                                {admins.map((admin) => (
+                                    <tr key={admin.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {admin.username}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
-                                            {download.category ? download.category.name : 'Tidak ada kategori'}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {admin.name}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
-                                            {download.description || '-'}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {admin.email}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
-                                            {download.creator ? download.creator.name : 'Tidak diketahui'}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {admin.role === 'adminbem' ? 'Admin BEM' : 'Admin MPM'}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            <button
-                                                onClick={() => handleDownload(download.file_path)}
-                                                className="text-green-600 hover:text-green-700 transition flex items-center gap-2"
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                                    admin.status === 'active'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}
                                             >
-                                                <svg
-                                                    className="w-5 h-5"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                                    />
-                                                </svg>
-                                                Unduh
-                                            </button>
+                                                {admin.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <Link
-                                                href={route('admin.downloads.edit', download.id)}
-                                                className="text-blue-600 hover:text-blue-700 mr-4 transition"
-                                            >
-                                                Edit
-                                            </Link>
                                             <button
-                                                onClick={() => handleDelete(download.id)}
-                                                className="text-red-600 hover:text-red-700 transition"
+                                                onClick={() => handleToggleStatus(admin.id)}
+                                                className={`mr-4 ${
+                                                    admin.status === 'active'
+                                                        ? 'text-red-600 hover:text-red-700'
+                                                        : 'text-green-600 hover:text-green-700'
+                                                } transition`}
                                             >
-                                                Hapus
+                                                {admin.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
                                             </button>
+                                            <Link
+                                                href={route('admin.organization-admins.editPassword', admin.id)}
+                                                className="text-blue-600 hover:text-blue-700 transition"
+                                            >
+                                                Ubah Password
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))}
@@ -236,18 +234,18 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m-3 6h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                 />
                             </svg>
                         </div>
                         <h3 className="text-xl font-medium text-gray-700 mb-2">
-                            Tidak ada file unduhan yang tersedia
+                            Tidak ada admin organisasi yang tersedia
                         </h3>
                         <p className="text-gray-500 text-center max-w-md mb-6">
-                            Silakan tambahkan file baru untuk memulai.
+                            Silakan tambahkan admin baru untuk memulai.
                         </p>
                         <Link
-                            href={route('admin.downloads.create')}
+                            href={route('admin.organization-admins.create')}
                             className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
                         >
                             <svg
@@ -264,7 +262,7 @@ export default function DownloadIndex({ auth, userRole, permissions, navigation,
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                 />
                             </svg>
-                            Tambah File Baru
+                            Tambah Admin Baru
                         </Link>
                     </div>
                 )}

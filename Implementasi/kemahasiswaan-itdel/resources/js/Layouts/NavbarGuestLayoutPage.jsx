@@ -76,7 +76,7 @@ const NavbarGuestLayoutPage = () => {
             default:
                 if (url.startsWith('/counseling')) return 'Konseling';
                 if (url.startsWith('/beasiswa')) return 'Beasiswa';
-                if (url.startsWith('/kesehatan')) return 'Kesehatan';
+                if (url.startsWith('/downloads')) return 'Unduhan';
                 if (url.startsWith('/asrama')) return 'Asrama';
                 if (url.startsWith('/bem')) return 'BEM';
                 if (url.startsWith('/mpm')) return 'MPM';
@@ -108,7 +108,7 @@ const NavbarGuestLayoutPage = () => {
         } 
         // Untuk Layanan Kemahasiswaan
         else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') || 
-                 url.startsWith('/kesehatan') || url.startsWith('/asrama')) {
+                 url.startsWith('/downloads') || url.startsWith('/asrama')) {
             breadcrumbItems.push(
                 <span key="separator-1" className="mx-2">/</span>,
                 <span key="layanan" className="text-white">Layanan Kemahasiswaan</span>,
@@ -299,13 +299,13 @@ const NavbarGuestLayoutPage = () => {
                                             </div>
                                         </Link>
                                         <Link
-                                            href="#"
+                                            href="/downloads"
                                             className="dropdown-item block border-l-4 border-transparent px-4 py-3 text-sm text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700"
                                             onClick={() => setLayananDropdownOpen(false)}
                                         >
-                                            <div className="font-medium">Kesehatan</div>
+                                            <div className="font-medium">Unduhan</div>
                                             <div className="text-xs text-gray-500">
-                                                Klinik dan asuransi kesehatan
+                                                katakata
                                             </div>
                                         </Link>
                                         <Link
@@ -540,14 +540,14 @@ const NavbarGuestLayoutPage = () => {
                                             Konseling
                                         </Link>
                                         <Link
-                                            href="#"
+                                            href="/downloads"
                                             className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                             onClick={() => {
                                                 setLayananDropdownOpen(false);
                                                 setMobileMenuOpen(false);
                                             }}
                                         >
-                                            Kesehatan
+                                            Unduhan
                                         </Link>
                                         <Link
                                             href="#"

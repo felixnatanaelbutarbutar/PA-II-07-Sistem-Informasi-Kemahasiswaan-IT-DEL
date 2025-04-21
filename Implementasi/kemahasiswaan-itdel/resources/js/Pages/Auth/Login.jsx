@@ -3,7 +3,7 @@ import TextInput from '@/Components/TextInput';
 import { Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, error, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         username: '',
         password: '',
@@ -11,11 +11,9 @@ export default function Login({ status, canResetPassword }) {
     });
 
     const [showPassword, setShowPassword] = useState(false);
-    const [loginAttempted, setLoginAttempted] = useState(false);
 
     const submit = (e) => {
         e.preventDefault();
-        setLoginAttempted(true);
         post(route('login'), {
             onSuccess: () => {
                 reset('password');
@@ -54,16 +52,24 @@ export default function Login({ status, canResetPassword }) {
                             Login
                         </h2>
 
+                        {/* NOTIFIKASI SUKSES (HIJAU) */}
                         {status && (
                             <div className="mb-6 rounded-lg bg-green-50 p-4 text-sm font-medium text-green-600">
                                 {status}
                             </div>
                         )}
 
-                        {/* NOTIFIKASI ERROR LOGIN */}
-                        {loginAttempted && (errors.username || errors.password) && (
+                        {/* NOTIFIKASI ERROR (MERAH) */}
+                        {error && (
                             <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm font-medium text-red-700">
-                                Username atau Password salah. Silakan coba lagi.
+                                {error}
+                            </div>
+                        )}
+
+                        {/* NOTIFIKASI ERROR DARI VALIDASI FORM */}
+                        {(errors.username || errors.password) && (
+                            <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm font-medium text-red-700">
+                                {errors.username || errors.password || 'Terjadi kesalahan saat login. Silakan coba lagi.'}
                             </div>
                         )}
 
@@ -201,7 +207,7 @@ export default function Login({ status, canResetPassword }) {
                                                 <path
                                                     className="opacity-75"
                                                     fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 0 7.938l3-2.647z"
                                                 />
                                             </svg>
                                             Signing in...
@@ -234,4 +240,3 @@ export default function Login({ status, canResetPassword }) {
         </div>
     );
 }
-    

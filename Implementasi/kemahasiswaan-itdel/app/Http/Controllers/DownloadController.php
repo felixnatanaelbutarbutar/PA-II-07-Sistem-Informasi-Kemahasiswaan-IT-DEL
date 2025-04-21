@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Download;
+use App\Models\DownloadCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,7 @@ class DownloadController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        $downloads = Download::with(['creator', 'updater'])
+        $downloads = Download::with(['category', 'creator', 'updater'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -33,7 +34,11 @@ class DownloadController extends Controller
 
     public function guestIndex()
     {
-        $downloads = Download::orderBy('created_at', 'desc')->get();
+        $downloads = Download::with('category')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $categories = DownloadCategory::select('id', 'name')->get();
 
         return Inertia::render('Download', [
             'downloads' => $downloads->map(function ($download) {
@@ -42,6 +47,14 @@ class DownloadController extends Controller
                     'title' => $download->title,
                     'description' => $download->description,
                     'file_path' => $download->file_path,
+                    'category' => $download->category ? $download->category->name : null,
+                    'category_id' => $download->category_id,
+                ];
+            }),
+            'categories' => $categories->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
                 ];
             }),
         ]);
@@ -54,11 +67,14 @@ class DownloadController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
+        $categories = DownloadCategory::select('id', 'name')->get();
+
         return Inertia::render('Admin/Download/add', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'navigation' => $menuItems,
+            'categories' => $categories,
         ]);
     }
 
@@ -67,6 +83,7 @@ class DownloadController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'category_id' => 'required|exists:download_categories,id',
             'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:2048',
         ]);
 
@@ -76,6 +93,7 @@ class DownloadController extends Controller
         Download::create([
             'title' => $request->title,
             'description' => $request->description,
+            'category_id' => $request->category_id,
             'file_path' => $filePath,
             'created_by' => $user->id,
             'updated_by' => $user->id,
@@ -91,12 +109,15 @@ class DownloadController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
+        $categories = DownloadCategory::select('id', 'name')->get();
+
         return Inertia::render('Admin/Download/edit', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'navigation' => $menuItems,
             'download' => $download,
+            'categories' => $categories,
         ]);
     }
 
@@ -105,6 +126,7 @@ class DownloadController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'category_id' => 'required|exists:download_categories,id',
             'file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:2048',
         ]);
 
@@ -121,6 +143,7 @@ class DownloadController extends Controller
         $download->update([
             'title' => $request->title,
             'description' => $request->description,
+            'category_id' => $request->category_id,
             'file_path' => $filePath,
             'updated_by' => $user->id,
         ]);
@@ -128,7 +151,7 @@ class DownloadController extends Controller
         return redirect()->route('admin.downloads.index')->with('success', 'File unduhan berhasil diperbarui.');
     }
 
-    public function destroy(Download $download)
+    public function destroy(Request $request, Download $download)
     {
         if ($download->file_path) {
             Storage::disk('public')->delete($download->file_path);
@@ -140,7 +163,7 @@ class DownloadController extends Controller
 
     public function show(Download $download)
     {
-        $download->load(['creator', 'updater']);
+        $download->load(['category', 'creator', 'updater']);
 
         return Inertia::render('DownloadDetails', [
             'download' => $download,

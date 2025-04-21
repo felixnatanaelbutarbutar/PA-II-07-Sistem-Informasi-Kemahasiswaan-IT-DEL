@@ -21,6 +21,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'status',     // Tambahkan status ke fillable
         'nim',        // Tambahkan NIM (opsional, hanya untuk mahasiswa)
         'asrama',     // Tambahkan asrama (opsional, hanya untuk mahasiswa)
         'prodi',      // Tambahkan prodi (opsional, hanya untuk mahasiswa)

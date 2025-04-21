@@ -19,6 +19,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['superadmin', 'kemahasiswaan', 'adminbem', 'adminmpm', 'mahasiswa'])->default('kemahasiswaan');
+            $table->enum('status', ['active', 'inactive'])->default('active'); // Kolom status ditambahkan
             $table->string('nim')->nullable(); // NIM, opsional untuk mahasiswa
             $table->string('asrama')->nullable(); // Asrama, opsional untuk mahasiswa
             $table->string('prodi')->nullable(); // Prodi, opsional untuk mahasiswa

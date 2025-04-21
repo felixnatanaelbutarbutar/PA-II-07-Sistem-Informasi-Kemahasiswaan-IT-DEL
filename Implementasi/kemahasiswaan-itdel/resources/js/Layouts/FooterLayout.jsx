@@ -107,8 +107,8 @@ const FooterLayout = () => {
                                 <FaTwitter size={16} />
                             </a>
                             <a
-                                href="https://instagram.com"
-                                target="_blank"
+                            href="https://www.tiktok.com/@institut.teknologi.del"
+                            target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-3 bg-pink-600 rounded-full hover:bg-pink-700 transition duration-200"
                                 aria-label="Instagram"
