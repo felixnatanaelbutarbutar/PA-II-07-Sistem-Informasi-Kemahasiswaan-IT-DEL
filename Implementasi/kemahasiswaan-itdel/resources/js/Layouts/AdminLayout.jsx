@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Toaster } from 'react-hot-toast'; // Impor Toaster
+import { Toaster } from 'react-hot-toast';
 
 import {
     LayoutDashboard,
@@ -10,14 +10,17 @@ import {
     ChevronDown,
     Sun,
     Moon,
+    Droplet,
+    Cloud,
     Newspaper,
     Award,
     Heart,
     ChevronRight,
-    Users, // Ikon untuk Manajemen BEM (organisasi)
-    BookOpen, // Ikon untuk Beasiswa (simbol pendidikan)
-    Download, // Ikon untuk Unduhan
-    MessageSquare, // Ikon untuk Aspirasi (simbol komunikasi)
+    Users,
+    BookOpen,
+    Download,
+    MessageSquare,
+    Image,
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -27,8 +30,9 @@ export default function AdminLayout({
     navigation = []
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [darkMode, setDarkMode] = useState(false);
+    const [theme, setTheme] = useState('light'); // Ganti darkMode menjadi theme
     const [expandedMenu, setExpandedMenu] = useState(null);
+    const [showThemeDropdown, setShowThemeDropdown] = useState(false);
     const { url } = usePage();
 
     // Icon mapping from RoleHelper to lucide-react
@@ -39,38 +43,44 @@ export default function AdminLayout({
         award: Award,
         heart: Heart,
         organization: Users,
-        scholarship: BookOpen, // Ikon untuk Beasiswa
-        download: Download, // Ikon untuk Unduhan
-        aspiration: MessageSquare, // Ikon untuk Aspirasi
+        scholarship: BookOpen,
+        download: Download,
+        aspiration: MessageSquare,
+        carousel: Image,
     };
 
-    // Initialize dark mode based on localStorage or system preference
+    // Theme definitions with their icons
+    const themes = [
+        { name: 'light', label: 'Light', icon: Sun, color: 'amber-500' },
+        { name: 'dark', label: 'Dark', icon: Moon, color: 'indigo-500' },
+        { name: 'light-blue', label: 'Light Blue', icon: Droplet, color: 'blue-300' },
+        { name: 'dark-blue', label: 'Dark Blue', icon: Cloud, color: 'blue-800' },
+    ];
+
+    // Initialize theme based on localStorage or system preference
     useEffect(() => {
-        const savedMode = localStorage.getItem('darkMode');
-        if (savedMode) {
-            const isDark = savedMode === 'true';
-            setDarkMode(isDark);
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            setDarkMode(true);
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme && themes.some(t => t.name === savedTheme)) {
+            setTheme(savedTheme);
+            document.documentElement.classList.add(savedTheme);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
             document.documentElement.classList.add('dark');
+        } else {
+            setTheme('light');
+            document.documentElement.classList.add('light');
         }
     }, []);
 
-    // Toggle dark mode and save preference to localStorage
-    const toggleDarkMode = () => {
-        const newMode = !darkMode;
-        setDarkMode(newMode);
-        localStorage.setItem('darkMode', newMode.toString());
-        if (newMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+    // Update theme and save to localStorage
+    const changeTheme = (newTheme) => {
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        // Remove all theme classes
+        themes.forEach(t => document.documentElement.classList.remove(t.name));
+        // Add the selected theme class
+        document.documentElement.classList.add(newTheme);
+        setShowThemeDropdown(false); // Tutup dropdown setelah memilih tema
     };
 
     const defaultNavigation = [
@@ -87,10 +97,8 @@ export default function AdminLayout({
 
     const menuItems = navigation.length > 0 ? navigation : defaultNavigation;
 
-    // Debugging: Log menu items to inspect structure
     console.log('Navigation Menu Items:', menuItems);
 
-    // Fungsi untuk memeriksa apakah rute ada di Ziggy
     const isRouteValid = (routeName) => {
         if (!routeName) {
             console.warn('Route name is undefined or null');
@@ -132,20 +140,33 @@ export default function AdminLayout({
     };
 
     return (
-        <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-900">
+        <div className={`flex min-h-screen transition-colors duration-300
+            ${theme === 'light' ? 'bg-zinc-50' : ''}
+            ${theme === 'dark' ? 'bg-zinc-900' : ''}
+            ${theme === 'light-blue' ? 'bg-blue-50' : ''}
+            ${theme === 'dark-blue' ? 'bg-blue-900' : ''}`}>
             {/* Desktop Sidebar */}
             <div className={`
                 fixed inset-y-0 left-0 z-50 w-72 overflow-y-auto 
-                bg-white dark:bg-zinc-800 shadow-lg
-                transform transition-transform duration-300 ease-in-out
+                shadow-lg transform transition-transform duration-300 ease-in-out
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
                 lg:translate-x-0 lg:block
+                ${theme === 'light' ? 'bg-white' : ''}
+                ${theme === 'dark' ? 'bg-zinc-800' : ''}
+                ${theme === 'light-blue' ? 'bg-white' : ''}
+                ${theme === 'dark-blue' ? 'bg-blue-950' : ''}
             `}>
                 <div className="flex h-full flex-col">
                     {/* Sidebar Header */}
-                    <div className="flex h-20 items-center justify-between px-6 border-b dark:border-zinc-700">
+                    <div className={`flex h-20 items-center justify-between px-6 border-b
+                        ${theme === 'light' ? 'border-zinc-200' : ''}
+                        ${theme === 'dark' ? 'border-zinc-700' : ''}
+                        ${theme === 'light-blue' ? 'border-blue-200' : ''}
+                        ${theme === 'dark-blue' ? 'border-blue-800' : ''}`}>
                         <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-md">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-md
+                                ${theme === 'light-blue' ? 'bg-blue-100' : ''}
+                                ${theme === 'dark-blue' ? 'bg-blue-800' : ''}`}>
                                 <img
                                     src="/assets/images/logo/logo-removebg.png"
                                     alt="Logo"
@@ -153,8 +174,20 @@ export default function AdminLayout({
                                 />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-400 dark:to-indigo-500">Kemahasiswaan</h2>
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400">Institut Teknologi Del</p>
+                                <h2 className={`text-xl font-bold bg-clip-text text-transparent
+                                    ${theme === 'light' ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : ''}
+                                    ${theme === 'dark' ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : ''}
+                                    ${theme === 'light-blue' ? 'bg-gradient-to-r from-blue-400 to-cyan-500' : ''}
+                                    ${theme === 'dark-blue' ? 'bg-gradient-to-r from-blue-300 to-indigo-400' : ''}`}>
+                                    Kemahasiswaan
+                                </h2>
+                                <p className={`text-xs
+                                    ${theme === 'light' ? 'text-zinc-500' : ''}
+                                    ${theme === 'dark' ? 'text-zinc-400' : ''}
+                                    ${theme === 'light-blue' ? 'text-blue-600' : ''}
+                                    ${theme === 'dark-blue' ? 'text-blue-300' : ''}`}>
+                                    Institut Teknologi Del
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -164,9 +197,8 @@ export default function AdminLayout({
                         {menuItems.map((item, index) => {
                             const hasSubmenu = item.submenu && item.submenu.length > 0;
                             const isOpen = expandedMenu === index;
-                            const Icon = item.icon && iconMap[item.icon] ? iconMap[item.icon] : LayoutDashboard; // Fallback ke LayoutDashboard
+                            const Icon = item.icon && iconMap[item.icon] ? iconMap[item.icon] : LayoutDashboard;
 
-                            // Debugging ikon
                             console.log(`Icon for ${item.name}:`, item.icon, 'Mapped Icon:', Icon ? Icon.name : 'Not found');
 
                             if (hasSubmenu) {
@@ -186,23 +218,34 @@ export default function AdminLayout({
                                                 flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group
                                                 ${isSubmenuActive
                                                     ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
-                                                    : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-zinc-900 dark:hover:text-white'}
-                                            `}
-                                        >
+                                                    : `${theme === 'light' ? 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900' : ''}
+                                                       ${theme === 'dark' ? 'text-zinc-300 hover:bg-zinc-700/50 hover:text-white' : ''}
+                                                       ${theme === 'light-blue' ? 'text-blue-700 hover:bg-blue-100 hover:text-blue-900' : ''}
+                                                       ${theme === 'dark-blue' ? 'text-blue-200 hover:bg-blue-800 hover:text-white' : ''}`}
+                                            `}>
                                             <div className="flex items-center">
                                                 {Icon && (
                                                     <span className="mr-3">
-                                                        <Icon className={`h-5 w-5 transition-all duration-200 ${isSubmenuActive ? 'text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400'}`} />
+                                                        <Icon className={`h-5 w-5 transition-all duration-200
+                                                            ${isSubmenuActive ? 'text-white' : 
+                                                              `${theme === 'light' ? 'text-zinc-500 group-hover:text-blue-500' : ''}
+                                                               ${theme === 'dark' ? 'text-zinc-400 group-hover:text-blue-400' : ''}
+                                                               ${theme === 'light-blue' ? 'text-blue-500 group-hover:text-blue-700' : ''}
+                                                               ${theme === 'dark-blue' ? 'text-blue-300 group-hover:text-blue-100' : ''}`}`} />
                                                     </span>
                                                 )}
                                                 <span className={`font-medium tracking-wide ${isSubmenuActive ? '' : 'group-hover:translate-x-1'} transition-transform duration-200`}>
                                                     {item.name}
                                                 </span>
                                             </div>
-                                            <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''} ${isSubmenuActive ? 'text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400'}`} />
+                                            <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}
+                                                ${isSubmenuActive ? 'text-white' : 
+                                                  `${theme === 'light' ? 'text-zinc-500 group-hover:text-blue-500' : ''}
+                                                   ${theme === 'dark' ? 'text-zinc-400 group-hover:text-blue-400' : ''}
+                                                   ${theme === 'light-blue' ? 'text-blue-500 group-hover:text-blue-700' : ''}
+                                                   ${theme === 'dark-blue' ? 'text-blue-300 group-hover:text-blue-100' : ''}`}`} />
                                         </button>
 
-                                        {/* Submenu */}
                                         {isOpen && (
                                             <div className="pl-8 space-y-1 mt-1">
                                                 {item.submenu.map((subItem, subIndex) => {
@@ -223,10 +266,15 @@ export default function AdminLayout({
                                                             className={`
                                                                 flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 group
                                                                 ${isSubItemActive
-                                                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                                                    : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-blue-600 dark:hover:text-blue-400'}
-                                                            `}
-                                                        >
+                                                                    ? `${theme === 'light' ? 'bg-blue-50 text-blue-600' : ''}
+                                                                       ${theme === 'dark' ? 'bg-blue-900/30 text-blue-400' : ''}
+                                                                       ${theme === 'light-blue' ? 'bg-blue-100 text-blue-700' : ''}
+                                                                       ${theme === 'dark-blue' ? 'bg-blue-800 text-blue-200' : ''}`
+                                                                    : `${theme === 'light' ? 'text-zinc-600 hover:bg-zinc-100 hover:text-blue-600' : ''}
+                                                                       ${theme === 'dark' ? 'text-zinc-300 hover:bg-zinc-700/50 hover:text-blue-400' : ''}
+                                                                       ${theme === 'light-blue' ? 'text-blue-700 hover:bg-blue-100 hover:text-blue-800' : ''}
+                                                                       ${theme === 'dark-blue' ? 'text-blue-200 hover:bg-blue-800 hover:text-blue-100' : ''}`}
+                                                            `}>
                                                             <span className={`font-medium ${isSubItemActive ? '' : 'group-hover:translate-x-1'} transition-transform duration-200`}>
                                                                 {subItem.name}
                                                             </span>
@@ -239,7 +287,6 @@ export default function AdminLayout({
                                 );
                             }
 
-                            // Menu tanpa submenu
                             if (!item.route) {
                                 console.warn(`Menu item "${item.name}" has no route defined.`);
                                 return null;
@@ -258,15 +305,24 @@ export default function AdminLayout({
                                         flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group
                                         ${isActiveRoute
                                             ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
-                                            : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-zinc-900 dark:hover:text-white'}
-                                    `}
-                                >
+                                            : `${theme === 'light' ? 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900' : ''}
+                                               ${theme === 'dark' ? 'text-zinc-300 hover:bg-zinc-700/50 hover:text-white' : ''}
+                                               ${theme === 'light-blue' ? 'text-blue-700 hover:bg-blue-100 hover:text-blue-900' : ''}
+                                               ${theme === 'dark-blue' ? 'text-blue-200 hover:bg-blue-800 hover:text-white' : ''}`}
+                                    `}>
                                     {Icon && (
                                         <span className="mr-3">
-                                            <Icon className={`h-5 w-5 transition-all duration-200 ${isActiveRoute ? 'text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400'}`} />
+                                            <Icon className={`h-5 w-5 transition-all duration-200
+                                                ${isActiveRoute ? 'text-white' : 
+                                                  `${theme === 'light' ? 'text-zinc-500 group-hover:text-blue-500' : ''}
+                                                   ${theme === 'dark' ? 'text-zinc-400 group-hover:text-blue-400' : ''}
+                                                   ${theme === 'light-blue' ? 'text-blue-500 group-hover:text-blue-700' : ''}
+                                                   ${theme === 'dark-blue' ? 'text-blue-300 group-hover:text-blue-100' : ''}`}`} />
                                         </span>
                                     )}
-                                    <span className={`font-medium tracking-wide ${isActiveRoute ? '' : 'group-hover:translate-x-1'} transition-transform duration-200`}>{item.name}</span>
+                                    <span className={`font-medium tracking-wide ${isActiveRoute ? '' : 'group-hover:translate-x-1'} transition-transform duration-200`}>
+                                        {item.name}
+                                    </span>
                                 </Link>
                             );
                         })}
@@ -274,24 +330,54 @@ export default function AdminLayout({
 
                     {/* Bottom Section */}
                     <div className="p-4 mt-auto">
-                        <div className="bg-zinc-100 dark:bg-zinc-700/30 rounded-xl p-4">
+                        <div className={`rounded-xl p-4
+                            ${theme === 'light' ? 'bg-zinc-100' : ''}
+                            ${theme === 'dark' ? 'bg-zinc-700/30' : ''}
+                            ${theme === 'light-blue' ? 'bg-blue-100' : ''}
+                            ${theme === 'dark-blue' ? 'bg-blue-800' : ''}`}>
                             <div className="flex justify-between items-center mb-3">
-                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Appearance</span>
+                                <span className={`text-xs font-medium
+                                    ${theme === 'light' ? 'text-zinc-500' : ''}
+                                    ${theme === 'dark' ? 'text-zinc-400' : ''}
+                                    ${theme === 'light-blue' ? 'text-blue-600' : ''}
+                                    ${theme === 'dark-blue' ? 'text-blue-200' : ''}`}>
+                                    Appearance
+                                </span>
                                 <button
-                                    onClick={toggleDarkMode}
-                                    className="p-2 rounded-lg bg-white dark:bg-zinc-700 shadow-sm hover:shadow-md transition-all duration-200"
-                                    aria-label="Toggle dark mode"
-                                >
-                                    {darkMode ? (
-                                        <Sun className="h-4 w-4 text-amber-500" />
-                                    ) : (
-                                        <Moon className="h-4 w-4 text-indigo-500" />
-                                    )}
+                                    onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+                                    className={`p-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200
+                                        ${theme === 'light' ? 'bg-white' : ''}
+                                        ${theme === 'dark' ? 'bg-zinc-700' : ''}
+                                        ${theme === 'light-blue' ? 'bg-blue-50' : ''}
+                                        ${theme === 'dark-blue' ? 'bg-blue-700' : ''}`}>
+                                    {themes.find(t => t.name === theme)?.icon && React.createElement(themes.find(t => t.name === theme).icon, {
+                                        className: `h-4 w-4 text-${themes.find(t => t.name === theme).color}`
+                                    })}
                                 </button>
                             </div>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                {darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                            </p>
+                            {/* Theme Dropdown */}
+                            {showThemeDropdown && (
+                                <div className={`absolute bottom-20 left-4 w-60 rounded-lg shadow-xl border
+                                    ${theme === 'light' ? 'bg-white border-zinc-100' : ''}
+                                    ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : ''}
+                                    ${theme === 'light-blue' ? 'bg-blue-50 border-blue-200' : ''}
+                                    ${theme === 'dark-blue' ? 'bg-blue-950 border-blue-800' : ''}`}>
+                                    {themes.map((t) => (
+                                        <button
+                                            key={t.name}
+                                            onClick={() => changeTheme(t.name)}
+                                            className={`flex items-center w-full px-4 py-2 text-sm transition-all duration-200
+                                                ${theme === t.name ? 'bg-blue-500 text-white' : 
+                                                  `${theme === 'light' ? 'text-zinc-700 hover:bg-zinc-100' : ''}
+                                                   ${theme === 'dark' ? 'text-zinc-300 hover:bg-zinc-700' : ''}
+                                                   ${theme === 'light-blue' ? 'text-blue-700 hover:bg-blue-100' : ''}
+                                                   ${theme === 'dark-blue' ? 'text-blue-200 hover:bg-blue-800' : ''}`}`}>
+                                            {React.createElement(t.icon, { className: `h-4 w-4 mr-2 text-${t.color}` })}
+                                            {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -308,71 +394,124 @@ export default function AdminLayout({
             {/* Main Content Area */}
             <div className="flex-1 lg:pl-72">
                 {/* Top Navigation Bar */}
-                <header className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md shadow-sm">
+                <header className={`sticky top-0 z-40 backdrop-blur-md shadow-sm
+                    ${theme === 'light' ? 'bg-white/90' : ''}
+                    ${theme === 'dark' ? 'bg-zinc-800/90' : ''}
+                    ${theme === 'light-blue' ? 'bg-blue-50/90' : ''}
+                    ${theme === 'dark-blue' ? 'bg-blue-950/90' : ''}`}>
                     <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-                        {/* Mobile Menu Toggle */}
                         <div className="flex items-center space-x-4">
                             <button
-                                className="lg:hidden p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                                onClick={() => setSidebarOpen(!sidebarOpen)}
-                            >
-                                <Menu className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+                                className={`lg:hidden p-2 rounded-lg focus:outline-none focus:ring-2
+                                    ${theme === 'light' ? 'hover:bg-zinc-100 focus:ring-blue-500' : ''}
+                                    ${theme === 'dark' ? 'hover:bg-zinc-700 focus:ring-blue-400' : ''}
+                                    ${theme === 'light-blue' ? 'hover:bg-blue-100 focus:ring-blue-600' : ''}
+                                    ${theme === 'dark-blue' ? 'hover:bg-blue-800 focus:ring-blue-300' : ''}`}
+                                onClick={() => setSidebarOpen(!sidebarOpen)}>
+                                <Menu className={`h-5 w-5
+                                    ${theme === 'light' ? 'text-zinc-700' : ''}
+                                    ${theme === 'dark' ? 'text-zinc-300' : ''}
+                                    ${theme === 'light-blue' ? 'text-blue-700' : ''}
+                                    ${theme === 'dark-blue' ? 'text-blue-200' : ''}`} />
                             </button>
 
-                            <h1 className="text-lg font-semibold text-zinc-800 dark:text-white hidden lg:block">
+                            <h1 className={`text-lg font-semibold hidden lg:block
+                                ${theme === 'light' ? 'text-zinc-800' : ''}
+                                ${theme === 'dark' ? 'text-white' : ''}
+                                ${theme === 'light-blue' ? 'text-blue-800' : ''}
+                                ${theme === 'dark-blue' ? 'text-blue-100' : ''}`}>
                                 {menuItems.find(item => item.route && isActive(item.route))?.name ||
                                     menuItems.find(item => item.submenu?.some(sub => isActive(sub.route)))?.name ||
                                     'Dashboard'}
                             </h1>
                         </div>
 
-                        {/* Right Side Actions */}
                         <div className="flex items-center space-x-2">
-                            {/* Dark Mode Toggle (Desktop) */}
                             <button
-                                onClick={toggleDarkMode}
-                                className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors hidden lg:block"
-                                aria-label="Toggle dark mode"
-                            >
-                                {darkMode ? (
-                                    <Sun className="h-5 w-5 text-amber-500" />
-                                ) : (
-                                    <Moon className="h-5 w-5 text-indigo-500" />
-                                )}
+                                onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+                                className={`p-2 rounded-lg transition-colors hidden lg:block
+                                    ${theme === 'light' ? 'hover:bg-zinc-100' : ''}
+                                    ${theme === 'dark' ? 'hover:bg-zinc-700' : ''}
+                                    ${theme === 'light-blue' ? 'hover:bg-blue-100' : ''}
+                                    ${theme === 'dark-blue' ? 'hover:bg-blue-800' : ''}`}
+                                aria-label="Select theme">
+                                {themes.find(t => t.name === theme)?.icon && React.createElement(themes.find(t => t.name === theme).icon, {
+                                    className: `h-5 w-5 text-${themes.find(t => t.name === theme).color}`
+                                })}
                             </button>
 
-                            {/* Notifications */}
-                            <button className="relative p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all duration-200">
-                                <Bell className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
+                            <button className={`relative p-2 rounded-lg transition-all duration-200
+                                ${theme === 'light' ? 'hover:bg-zinc-100' : ''}
+                                ${theme === 'dark' ? 'hover:bg-zinc-700' : ''}
+                                ${theme === 'light-blue' ? 'hover:bg-blue-100' : ''}
+                                ${theme === 'dark-blue' ? 'hover:bg-blue-800' : ''}`}>
+                                <Bell className={`h-5 w-5
+                                    ${theme === 'light' ? 'text-zinc-600' : ''}
+                                    ${theme === 'dark' ? 'text-zinc-300' : ''}
+                                    ${theme === 'light-blue' ? 'text-blue-600' : ''}
+                                    ${theme === 'dark-blue' ? 'text-blue-200' : ''}`} />
                                 <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs font-medium shadow-md">
                                     3
                                 </span>
                             </button>
 
-                            {/* User Dropdown */}
                             <div className="relative group">
-                                <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all duration-300">
+                                <button className={`flex items-center space-x-2 p-2 rounded-lg transition-all duration-300
+                                    ${theme === 'light' ? 'hover:bg-zinc-100' : ''}
+                                    ${theme === 'dark' ? 'hover:bg-zinc-700' : ''}
+                                    ${theme === 'light-blue' ? 'hover:bg-blue-100' : ''}
+                                    ${theme === 'dark-blue' ? 'hover:bg-blue-800' : ''}`}>
                                     <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm">
                                         {user?.name?.charAt(0) || 'U'}
                                     </div>
-                                    <span className="hidden md:inline text-sm font-medium text-zinc-800 dark:text-white">
+                                    <span className={`hidden md:inline text-sm font-medium
+                                        ${theme === 'light' ? 'text-zinc-800' : ''}
+                                        ${theme === 'dark' ? 'text-white' : ''}
+                                        ${theme === 'light-blue' ? 'text-blue-800' : ''}
+                                        ${theme === 'dark-blue' ? 'text-blue-100' : ''}`}>
                                         {user?.name || 'User'}
                                     </span>
-                                    <ChevronDown className="h-4 w-4 opacity-60 text-zinc-700 dark:text-zinc-300" />
+                                    <ChevronDown className={`h-4 w-4 opacity-60
+                                        ${theme === 'light' ? 'text-zinc-700' : ''}
+                                        ${theme === 'dark' ? 'text-zinc-300' : ''}
+                                        ${theme === 'light-blue' ? 'text-blue-700' : ''}
+                                        ${theme === 'dark-blue' ? 'text-blue-200' : ''}`} />
                                 </button>
 
-                                {/* Dropdown Menu */}
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-100 dark:border-zinc-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform group-hover:translate-y-0 translate-y-2">
-                                    <div className="p-3 border-b border-zinc-100 dark:border-zinc-700">
-                                        <p className="text-sm font-medium text-zinc-800 dark:text-white">{user?.name || 'User'}</p>
-                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{user?.email || 'user@example.com'}</p>
+                                <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-xl border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform group-hover:translate-y-0 translate-y-2
+                                    ${theme === 'light' ? 'bg-white border-zinc-100' : ''}
+                                    ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : ''}
+                                    ${theme === 'light-blue' ? 'bg-blue-50 border-blue-200' : ''}
+                                    ${theme === 'dark-blue' ? 'bg-blue-950 border-blue-800' : ''}`}>
+                                    <div className={`p-3 border-b
+                                        ${theme === 'light' ? 'border-zinc-100' : ''}
+                                        ${theme === 'dark' ? 'border-zinc-700' : ''}
+                                        ${theme === 'light-blue' ? 'border-blue-200' : ''}
+                                        ${theme === 'dark-blue' ? 'border-blue-800' : ''}`}>
+                                        <p className={`text-sm font-medium
+                                            ${theme === 'light' ? 'text-zinc-800' : ''}
+                                            ${theme === 'dark' ? 'text-white' : ''}
+                                            ${theme === 'light-blue' ? 'text-blue-800' : ''}
+                                            ${theme === 'dark-blue' ? 'text-blue-100' : ''}`}>
+                                            {user?.name || 'User'}
+                                        </p>
+                                        <p className={`text-xs
+                                            ${theme === 'light' ? 'text-zinc-500' : ''}
+                                            ${theme === 'dark' ? 'text-zinc-400' : ''}
+                                            ${theme === 'light-blue' ? 'text-blue-600' : ''}
+                                            ${theme === 'dark-blue' ? 'text-blue-200' : ''}`}>
+                                            {user?.email || 'user@example.com'}
+                                        </p>
                                     </div>
                                     <div className="py-1">
                                         <Link
                                             href={route('logout')}
                                             method="post"
-                                            className="flex items-center px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-sm text-zinc-700 dark:text-zinc-300"
-                                        >
+                                            className={`flex items-center px-4 py-2 text-sm
+                                                ${theme === 'light' ? 'text-zinc-700 hover:bg-zinc-100' : ''}
+                                                ${theme === 'dark' ? 'text-zinc-300 hover:bg-zinc-700' : ''}
+                                                ${theme === 'light-blue' ? 'text-blue-700 hover:bg-blue-100' : ''}
+                                                ${theme === 'dark-blue' ? 'text-blue-200 hover:bg-blue-800' : ''}`}>
                                             <LogOut className="mr-2 h-4 w-4" />
                                             Logout
                                         </Link>
@@ -383,7 +522,6 @@ export default function AdminLayout({
                     </div>
                 </header>
 
-                {/* Page Content */}
                 <main className="p-4 sm:p-6 lg:p-8">
                     {children}
                 </main>

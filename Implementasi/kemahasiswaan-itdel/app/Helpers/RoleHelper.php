@@ -31,7 +31,7 @@ class RoleHelper
                 'bem' => true,
                 'downloads' => true,
                 'organizationadmin' => true,
-                'carousel' => true, // Tambahkan izin untuk carousel
+                'carousel' => true,
             ],
             'adminbem' => [
                 'pengumuman' => true,
@@ -43,7 +43,7 @@ class RoleHelper
                 'aspiration' => false,
                 'bem' => true,
                 'mpm' => false,
-                'carousel' => false, // Tidak ada akses untuk adminbem
+                'carousel' => false,
             ],
             'adminmpm' => [
                 'pengumuman' => true,
@@ -55,7 +55,7 @@ class RoleHelper
                 'aspiration' => true,
                 'bem' => false,
                 'mpm' => true,
-                'carousel' => false, 
+                'carousel' => false,
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -67,7 +67,7 @@ class RoleHelper
                 'counseling' => true,
                 'aspiration' => false,
                 'bem' => false,
-                'carousel' => false, 
+                'carousel' => false,
             ],
         ];
 
@@ -281,7 +281,7 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Kelola Admin Organisasi',
                 'route' => 'admin.organization-admins.index',
-                'icon' => 'user-shield',
+                'icon' => 'organization', // Ganti dari 'user-shield' ke 'organization'
                 'visible' => true,
             ];
         }
@@ -291,7 +291,7 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Kelola Carousel',
                 'route' => 'admin.carousel.index',
-                'icon' => 'image',
+                'icon' => 'carousel', // Ganti dari 'image' ke 'carousel' untuk konsistensi
                 'visible' => true,
             ];
         }
