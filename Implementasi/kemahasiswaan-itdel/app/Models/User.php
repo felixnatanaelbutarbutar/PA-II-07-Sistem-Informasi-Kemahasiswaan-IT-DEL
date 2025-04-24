@@ -59,4 +59,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Counseling::class, 'requestBy');
     }
+
+    public function submissions()
+    {
+        return $this->hasMany(Submission::class);
+    }
+
+    public function submissionResponses()
+    {
+        return $this->hasMany(SubmissionResponse::class);
+    }
 }

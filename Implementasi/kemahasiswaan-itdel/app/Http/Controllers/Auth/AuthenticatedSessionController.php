@@ -151,6 +151,7 @@ class AuthenticatedSessionController extends Controller
                 'logistik' => 'kemahasiswaan',
                 'koordinator' => 'kemahasiswaan',
                 'authenticated user' => 'kemahasiswaan',
+                'staf administrasi akademik dan kemahasiswaan' => 'kemahasiswaan', // Role baru ditambahkan
             ];
 
             // Tentukan role pengguna

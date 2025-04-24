@@ -112,15 +112,15 @@ const NavbarGuestLayout = () => {
                                 Pengumuman
                             </Link>
                             <Link
-                                href="/struktur"
-                                className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/struktur') ? 'nav-item-active' : 'transition-colors hover:text-white'
+                                href="/achievements"
+                                className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/achievements') ? 'nav-item-active' : 'transition-colors hover:text-white'
                                     }`}
                             >
-                                Struktur Organisasi
+                                Prestasi
                             </Link>
                             <Link
-                                href="/kegiatan"
-                                className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/kegiatan') ? 'nav-item-active' : 'transition-colors hover:text-white'
+                                href="/activities"
+                                className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/activities') ? 'nav-item-active' : 'transition-colors hover:text-white'
                                     }`}
                             >
                                 Kegiatan
@@ -172,16 +172,16 @@ const NavbarGuestLayout = () => {
                                             </div>
                                         </Link>
                                         <Link
-                                            href="#"
+                                            href="/downloads"
                                             className="dropdown-item block border-l-4 border-transparent px-4 py-3 text-sm text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700"
                                             onClick={() => setLayananDropdownOpen(false)}
                                         >
-                                            <div className="font-medium">Kesehatan</div>
+                                            <div className="font-medium">Unduhan</div>
                                             <div className="text-xs text-gray-500">
-                                                Klinik dan asuransi kesehatan
+                                                Halaman untuk menu unduhan
                                             </div>
                                         </Link>
-                                        <Link
+                                        {/* <Link
                                             href="#"
                                             className="dropdown-item block border-l-4 border-transparent px-4 py-3 text-sm text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700"
                                             onClick={() => setLayananDropdownOpen(false)}
@@ -190,7 +190,7 @@ const NavbarGuestLayout = () => {
                                             <div className="text-xs text-gray-500">
                                                 Informasi dan pendaftaran asrama
                                             </div>
-                                        </Link>
+                                        </Link> */}
                                     </div>
                                 )}
                             </div>
@@ -230,7 +230,7 @@ const NavbarGuestLayout = () => {
                                                     <Link href="/bem" className="mega-menu-item">
                                                     </Link>
                                                     <Link href="/bem" className="mega-menu-item">
-                                                        Struktur Organisasi
+                                                        Prestasi
                                                     </Link>
                                                     <Link href="/bem" className="mega-menu-item">
                                                         Program Kerja
@@ -253,13 +253,13 @@ const NavbarGuestLayout = () => {
                                                     MPM (Majelis Perwakilan Mahasiswa)
                                                 </div>
                                                 <div className="mt-2">
-                                                    <Link href="#" className="mega-menu-item">
+                                                    <Link href="/mpm" className="mega-menu-item">
                                                         Tentang MPM
                                                     </Link>
-                                                    <Link href="#" className="mega-menu-item">
+                                                    <Link href="/mpm" className="mega-menu-item">
                                                         Anggota MPM
                                                     </Link>
-                                                    <Link href="#" className="mega-menu-item">
+                                                    <Link href="/mpm" className="mega-menu-item">
                                                         Komisi
                                                     </Link>
                                                     <Link href="#" className="mega-menu-item">
@@ -357,7 +357,7 @@ const NavbarGuestLayout = () => {
                                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                Struktur Organisasi
+                                Prestasi
                             </Link>
                             <Link
                                 href="#events"
@@ -479,7 +479,7 @@ const NavbarGuestLayout = () => {
                                                     setMobileMenuOpen(false);
                                                 }}
                                             >
-                                                Struktur Organisasi
+                                                Prestasi
                                             </Link>
                                             <Link
                                                 href="#"

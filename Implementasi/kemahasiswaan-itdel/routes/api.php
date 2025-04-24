@@ -6,8 +6,11 @@ use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\CarouselController;
+use App\Http\Controllers\API\SubmissionController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\NewsCategoryController;
+use App\Http\Controllers\API\NotificationController;
+use App\Http\Controllers\API\SubmissionResponseController;
 use App\Http\Controllers\Api\AnnouncementCategoryController;
 
 /*
@@ -41,3 +44,4 @@ Route::post('/chatbot', [ChatbotController::class, 'chat']);
 Route::get('/achievements-grouped', [AchievementController::class, 'getGroupedAchievements']);
 
 Route::get('/carousel/guest', [CarouselController::class, 'guestIndex'])->name('api.carousel.guest.index');
+

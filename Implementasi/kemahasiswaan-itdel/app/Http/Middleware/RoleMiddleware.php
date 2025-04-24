@@ -31,7 +31,7 @@ class RoleMiddleware
                 'required_roles' => $roles,
                 'request_path' => $request->path()
             ]);
-            abort(403, 'Unauthorized');
+            abort(403, 'Anda tidak memiliki akses di halaman ini');
         }
 
         return $next($request);

@@ -23,6 +23,7 @@ class RoleHelper
                 'news' => true,
                 'scholarshipcategory' => true,
                 'scholarship' => true,
+                'form' => true,
                 'achievements' => true,
                 'achievementtype' => true,
                 'counseling' => true,
@@ -32,6 +33,7 @@ class RoleHelper
                 'downloads' => true,
                 'organizationadmin' => true,
                 'carousel' => true,
+                'kegiatan' => true,
             ],
             'adminbem' => [
                 'pengumuman' => true,
@@ -39,11 +41,14 @@ class RoleHelper
                 'newscategory' => false,
                 'achievements' => true,
                 'achievementtype' => false,
+                'scholarship' => false,
+                'form' => false,
                 'counseling' => false,
                 'aspiration' => false,
                 'bem' => true,
                 'mpm' => false,
                 'carousel' => false,
+                'kegiatan' => true,
             ],
             'adminmpm' => [
                 'pengumuman' => true,
@@ -51,11 +56,14 @@ class RoleHelper
                 'newscategory' => false,
                 'achievements' => false,
                 'achievementtype' => false,
+                'scholarship' => false,
+                'form' => false,
                 'counseling' => false,
                 'aspiration' => true,
                 'bem' => false,
                 'mpm' => true,
                 'carousel' => false,
+                'kegiatan' => true,
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -64,10 +72,25 @@ class RoleHelper
                 'newscategory' => false,
                 'achievements' => false,
                 'achievementtype' => false,
+                'scholarship' => false,
+                'form' => false,
                 'counseling' => true,
                 'aspiration' => false,
                 'bem' => false,
                 'carousel' => false,
+                'kegiatan' => true,
+            ],
+            // Tambahkan peran 'guest' dengan izin terbatas
+            'guest' => [
+                'pengumuman' => true,
+                'news' => true,
+                'achievements' => true,
+                'counseling' => true,
+                'aspiration' => true,
+                'bem' => true,
+                'mpm' => true,
+                'downloads' => true,
+                'kegiatan' => true,
             ],
         ];
 
@@ -98,60 +121,106 @@ class RoleHelper
         $role = strtolower($role);
         $permissions = self::getRolePermissions($role);
 
-        // Menu untuk superadmin, kemahasiswaan, adminbem, adminmpm
-        $menuItems = [
-            [
+        // Inisialisasi menuItems
+        $menuItems = [];
+
+        // Menu untuk pengguna yang login (superadmin, kemahasiswaan, adminbem, adminmpm)
+        if (in_array($role, ['superadmin', 'kemahasiswaan', 'adminbem', 'adminmpm'])) {
+            $menuItems[] = [
                 'name' => 'Dashboard',
                 'route' => $role === 'superadmin' ? 'superadmin.dashboard' : 'admin.dashboard',
                 'icon' => 'home',
                 'visible' => true,
-            ]
-        ];
+            ];
+        }
 
         // Menu untuk mahasiswa (tanpa dashboard admin)
         if ($role === 'mahasiswa') {
             $menuItems = [];
         }
 
-        if ($permissions['pengumuman'] ?? false) {
-            $menuItems[] = [
-                'name' => 'Pengumuman',
-                'route' => 'admin.announcement.index',
-                'icon' => 'bell',
-                'visible' => true,
+        // Menu untuk guest (tanpa dashboard)
+        if ($role === 'guest') {
+            $menuItems = [
+                [
+                    'name' => 'Beranda',
+                    'route' => 'home',
+                    'icon' => 'home',
+                    'visible' => true,
+                ],
+                [
+                    'name' => 'Berita',
+                    'route' => 'news.guest.index',
+                    'icon' => 'newspaper',
+                    'visible' => true,
+                ],
+                [
+                    'name' => 'Pengumuman',
+                    'route' => 'announcement.guest.index',
+                    'icon' => 'bell',
+                    'visible' => true,
+                ],
+                [
+                    'name' => 'Prestasi',
+                    'route' => 'achievements.index',
+                    'icon' => 'award',
+                    'visible' => true,
+                ],
+                [
+                    'name' => 'Kegiatan',
+                    'route' => 'activities.guest.index',
+                    'icon' => 'calendar',
+                    'visible' => true,
+                ],
+                [
+                    'name' => 'BEM',
+                    'route' => 'bem.show',
+                    'icon' => 'organization',
+                    'visible' => true,
+                ],
+                [
+                    'name' => 'MPM',
+                    'route' => 'mpm.show',
+                    'icon' => 'organization',
+                    'visible' => true,
+                ],
+                [
+                    'name' => 'Unduhan',
+                    'route' => 'downloads.guest.index',
+                    'icon' => 'download',
+                    'visible' => true,
+                ],
             ];
         }
 
+        // Menu untuk Manajemen Pengumuman
         if (($permissions['announcement'] ?? false) || ($permissions['announcementcategory'] ?? false)) {
-            $newsSubmenu = [];
+            $announcementSubmenu = [];
             if ($permissions['announcementcategory'] ?? false) {
-                $newsSubmenu[] = [
+                $announcementSubmenu[] = [
                     'name' => 'Kategori Pengumuman',
                     'route' => 'admin.announcement-category.index',
                     'visible' => true,
                 ];
             }
-
             if ($permissions['announcement'] ?? false) {
-                $newsSubmenu[] = [
+                $announcementSubmenu[] = [
                     'name' => 'Pengumuman',
                     'route' => 'admin.announcement.index',
                     'visible' => true,
                 ];
             }
-
             $menuItems[] = [
                 'name' => 'Manajemen Pengumuman',
                 'icon' => 'bell',
                 'visible' => true,
-                'submenu' => $newsSubmenu,
+                'submenu' => $announcementSubmenu,
             ];
         }
 
-        // Mengelompokkan Berita dan Kategori Berita dalam dropdown "Manajemen Berita"
+        // Menu untuk Manajemen Berita
         if (($permissions['news'] ?? false) || ($permissions['newscategory'] ?? false)) {
             $newsSubmenu = [];
-
             if ($permissions['newscategory'] ?? false) {
                 $newsSubmenu[] = [
                     'name' => 'Kategori Berita',
@@ -159,7 +228,6 @@ class RoleHelper
                     'visible' => true,
                 ];
             }
-
             if ($permissions['news'] ?? false) {
                 $newsSubmenu[] = [
                     'name' => 'Berita',
@@ -167,7 +235,6 @@ class RoleHelper
                     'visible' => true,
                 ];
             }
-
             $menuItems[] = [
                 'name' => 'Manajemen Berita',
                 'icon' => 'newspaper',
@@ -176,46 +243,34 @@ class RoleHelper
             ];
         }
 
-        // Mengelompokkan Beasiswa dan Kategori Beasiswa dalam dropdown "Manajemen Beasiswa"
+        // Menu untuk Manajemen Beasiswa
         if (($permissions['scholarship'] ?? false) || ($permissions['scholarshipcategory'] ?? false)) {
-            $newsSubmenu = [];
-
-            if ($permissions['scholarship'] ?? false) {
-                $newsSubmenu[] = [
-                    'name' => 'Beasiswa',
-                    'route' => 'admin.scholarship.index',
-                    'visible' => true,
-                ];
-            }
-
+            $scholarshipSubmenu = [];
             if ($permissions['scholarshipcategory'] ?? false) {
-                $newsSubmenu[] = [
+                $scholarshipSubmenu[] = [
                     'name' => 'Kategori Beasiswa',
                     'route' => 'admin.scholarship-category.index',
                     'visible' => true,
                 ];
             }
-
+            if ($permissions['scholarship'] ?? false) {
+                $scholarshipSubmenu[] = [
+                    'name' => 'Beasiswa',
+                    'route' => 'admin.scholarship.index',
+                    'visible' => true,
+                ];
+            }
             $menuItems[] = [
                 'name' => 'Manajemen Beasiswa',
                 'icon' => 'scholarship',
                 'visible' => true,
-                'submenu' => $newsSubmenu,
+                'submenu' => $scholarshipSubmenu,
             ];
         }
 
-        // Mengelompokkan Prestasi dan Jenis Prestasi dalam dropdown "Manajemen Prestasi"
+        // Menu untuk Manajemen Prestasi
         if (($permissions['achievements'] ?? false) || ($permissions['achievementtype'] ?? false)) {
             $achievementSubmenu = [];
-
-            if ($permissions['achievements'] ?? false) {
-                $achievementSubmenu[] = [
-                    'name' => 'Prestasi',
-                    'route' => 'admin.achievements.index',
-                    'visible' => true,
-                ];
-            }
-
             if ($permissions['achievementtype'] ?? false) {
                 $achievementSubmenu[] = [
                     'name' => 'Jenis Prestasi',
@@ -223,7 +278,13 @@ class RoleHelper
                     'visible' => true,
                 ];
             }
-
+            if ($permissions['achievements'] ?? false) {
+                $achievementSubmenu[] = [
+                    'name' => 'Prestasi',
+                    'route' => 'admin.achievements.index',
+                    'visible' => true,
+                ];
+            }
             $menuItems[] = [
                 'name' => 'Manajemen Prestasi',
                 'icon' => 'award',
@@ -232,6 +293,17 @@ class RoleHelper
             ];
         }
 
+        // Menu untuk Manajemen Form
+        if ($permissions['form'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Manajemen Form',
+                'route' => 'admin.form.index',
+                'icon' => 'organization',
+                'visible' => true,
+            ];
+        }
+
+        // Menu untuk Konseling
         if ($permissions['counseling'] ?? false) {
             $menuItems[] = [
                 'name' => 'Konseling',
@@ -241,15 +313,17 @@ class RoleHelper
             ];
         }
 
+        // Menu untuk Aspirasi
         if ($permissions['aspiration'] ?? false) {
             $menuItems[] = [
                 'name' => 'Aspirasi',
-                'route' => 'admin.aspiration.index',
+                'route' => $role === 'mahasiswa' ? 'aspiration.index' : 'admin.aspiration.index',
                 'icon' => 'aspiration',
                 'visible' => true,
             ];
         }
 
+        // Menu untuk Manajemen MPM
         if ($permissions['mpm'] ?? false) {
             $menuItems[] = [
                 'name' => 'Manajemen MPM',
@@ -258,6 +332,8 @@ class RoleHelper
                 'visible' => true,
             ];
         }
+
+        // Menu untuk Manajemen BEM
         if ($permissions['bem'] ?? false) {
             $menuItems[] = [
                 'name' => 'Manajemen BEM',
@@ -267,6 +343,7 @@ class RoleHelper
             ];
         }
 
+        // Menu untuk Unduhan
         if ($permissions['downloads'] ?? false) {
             $menuItems[] = [
                 'name' => 'Unduhan',
@@ -276,22 +353,32 @@ class RoleHelper
             ];
         }
 
-        // Tambahkan menu untuk fitur organizationadmin (hanya untuk kemahasiswaan)
+        // Menu untuk Kelola Admin Organisasi
         if ($permissions['organizationadmin'] ?? false) {
             $menuItems[] = [
                 'name' => 'Kelola Admin Organisasi',
                 'route' => 'admin.organization-admins.index',
-                'icon' => 'organization', // Ganti dari 'user-shield' ke 'organization'
+                'icon' => 'organization',
                 'visible' => true,
             ];
         }
 
-        // Tambahkan menu untuk fitur carousel (hanya untuk kemahasiswaan)
+        // Menu untuk Kelola Carousel
         if ($permissions['carousel'] ?? false) {
             $menuItems[] = [
                 'name' => 'Kelola Carousel',
                 'route' => 'admin.carousel.index',
-                'icon' => 'carousel', // Ganti dari 'image' ke 'carousel' untuk konsistensi
+                'icon' => 'carousel',
+                'visible' => true,
+            ];
+        }
+
+        // Menu untuk Kegiatan
+        if ($permissions['kegiatan'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Kegiatan',
+                'route' => $role === 'guest' ? 'activities.guest.index' : 'admin.activities.index',
+                'icon' => 'calendar',
                 'visible' => true,
             ];
         }

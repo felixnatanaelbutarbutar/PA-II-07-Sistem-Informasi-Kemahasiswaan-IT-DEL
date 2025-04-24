@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BemController;
 use App\Http\Controllers\MpmController;
+use App\Http\Controllers\FormController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\CarouselController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\AspirationController;
@@ -44,6 +46,10 @@ Route::get('/announcement/{announcement_id}', [AnnouncementController::class, 's
 Route::get('/counseling', [CounselingController::class, 'index'])->name('counseling.index');
 Route::post('/counseling', [CounselingController::class, 'store'])->name('counseling.store');
 
+// Activity Calendar for Guests
+Route::get('/activities', [ActivityController::class, 'guestIndex'])->name('activities.guest.index');
+Route::get('/activities/export/pdf', [ActivityController::class, 'guestExportToPDF'])->name('activities.guest.export.pdf');
+
 // Achievements Routes
 Route::get('/achievements', [AchievementController::class, 'guestIndex'])->name('achievements.index');
 
@@ -66,6 +72,11 @@ Route::get('/mpm', [MpmController::class, 'show'])->name('mpm.show');
 
 // Routes untuk unduhan di sisi guest
 Route::get('/downloads', [DownloadController::class, 'guestIndex'])->name('downloads.guest.index');
+
+// Scholarship Routes for Guests
+Route::get('/scholarships', [ScholarshipController::class, 'guestIndex'])->name('scholarships.guest.index');
+Route::get('/scholarships/{scholarship_id}', [ScholarshipController::class, 'show'])->name('scholarships.show');
+
 
 // Login Route
 Route::get('/login', function () {
@@ -128,48 +139,13 @@ Route::middleware(['auth'])->group(function () {
             ]);
         })->name('dashboard');
 
-        // Feature-Specific Routes with Permission Checks
-        Route::middleware(['feature:berita'])->group(function () {
-            Route::get('/berita', function () {
-                return Inertia::render('Admin/Berita', [
-                    'auth' => [
-                        'user' => Auth::user(),
-                    ],
-                ]);
-            })->name('berita');
+        // Rute untuk Kalender Kegiatan (Kemahasiswaan, AdminBEM, AdminMPM)
+        Route::middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
+            Route::resource('activities', ActivityController::class)->except(['show']);
+            Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.destroy');
+            // Tambahkan rute untuk ekspor PDF
+            Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
         });
-
-        Route::middleware(['feature:layanan'])->group(function () {
-            Route::get('/layanan', function () {
-                return Inertia::render('Admin/Layanan', [
-                    'auth' => [
-                        'user' => Auth::user(),
-                    ],
-                ]);
-            })->name('layanan');
-        });
-
-        Route::middleware(['feature:kegiatan'])->group(function () {
-            Route::get('/kegiatan', function () {
-                return Inertia::render('Admin/Kegiatan', [
-                    'auth' => [
-                        'user' => Auth::user(),
-                    ],
-                ]);
-            })->name('kegiatan');
-        });
-
-        Route::middleware(['feature:organisasi'])->group(function () {
-            Route::get('/organisasi', function () {
-                return Inertia::render('Admin/Organisasi', [
-                    'auth' => [
-                        'user' => Auth::user(),
-                    ],
-                ]);
-            })->name('organisasi');
-        });
-
-                    
 
         // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
@@ -184,7 +160,6 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('bem', BemController::class)->except(['destroy', 'update']);
             Route::post('bem/{bem}/update', [BemController::class, 'update'])->name('bem.update');
             Route::post('bem/{bem}/delete', [BemController::class, 'destroy'])->name('bem.delete');
-
         });
 
         // Achievement, News Category, Counseling, and Aspiration Routes (Kemahasiswaan Only)
@@ -239,6 +214,11 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('carousel', CarouselController::class)->except(['show', 'destroy', 'update']);
             Route::post('carousel/{carousel}/update', [CarouselController::class, 'update'])->name('carousel.update');
             Route::post('carousel/{carousel}/delete', [CarouselController::class, 'destroy'])->name('carousel.destroy');
+
+            Route::resource('form', FormController::class)->except(['show', 'destroy', 'update']);
+            Route::post('form/{form}/update', [FormController::class, 'update'])->name('form.update');
+            Route::post('form/{form}/delete', [FormController::class, 'destroy'])->name('form.destroy');
+            Route::post('form/{form}/toggleActive', [FormController::class, 'toggleActive'])->name('admin.form.toggleActive');
         });
 
         // MPM Routes (AdminMPM) - Ditambahkan

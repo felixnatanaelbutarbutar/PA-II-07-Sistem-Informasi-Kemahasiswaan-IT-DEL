@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Scholarship;
-use App\Models\ScholarshipCategory;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth;
 use App\Helpers\RoleHelper;
+use App\Models\Scholarship;
+use Illuminate\Http\Request;
+use App\Models\ScholarshipCategory;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ScholarshipController extends Controller
 {
-    /**
-     * Display a listing of scholarships.
-     */
     public function index()
     {
         $user = Auth::user();
@@ -24,7 +23,7 @@ class ScholarshipController extends Controller
 
         $scholarships = Scholarship::with(['category', 'creator', 'updater'])->get();
 
-        return Inertia::render('Admin/Scholarship/Index', [
+        return Inertia::render('Admin/Scholarship/index', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -33,18 +32,15 @@ class ScholarshipController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new scholarship.
-     */
     public function create()
     {
         $user = Auth::user();
         $role = strtolower($user->role);
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
-        $categories = ScholarshipCategory::all(); // Untuk dropdown kategori
+        $categories = ScholarshipCategory::all();
 
-        return Inertia::render('Admin/Scholarship/Add', [
+        return Inertia::render('Admin/Scholarship/add', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -53,15 +49,12 @@ class ScholarshipController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created scholarship in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'poster' => 'nullable|string', // Ganti ke 'image|max:2048' jika upload file
+            'poster' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'category_id' => 'required|exists:scholarship_categories,category_id',
@@ -87,46 +80,22 @@ class ScholarshipController extends Controller
                 'scholarship_id' => $scholarshipId,
                 'name' => $request->name,
                 'description' => $request->description,
-                'poster' => $request->poster, // Default ditangani di model via accessor
+                'poster' => $request->poster,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'category_id' => $request->category_id,
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
-
-            return redirect()->route('Scholarship.index')
-                            ->with('success', 'Beasiswa berhasil ditambahkan.');
         } catch (\Exception $e) {
             Log::error('Error creating scholarship: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to create scholarship: ' . $e->getMessage()])->withInput();
         }
+
+        return redirect()->route('admin.scholarship.index')
+            ->with('success', 'Beasiswa berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified scholarship.
-     */
-    public function show($id)
-    {
-        $user = Auth::user();
-        $role = strtolower($user->role);
-        $menuItems = RoleHelper::getNavigationMenu($role);
-        $permissions = RoleHelper::getRolePermissions($role);
-
-        $scholarship = Scholarship::with(['category', 'creator', 'updater'])->findOrFail($id);
-
-        return Inertia::render('Admin/Scholarship/Show', [
-            'auth' => ['user' => $user],
-            'userRole' => $role,
-            'permissions' => $permissions,
-            'menu' => $menuItems,
-            'scholarship' => $scholarship,
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified scholarship.
-     */
     public function edit($scholarship_id)
     {
         $user = Auth::user();
@@ -137,7 +106,7 @@ class ScholarshipController extends Controller
         $scholarship = Scholarship::findOrFail($scholarship_id);
         $categories = ScholarshipCategory::all();
 
-        return Inertia::render('Admin/Scholarship/Edit', [
+        return Inertia::render('Admin/Scholarship/edit', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
@@ -147,83 +116,127 @@ class ScholarshipController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified scholarship in storage.
-     */
-    public function update(Request $request, $id)
+    public function update(Request $request, $scholarship_id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'poster' => 'nullable|string', // Ganti ke 'image|max:2048' jika upload file
+            'poster' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'category_id' => 'required|exists:scholarship_categories,category_id',
         ]);
 
         try {
-            $scholarship = Scholarship::findOrFail($id);
+            $scholarship = Scholarship::findOrFail($scholarship_id);
 
             Log::debug('Updating scholarship', [
-                'id' => $id,
+                'scholarship_id' => $scholarship_id,
                 'name' => $request->name,
                 'description' => $request->description,
                 'poster' => $request->poster,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'category_id' => $request->category_id,
-                'updated_by' => Auth::user()->id,
+                'updated_by' => Auth::id(),
             ]);
 
             $scholarship->update([
                 'name' => $request->name,
                 'description' => $request->description,
-                'poster' => $request->poster, // Default ditangani di model via accessor
+                'poster' => $request->poster,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'category_id' => $request->category_id,
-                'updated_by' => Auth::user()->id,
+                'updated_by' => Auth::id(),
             ]);
-
-            return redirect()->route('admin.Scholarship.index')
-                            ->with('success', 'Beasiswa berhasil diperbarui!');
         } catch (\Exception $e) {
             Log::error('Error updating scholarship: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to update scholarship: ' . $e->getMessage()])->withInput();
         }
+
+        return redirect()->route('admin.scholarship.index')
+            ->with('success', 'Beasiswa berhasil diperbarui!');
     }
 
-    /**
-     * Remove the specified scholarship from storage.
-     */
     public function destroy($scholarship_id)
     {
         try {
-            $scholarship = Scholarship::where('scholarship_id', $scholarship_id)->firstOrFail();
+            $scholarship = Scholarship::findOrFail($scholarship_id);
             $scholarship->delete();
-
-            return redirect()->route('admin.Scholarship.index')
-                            ->with('success', 'Beasiswa berhasil dihapus!');
         } catch (\Exception $e) {
             Log::error('Error deleting scholarship: ' . $e->getMessage());
-            return back()->with('error', 'Gagal menghapus beasiswa: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to delete scholarship: ' . $e->getMessage()]);
         }
+
+        return redirect()->route('admin.scholarship.index')
+            ->with('success', 'Beasiswa berhasil dihapus!');
     }
 
-    /**
-     * Generate a unique ID for scholarship_id.
-     */
     private function generateScholarshipId()
     {
         $lastScholarship = Scholarship::latest('scholarship_id')->first();
 
         if ($lastScholarship) {
-            $lastIdNumber = (int) substr($lastScholarship->scholarship_id, 2); // Ambil angka setelah 'sb'
+            $lastIdNumber = (int) substr($lastScholarship->scholarship_id, 2);
             $newIdNumber = $lastIdNumber + 1;
         } else {
             $newIdNumber = 1;
         }
 
-        return 'sb' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT); // Format: sb001
+        return 'sch' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    public function guestIndex()
+    {
+        $scholarships = Scholarship::with(['category', 'form'])
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->get()
+            ->map(function ($scholarship) {
+                return [
+                    'scholarship_id' => $scholarship->scholarship_id,
+                    'name' => $scholarship->name,
+                    'description' => $scholarship->description,
+                    'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
+                    'start_date' => $scholarship->start_date,
+                    'end_date' => $scholarship->end_date,
+                    'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
+                    'form' => $scholarship->form ? [
+                        'form_id' => $scholarship->form->form_id,
+                        'is_active' => $scholarship->form->is_active,
+                    ] : null,
+                ];
+            });
+
+        return Inertia::render('Scholarship', [
+            'scholarships' => $scholarships,
+        ]);
+    }
+
+    public function show($scholarship_id)
+    {
+        $scholarship = Scholarship::with(['category', 'form', 'creator'])
+            ->where('scholarship_id', $scholarship_id)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->firstOrFail();
+
+        return Inertia::render('ScholarshipDetail', [
+            'scholarship' => [
+                'scholarship_id' => $scholarship->scholarship_id,
+                'name' => $scholarship->name,
+                'description' => $scholarship->description,
+                'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
+                'start_date' => $scholarship->start_date,
+                'end_date' => $scholarship->end_date,
+                'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
+                'created_by' => $scholarship->creator ? $scholarship->creator->name : 'Unknown',
+                'form' => $scholarship->form ? [
+                    'form_id' => $scholarship->form->form_id,
+                    'is_active' => $scholarship->form->is_active,
+                ] : null,
+            ],
+        ]);
     }
 }

@@ -13,11 +13,15 @@ import {
     BookOpen,
     Download,
     MessageSquare,
-    Image,
+    Image as LucideImage, // Gunakan alias untuk menghindari konflik
 } from 'lucide-react';
+import axios from 'axios';
 
 export default function Dashboard({ auth, userRole, permissions, menu, totalMahasiswa }) {
-    // Icon mapping dari RoleHelper ke lucide-react, disesuaikan dengan AdminLayout
+    const [activeActivities, setActiveActivities] = React.useState(0);
+    const [announcementsCount, setAnnouncementsCount] = React.useState(0);
+
+    // Icon mapping dari RoleHelper ke lucide-react
     const iconMap = {
         home: LayoutDashboard,
         bell: Bell,
@@ -30,11 +34,29 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
         scholarship: BookOpen,
         download: Download,
         aspiration: MessageSquare,
-        carousel: Image,
+        carousel: LucideImage,
     };
 
     useEffect(() => {
         console.log('User info:', auth.user);
+
+        // Fetch jumlah kegiatan aktif
+        axios.get('/admin/activities/count')
+            .then(response => {
+                setActiveActivities(response.data.active_count);
+            })
+            .catch(error => {
+                console.error('Error fetching active activities count:', error);
+            });
+
+        // Fetch jumlah pengumuman
+        axios.get('/admin/announcements/count')
+            .then(response => {
+                setAnnouncementsCount(response.data.count);
+            })
+            .catch(error => {
+                console.error('Error fetching announcements count:', error);
+            });
     }, [auth.user]);
 
     // Fungsi untuk memeriksa apakah rute valid
@@ -59,11 +81,9 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
 
     // Fungsi untuk mendapatkan route yang dapat digunakan untuk link
     const getLinkRoute = (item) => {
-        // Jika item memiliki route langsung dan valid
         if (item.route && isRouteValid(item.route)) {
             return item.route;
         }
-        // Jika item memiliki submenu, gunakan route dari submenu pertama yang valid
         if (item.submenu && item.submenu.length > 0) {
             const validSubItem = item.submenu.find(subItem => subItem.route && isRouteValid(subItem.route));
             return validSubItem ? validSubItem.route : null;
@@ -71,7 +91,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
         return null;
     };
 
-    // Daftar warna untuk setiap fitur (untuk variasi visual)
+    // Daftar warna untuk setiap fitur
     const featureColors = [
         { bg: 'bg-blue-50', hoverBg: 'bg-blue-100', text: 'text-blue-800', accent: 'bg-blue-500', hoverText: 'text-blue-600' },
         { bg: 'bg-green-50', hoverBg: 'bg-green-100', text: 'text-green-800', accent: 'bg-green-500', hoverText: 'text-green-600' },
@@ -149,7 +169,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                                 ${document.documentElement.classList.contains('dark') ? 'text-green-400' : ''}
                                 ${document.documentElement.classList.contains('light-blue') ? 'text-green-700' : ''}
                                 ${document.documentElement.classList.contains('dark-blue') ? 'text-green-100' : ''}`}>
-                                15
+                                {activeActivities}
                             </p>
                         </div>
 
@@ -170,7 +190,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                                 ${document.documentElement.classList.contains('dark') ? 'text-purple-400' : ''}
                                 ${document.documentElement.classList.contains('light-blue') ? 'text-purple-700' : ''}
                                 ${document.documentElement.classList.contains('dark-blue') ? 'text-purple-100' : ''}`}>
-                                8
+                                {announcementsCount}
                             </p>
                         </div>
                     </div>
