@@ -6,8 +6,15 @@ use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
+Log::info('DebugAuthSanctum.php File Loaded'); // Log statis
+
 class DebugAuthSanctum
 {
+    public function __construct()
+    {
+        Log::info('DebugAuthSanctum Middleware Instantiated');
+    }
+
     public function handle($request, Closure $next)
     {
         $user = Auth::user();

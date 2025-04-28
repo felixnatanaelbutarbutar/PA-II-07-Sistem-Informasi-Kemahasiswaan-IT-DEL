@@ -57,6 +57,3 @@ Route::get('/aspiration-categories', [DashboardController::class, 'getAspiration
 //     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
 // });
 
-// Route::middleware(['session'])->group(function () {
-//     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis/students');
-// });
