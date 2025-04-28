@@ -10,6 +10,7 @@ use App\Http\Controllers\MpmController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ApiProxyController;
 use App\Http\Controllers\CarouselController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\AspirationController;
@@ -203,13 +204,14 @@ Route::middleware(['auth'])->group(function () {
             Route::post('scholarship/{scholarship}/update', [ScholarshipController::class, 'update'])->name('scholarship.update');
             Route::post('scholarship/{scholarship}/delete', [ScholarshipController::class, 'destroy'])->name('scholarship.destroy');
 
-            // === ORGANIZATION ADMINS ===
-            Route::get('/organization-admins', [OrganizationAdminController::class, 'index'])->name('organization-admins.index');
-            Route::get('/organization-admins/create', [OrganizationAdminController::class, 'create'])->name('organization-admins.create');
-            Route::post('/organization-admins', [OrganizationAdminController::class, 'store'])->name('organization-admins.store');
-            Route::post('/organization-admins/{user}/toggle-status', [OrganizationAdminController::class, 'toggleStatus'])->name('organization-admins.toggleStatus');
-            Route::post('/organization-admins/set-role', [OrganizationAdminController::class, 'setRole'])->name('organization-admins.setRole'); // New route for setting roles
+            // Rute untuk Organization Admins menggunakan ApiProxyController
+            Route::get('/organization-admins', [ApiProxyController::class, 'showStudents'])->name('organization-admins.index');
 
+            // Rute lainnya untuk Organization Admins (jika masih diperlukan)
+            // Route::get('/organization-admins/create', [OrganizationAdminController::class, 'create'])->name('organization-admins.create');
+            // Route::post('/organization-admins', [OrganizationAdminController::class, 'store'])->name('organization-admins.store');
+            Route::post('/organization-admins/{user}/toggle-status', [OrganizationAdminController::class, 'toggleStatus'])->name('organization-admins.toggleStatus');
+            Route::post('/organization-admins/set-role', [OrganizationAdminController::class, 'setRole'])->name('organization-admins.setRole');
             // === CAROUSEL ===
             Route::resource('carousel', CarouselController::class)->except(['show', 'destroy', 'update']);
             Route::post('carousel/{carousel}/update', [CarouselController::class, 'update'])->name('carousel.update');

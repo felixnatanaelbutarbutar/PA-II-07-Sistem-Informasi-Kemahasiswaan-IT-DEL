@@ -2,55 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
-use GuzzleHttp\Exception\RequestException;
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\RoleHelper; // Pastikan Anda mengimpor RoleHelper
 
 class ApiProxyController extends Controller
 {
-    public function getStudents(Request $request)
+    public function showStudents(Request $request)
     {
-        // Log awal untuk memastikan endpoint dicapai
-        $userData = Auth::user() ? [
-            'id' => Auth::user()->id,
-            'username' => Auth::user()->username,
-            'email' => Auth::user()->email,
-            'role' => Auth::user()->role,
-        ] : null;
-
-        Log::info('Attempting to access getStudents endpoint', [
-            'user' => $userData,
-            'session' => $request->session()->all(),
-        ]);
-
-        // Periksa apakah pengguna terautentikasi
-        if (!Auth::check()) {
-            Log::error('User is not authenticated');
-            return response()->json(['error' => 'User is not authenticated'], 401);
-        }
-
-        // Ambil api_token dari sesi
         $token = $request->session()->get('api_token');
         if (!$token) {
-            Log::error('No API token found in session', ['session' => $request->session()->all()]);
-            return response()->json(['error' => 'No authentication token found'], 401);
-        }
-
-        // Log token yang akan digunakan
-        Log::info('Using API Token:', ['token' => $token]);
-
-        // Ambil CIS_API_URL dari konfigurasi
-        $cisApiUrl = config('app.cis_api_url');
-        if (empty($cisApiUrl)) {
-            Log::error('CIS_API_URL is empty or not set in configuration');
-            return response()->json(['error' => 'CIS API URL not configured'], 500);
+            return redirect()->route('login')->withErrors(['login' => 'Silakan login terlebih dahulu.']);
         }
 
         try {
+            // Ambil data mahasiswa dari CIS API
             $client = new Client();
-            $response = $client->get($cisApiUrl . '/library-api/mahasiswa', [
+            $response = $client->get(config('app.cis_api_url') . '/library-api/mahasiswa', [
                 'verify' => false,
                 'headers' => [
                     'Authorization' => 'Bearer ' . $token,
@@ -64,32 +36,7 @@ class ApiProxyController extends Controller
             $body = $response->getBody()->getContents();
             $data = json_decode($body, true);
 
-            Log::info('Raw CIS API Response:', ['body' => $body]);
-            Log::info('Decoded CIS API Response:', ['data' => $data]);
-
-            // Tangani berbagai struktur respons
-            $studentsData = null;
-            if (is_array($data)) {
-                $studentsData = $data;
-            } elseif (isset($data['data']) && is_array($data['data'])) {
-                $studentsData = $data['data'];
-            } elseif (isset($data['students']) && is_array($data['students'])) {
-                $studentsData = $data['students'];
-            } elseif (isset($data['results']) && is_array($data['results'])) {
-                $studentsData = $data['results'];
-            } elseif (isset($data['data']['mahasiswa']) && is_array($data['data']['mahasiswa'])) {
-                $studentsData = $data['data']['mahasiswa'];
-            }
-
-            if ($studentsData === null || !is_array($studentsData)) {
-                Log::error('Invalid response structure from CIS API', ['response' => $data]);
-                return response()->json([
-                    'error' => 'Invalid response structure from CIS API',
-                    'response' => $data,
-                ], 500);
-            }
-
-            // Transformasi data ke format yang diharapkan
+            $studentsData = $data['data']['mahasiswa'] ?? [];
             $students = array_map(function ($mahasiswa) {
                 return [
                     'user_id' => $mahasiswa['id'] ?? null,
@@ -105,32 +52,90 @@ class ApiProxyController extends Controller
                 ];
             }, $studentsData);
 
-            return response()->json($students);
-        } catch (RequestException $e) {
-            if ($e->hasResponse()) {
-                $statusCode = $e->getResponse()->getStatusCode();
-                $responseBody = $e->getResponse()->getBody()->getContents();
-                $decodedResponse = json_decode($responseBody, true);
-                Log::error('CIS API HTTP Error:', [
-                    'status' => $statusCode,
-                    'response' => $responseBody,
-                    'decoded' => $decodedResponse,
-                ]);
-                if ($statusCode === 401) {
-                    return response()->json(['error' => 'Token autentikasi tidak valid. Silakan login kembali.'], 401);
-                }
-                return response()->json([
-                    'error' => 'CIS API request failed',
-                    'status' => $statusCode,
-                    'details' => $decodedResponse ?? $responseBody,
-                ], $statusCode);
+            // Ambil parameter pencarian dari request
+            $searchQuery = $request->input('search', '');
+
+            // Filter data berdasarkan NIM, nama, atau prodi
+            if ($searchQuery) {
+                $students = array_filter($students, function ($student) use ($searchQuery) {
+                    $searchLower = strtolower($searchQuery);
+                    return (
+                        stripos(strtolower($student['nim']), $searchLower) !== false ||
+                        stripos(strtolower($student['name']), $searchLower) !== false ||
+                        stripos(strtolower($student['prodi'] ?? ''), $searchLower) !== false
+                    );
+                });
+                $students = array_values($students); // Reset indeks array setelah filter
             }
 
-            Log::error('Error fetching students from CIS API:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Failed to fetch students from CIS API: ' . $e->getMessage()], 500);
+            // Pagination: Batasi menjadi 10 mahasiswa per halaman
+            $perPage = 10;
+            $currentPage = $request->input('page', 1);
+            $offset = ($currentPage - 1) * $perPage;
+            $total = count($students);
+            $studentsPaginated = array_slice($students, $offset, $perPage);
+
+            // Ambil data existingAdmins dari tabel users untuk mengecek role dan status
+            $existingAdmins = User::whereIn('nim', array_column($students, 'nim'))
+                ->get()
+                ->keyBy('nim')
+                ->map(function ($user) {
+                    return [
+                        'role' => $user->role,
+                        'status' => $user->status === 1 ? 'active' : 'inactive',
+                    ];
+                })
+                ->toArray();
+
+            // Ambil data pengguna yang sedang login
+            $user = Auth::user();
+            $role = strtolower($user->role);
+
+            // Ambil menu navigasi dan permissions menggunakan RoleHelper
+            $menuItems = RoleHelper::getNavigationMenu($role);
+            $permissions = RoleHelper::getRolePermissions($role);
+
+            // Kembalikan data menggunakan Inertia untuk merender komponen React
+            return Inertia::render('Admin/OrganizationAdmin/index', [
+                'students' => [
+                    'data' => $studentsPaginated,
+                    'current_page' => $currentPage,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => ceil($total / $perPage),
+                ],
+                'existingAdmins' => $existingAdmins,
+                'searchQuery' => $searchQuery,
+                'auth' => ['user' => $user], // Kirim data pengguna
+                'userRole' => $role, // Kirim role pengguna
+                'permissions' => $permissions, // Kirim permissions
+                'navigation' => $menuItems, // Kirim menu navigasi
+            ]);
         } catch (\Exception $e) {
-            Log::error('Unexpected error in ApiProxyController:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Unexpected error: ' . $e->getMessage()], 500);
+            Log::error('Error fetching students: ' . $e->getMessage());
+
+            // Ambil data pengguna yang sedang login untuk error state
+            $user = Auth::user();
+            $role = $user ? strtolower($user->role) : null;
+            $menuItems = $role ? RoleHelper::getNavigationMenu($role) : [];
+            $permissions = $role ? RoleHelper::getRolePermissions($role) : [];
+
+            return Inertia::render('Admin/OrganizationAdmin/index', [
+                'error' => 'Gagal mengambil data mahasiswa: ' . $e->getMessage(),
+                'students' => [
+                    'data' => [],
+                    'current_page' => 1,
+                    'per_page' => 10,
+                    'total' => 0,
+                    'last_page' => 1,
+                ],
+                'existingAdmins' => [],
+                'searchQuery' => '',
+                'auth' => ['user' => $user],
+                'userRole' => $role,
+                'permissions' => $permissions,
+                'navigation' => $menuItems,
+            ]);
         }
     }
 }

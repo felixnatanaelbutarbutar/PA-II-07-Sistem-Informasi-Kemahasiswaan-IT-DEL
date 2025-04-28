@@ -100,30 +100,29 @@ class AuthenticatedSessionController extends Controller
                 'adminmpm' => 'adminmpm',
             ];
 
-            // Tentukan role pengguna
+            // Tentukan role pengguna dari API
             $apiRole = strtolower($apiUser['role'] ?? 'unknown');
             Log::info('API Role:', ['role' => $apiRole]);
-            $userRole = $roleMapping[$apiRole] ?? null;
-            Log::info('Mapped Role:', ['userRole' => $userRole]);
+            $defaultUserRole = $roleMapping[$apiRole] ?? null;
+            Log::info('Mapped Role (default):', ['defaultUserRole' => $defaultUserRole]);
 
             // Jika role tidak dikenali, tolak login
-            if (!$userRole || !in_array($userRole, ['superadmin', 'kemahasiswaan', 'adminbem', 'adminmpm', 'mahasiswa'])) {
-                Log::error('Login Failed: Unrecognized role', ['apiRole' => $apiRole, 'userRole' => $userRole]);
+            if (!$defaultUserRole || !in_array($defaultUserRole, ['superadmin', 'kemahasiswaan', 'adminbem', 'adminmpm', 'mahasiswa'])) {
+                Log::error('Login Failed: Unrecognized role', ['apiRole' => $apiRole, 'defaultUserRole' => $defaultUserRole]);
                 return back()
                     ->withErrors(['username' => 'Role tidak dikenali. Hubungi administrator.'])
                     ->with('status', 'Role tidak dikenali. Hubungi administrator.');
             }
 
-            // Inisialisasi data pengguna tanpa 'name' terlebih dahulu
+            // Inisialisasi data pengguna tanpa 'role' terlebih dahulu
             $userData = [
                 'username' => $apiUser['username'],
                 'email' => $apiUser['email'] ?? ($apiUser['username'] . '@del.ac.id'),
                 'password' => bcrypt($request->password),
-                'role' => $userRole,
             ];
 
             // Jika role adalah 'mahasiswa', ambil data tambahan dari /library-api/mahasiswa
-            if ($userRole === 'mahasiswa') {
+            if ($defaultUserRole === 'mahasiswa') {
                 $mahasiswaApiUrl = $cisApiUrl . '/library-api/mahasiswa';
                 Log::info('Fetching mahasiswa data from:', ['url' => $mahasiswaApiUrl]);
 
@@ -162,15 +161,40 @@ class AuthenticatedSessionController extends Controller
             // Isi kolom 'name' setelah data mahasiswa digabungkan
             $userData['name'] = $apiUser['nama'] ?? $apiUser['name'] ?? $apiUser['username'];
 
-            Log::info('Data for updateOrCreate:', $userData);
+            // Cari pengguna di database lokal berdasarkan username
+            $existingUser = User::where('username', $apiUser['username'])->first();
 
-            // Cari atau buat pengguna di database lokal
-            $user = User::updateOrCreate(
-                ['username' => $apiUser['username']],
-                $userData
-            );
+            if ($existingUser) {
+                // Jika pengguna sudah ada, gunakan role yang ada di tabel users
+                $userRole = $existingUser->role;
+                Log::info('User exists, using role from database:', ['username' => $existingUser->username, 'role' => $userRole]);
 
-            Log::info('User Created/Updated:', ['user' => $user->toArray()]);
+                // Update data pengguna, kecuali role
+                $existingUser->update([
+                    'email' => $userData['email'],
+                    'name' => $userData['name'],
+                    'password' => $userData['password'],
+                    'nim' => $userData['nim'] ?? $existingUser->nim,
+                    'asrama' => $userData['asrama'] ?? $existingUser->asrama,
+                    'prodi' => $userData['prodi'] ?? $existingUser->prodi,
+                    'fakultas' => $userData['fakultas'] ?? $existingUser->fakultas,
+                    'angkatan' => $userData['angkatan'] ?? $existingUser->angkatan,
+                ]);
+
+                $user = $existingUser;
+            } else {
+                // Jika pengguna belum ada, gunakan role dari API (default role)
+                $userRole = $defaultUserRole;
+                Log::info('User does not exist, creating new user with role from API:', ['username' => $apiUser['username'], 'role' => $userRole]);
+
+                // Tambahkan role ke $userData untuk pembuatan user baru
+                $userData['role'] = $userRole;
+
+                // Buat pengguna baru
+                $user = User::create($userData);
+            }
+
+            Log::info('User Data After Processing:', ['user' => $user->toArray()]);
 
             // Periksa status user
             if ($user->status === 'inactive') {

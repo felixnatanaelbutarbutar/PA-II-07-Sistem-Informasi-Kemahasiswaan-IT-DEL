@@ -3,98 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Helpers\RoleHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 
 class OrganizationAdminController extends Controller
 {
-    public function index()
-    {
-        $user = Auth::user();
-        if (!$user) {
-            Log::error('User not authenticated in OrganizationAdminController::index');
-            return redirect()->route('login')->with('error', 'Silakan login kembali.');
-        }
-
-        $role = strtolower($user->role);
-        try {
-            $menuItems = RoleHelper::getNavigationMenu($role);
-            $permissions = RoleHelper::getRolePermissions($role);
-        } catch (\Exception $e) {
-            Log::error('Error fetching navigation or permissions:', ['error' => $e->getMessage()]);
-            return redirect()->route('login')->with('error', 'Terjadi kesalahan. Silakan coba lagi.');
-        }
-
-        // Fetch existing admins from the users table (for role lookup on the frontend)
-        $admins = User::whereIn('role', ['adminbem', 'adminmpm'])
-            ->orderBy('created_at', 'desc')
-            ->get(['id', 'username', 'email', 'nim', 'role', 'status'])
-            ->keyBy('nim'); // Key by NIM for easy lookup
-
-        Log::info('Admins data in index:', ['admins' => $admins->toArray()]);
-
-        return Inertia::render('Admin/OrganizationAdmin/index', [
-            'permissions' => $permissions,
-            'navigation' => $menuItems,
-            'existingAdmins' => $admins,
-        ]);
-    }
-
-    public function create()
-    {
-        $user = Auth::user();
-        if (!$user) {
-            Log::error('User not authenticated in OrganizationAdminController::create');
-            return redirect()->route('login')->with('error', 'Silakan login kembali.');
-        }
-
-        $role = strtolower($user->role);
-        try {
-            $menuItems = RoleHelper::getNavigationMenu($role);
-            $permissions = RoleHelper::getRolePermissions($role);
-        } catch (\Exception $e) {
-            Log::error('Error fetching navigation or permissions:', ['error' => $e->getMessage()]);
-            return redirect()->route('login')->with('error', 'Terjadi kesalahan. Silakan coba lagi.');
-        }
-
-        return Inertia::render('Admin/OrganizationAdmin/add', [
-            'permissions' => $permissions,
-            'navigation' => $menuItems,
-        ]);
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'username' => 'required|string|max:255|unique:users',
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:adminbem,adminmpm',
-        ]);
-
-        try {
-            User::create([
-                'username' => $request->username,
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => $request->role,
-                'status' => 'active',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error creating admin:', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('notification', ['type' => 'error', 'message' => 'Gagal menambahkan admin: ' . $e->getMessage()]);
-        }
-
-        return redirect()->route('admin.organization-admins.index')
-            ->with('notification', ['type' => 'success', 'message' => 'Admin organisasi berhasil ditambahkan.']);
-    }
-
     public function toggleStatus(User $user)
     {
         if (!in_array($user->role, ['adminbem', 'adminmpm'])) {
@@ -127,37 +40,45 @@ class OrganizationAdminController extends Controller
             'role' => 'required|in:adminbem,adminmpm,mahasiswa',
         ]);
 
-        Log::info('Setting role for user:', [
+        Log::info('Attempting to set role for user:', [
             'nim' => $request->nim,
             'email' => $request->email,
             'role' => $request->role,
         ]);
 
-        // Check if the user already exists in the users table (by NIM or email)
+        // Cari user berdasarkan NIM atau email
         $user = User::where('nim', $request->nim)
             ->orWhere('email', $request->email)
             ->first();
 
+        // Jika role diubah menjadi 'mahasiswa', hapus user dari tabel users
         if ($request->role === 'mahasiswa') {
             if ($user) {
                 try {
+                    Log::info('Deleting user from users table:', ['nim' => $user->nim, 'email' => $user->email]);
                     $user->delete();
+                    Log::info('User deleted successfully:', ['nim' => $request->nim]);
                 } catch (\Exception $e) {
                     Log::error('Error deleting user:', ['error' => $e->getMessage()]);
                     return redirect()->back()->with('notification', ['type' => 'error', 'message' => 'Gagal menghapus user: ' . $e->getMessage()]);
                 }
                 return redirect()->back()->with('notification', ['type' => 'success', 'message' => 'User berhasil dihapus dari daftar admin organisasi.']);
             }
+            Log::info('No user found to delete:', ['nim' => $request->nim]);
             return redirect()->back()->with('notification', ['type' => 'success', 'message' => 'Tidak ada perubahan, user belum terdaftar sebagai admin.']);
         }
 
+        // Jika role adalah adminbem atau adminmpm, update atau buat user
         try {
             if ($user) {
+                Log::info('Updating existing user:', ['nim' => $user->nim, 'old_role' => $user->role, 'new_role' => $request->role]);
                 $user->update([
                     'role' => $request->role,
                     'status' => 'active',
                 ]);
+                Log::info('User updated successfully:', ['nim' => $user->nim, 'new_role' => $user->role]);
             } else {
+                Log::info('Creating new user:', ['nim' => $request->nim, 'role' => $request->role]);
                 $user = User::create([
                     'username' => $request->username,
                     'email' => $request->email,
@@ -166,8 +87,8 @@ class OrganizationAdminController extends Controller
                     'prodi' => $request->prodi,
                     'role' => $request->role,
                     'status' => 'active',
-                    // Password tidak diset karena autentikasi menggunakan CIS API
                 ]);
+                Log::info('User created successfully:', ['nim' => $user->nim, 'role' => $user->role]);
             }
         } catch (\Exception $e) {
             Log::error('Error setting role:', ['error' => $e->getMessage()]);

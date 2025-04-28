@@ -14,6 +14,8 @@ import {
     Download,
     MessageSquare,
     Image as LucideImage,
+    TrendingUp, // Tambahkan impor untuk TrendingUp
+    Activity, // Tambahkan impor untuk Activity
 } from 'lucide-react';
 import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
@@ -356,101 +358,220 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                         </div>
                     </div>
 
-                    {/* Aspiration Chart (Visible to kemahasiswaan and adminmpm) */}
-                    {['kemahasiswaan', 'adminmpm'].includes(userRole) && (
-                        <div className="mb-8">
-                            <div className={`rounded-xl shadow-lg p-6 border
-                                ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
-                                ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
-                                ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
-                                ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
-                                <h2 className={`text-xl font-semibold mb-4
-                                    ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
-                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
-                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
-                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
-                                    Statistik Aspirasi per Kategori
-                                </h2>
-                                {aspirationLoading ? (
-                                    <div className="flex justify-center items-center h-64">
-                                        <svg
-                                            className="animate-spin h-10 w-10 text-blue-500"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            />
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                                            />
-                                        </svg>
+                    {/* Statistik - 2 Column Layout */}
+                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {/* First Card - Combining Total Mahasiswa and Kegiatan Aktif */}
+                        <div className={`rounded-xl p-5 shadow-md transition-all hover:shadow-lg border
+                            ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
+                            ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
+                            ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
+                            ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
+                            <h3 className={`mb-3 text-lg font-medium flex items-center
+                                ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                <Users className="mr-2 h-5 w-5" />
+                                Informasi Mahasiswa
+                            </h3>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className={`flex items-center mb-2 
+                                        ${document.documentElement.classList.contains('light') ? 'text-blue-700' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-blue-400' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-300' : ''}`}>
+                                        <TrendingUp className="mr-2 h-4 w-4" />
+                                        <p className="text-sm font-medium">Total Mahasiswa</p>
                                     </div>
-                                ) : aspirationError ? (
-                                    <p className={`text-center text-red-500`}>
-                                        {aspirationError}
+                                    <p className={`text-2xl font-bold
+                                        ${document.documentElement.classList.contains('light') ? 'text-blue-600' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-blue-400' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                        {totalMahasiswa}
                                     </p>
-                                ) : aspirationData.length > 0 ? (
-                                    <div className="w-full">
-                                        <Bar data={aspirationChartData} options={aspirationChartOptions} />
+                                </div>
+                                <div>
+                                    <div className={`flex items-center mb-2 
+                                        ${document.documentElement.classList.contains('light') ? 'text-green-700' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-green-400' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-green-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-green-300' : ''}`}>
+                                        <Activity className="mr-2 h-4 w-4" />
+                                        <p className="text-sm font-medium">Kegiatan Aktif</p>
                                     </div>
-                                ) : (
-                                    <p className={`text-center
-                                        ${document.documentElement.classList.contains('light') ? 'text-gray-500' : ''}
-                                        ${document.documentElement.classList.contains('dark') ? 'text-gray-400' : ''}
-                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-600' : ''}
-                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-200' : ''}`}>
-                                        Tidak ada data aspirasi untuk ditampilkan.
+                                    <p className={`text-2xl font-bold
+                                        ${document.documentElement.classList.contains('light') ? 'text-green-600' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-green-400' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-green-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-green-100' : ''}`}>
+                                        {activeActivities}
                                     </p>
-                                )}
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Achievement Chart (Visible to kemahasiswaan only) */}
-                    {userRole === 'kemahasiswaan' && (
-                        <div className="mb-8">
-                            <div className={`rounded-xl shadow-lg p-6 border
-                                ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
-                                ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
-                                ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
-                                ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
-                                <h2 className={`text-xl font-semibold mb-4
-                                    ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
-                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
-                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
-                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
-                                    Statistik Prestasi Mahasiswa
-                                </h2>
-                                {achievementError ? (
-                                    <p className={`text-center text-red-500`}>
-                                        {achievementError}
-                                    </p>
-                                ) : (
-                                    <div className="w-full">
-                                        <Bar data={achievementChartData} options={achievementChartOptions} />
+                        {/* Second Card - Announcements and quick access */}
+                        <div className={`rounded-xl p-5 shadow-md transition-all hover:shadow-lg border
+                            ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
+                            ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
+                            ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
+                            ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
+                            <h3 className={`mb-3 text-lg font-medium flex items-center
+                                ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                <Bell className="mr-2 h-5 w-5" />
+                                Informasi Pengumuman
+                            </h3>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className={`flex items-center mb-2 
+                                        ${document.documentElement.classList.contains('light') ? 'text-purple-700' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-purple-400' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-purple-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-purple-300' : ''}`}>
+                                        <Newspaper className="mr-2 h-4 w-4" />
+                                        <p className="text-sm font-medium">Total Pengumuman</p>
                                     </div>
-                                )}
-                                <div className="mt-4 text-center">
+                                    <p className={`text-2xl font-bold
+                                        ${document.documentElement.classList.contains('light') ? 'text-purple-600' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-purple-400' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-purple-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-purple-100' : ''}`}>
+                                        {announcementsCount}
+                                    </p>
+                                </div>
+                                <div>
                                     <Link
-                                        href="/admin/achievements"
-                                        className={`inline-block px-4 py-2 rounded-lg transition-all duration-300
-                                            ${document.documentElement.classList.contains('light') ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
-                                            ${document.documentElement.classList.contains('dark') ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
-                                            ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
-                                            ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-400 text-white hover:bg-blue-500' : ''}`}>
-                                        Lihat Manajemen Prestasi
+                                        // href={route('admin.announcements.index')}
+                                        href='/admin/announcement'
+                                        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all
+                                            ${document.documentElement.classList.contains('light') ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' : ''}
+                                            ${document.documentElement.classList.contains('dark') ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-800/50' : ''}
+                                            ${document.documentElement.classList.contains('light-blue') ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' : ''}
+                                            ${document.documentElement.classList.contains('dark-blue') ? 'bg-purple-800 text-purple-100 hover:bg-purple-700' : ''}`}>
+                                        <Bell className="mr-1 h-4 w-4" />
+                                        Kelola Pengumuman
                                     </Link>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Charts area - Two column layout */}
+                    {(['kemahasiswaan', 'adminmpm'].includes(userRole) || userRole === 'kemahasiswaan') && (
+                        <div className="mb-6 grid gap-4 md:grid-cols-2">
+                            {/* Aspiration Chart (Visible to kemahasiswaan and adminmpm) */}
+                            {['kemahasiswaan', 'adminmpm'].includes(userRole) && (
+                                <div className={`rounded-xl shadow-md p-5 border
+                                    ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
+                                    <h2 className={`text-lg font-medium mb-4 flex items-center
+                                        ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                        <MessageSquare className="mr-2 h-5 w-5" />
+                                        Statistik Aspirasi
+                                    </h2>
+                                    {aspirationLoading ? (
+                                        <div className="flex justify-center items-center h-56">
+                                            <svg
+                                                className="animate-spin h-8 w-8 text-blue-500"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                                />
+                                            </svg>
+                                        </div>
+                                    ) : aspirationError ? (
+                                        <p className={`text-center text-red-500 h-56 flex items-center justify-center`}>
+                                            {aspirationError}
+                                        </p>
+                                    ) : aspirationData.length > 0 ? (
+                                        <div className="h-56">
+                                            <Bar data={aspirationChartData} options={aspirationChartOptions} />
+                                        </div>
+                                    ) : (
+                                        <p className={`text-center h-56 flex items-center justify-center
+                                            ${document.documentElement.classList.contains('light') ? 'text-gray-500' : ''}
+                                            ${document.documentElement.classList.contains('dark') ? 'text-gray-400' : ''}
+                                            ${document.documentElement.classList.contains('light-blue') ? 'text-blue-600' : ''}
+                                            ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-200' : ''}`}>
+                                            Tidak ada data aspirasi untuk ditampilkan.
+                                        </p>
+                                    )}
+                                    <div className="mt-4 flex justify-end">
+                                        <Link
+                                            href="/admin/aspirations"
+                                            className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all
+                                                ${document.documentElement.classList.contains('light') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}
+                                                ${document.documentElement.classList.contains('dark') ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' : ''}
+                                                ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''}
+                                                ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-800 text-blue-100 hover:bg-blue-700' : ''}`}>
+                                            <MessageSquare className="mr-1 h-4 w-4" />
+                                            Kelola Aspirasi
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Achievement Chart (Visible to kemahasiswaan only) */}
+                            {userRole === 'kemahasiswaan' && (
+                                <div className={`rounded-xl shadow-md p-5 border
+                                    ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
+                                    <h2 className={`text-lg font-medium mb-4 flex items-center
+                                        ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                        <Award className="mr-2 h-5 w-5" />
+                                        Statistik Prestasi
+                                    </h2>
+                                    {achievementError ? (
+                                        <p className={`text-center text-red-500 h-56 flex items-center justify-center`}>
+                                            {achievementError}
+                                        </p>
+                                    ) : (
+                                        <div className="h-56">
+                                            <Bar data={achievementChartData} options={achievementChartOptions} />
+                                        </div>
+                                    )}
+                                    <div className="mt-4 flex justify-end">
+                                        <Link
+                                            href="/admin/achievements"
+                                            className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all
+                                                ${document.documentElement.classList.contains('light') ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : ''}
+                                                ${document.documentElement.classList.contains('dark') ? 'bg-yellow-900/30 text-yellow-300 hover:bg-yellow-800/50' : ''}
+                                                ${document.documentElement.classList.contains('light-blue') ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : ''}
+                                                ${document.documentElement.classList.contains('dark-blue') ? 'bg-yellow-800 text-yellow-100 hover:bg-yellow-700' : ''}`}>
+                                            <Award className="mr-1 h-4 w-4" />
+                                            Kelola Prestasi
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

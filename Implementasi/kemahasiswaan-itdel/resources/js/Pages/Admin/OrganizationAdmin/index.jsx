@@ -1,18 +1,16 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 
-export default function OrganizationAdminIndex({ permissions, navigation, existingAdmins, notification }) {
+export default function OrganizationAdminIndex({ permissions, navigation, existingAdmins, notification, students, searchQuery }) {
     const { props } = usePage();
-    const { auth, userRole } = props; // Access auth and userRole from shared props
+    const { auth, userRole } = props;
 
-    const [students, setStudents] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
     const [notificationType, setNotificationType] = useState('success');
+    const [searchInput, setSearchInput] = useState(searchQuery || '');
+    const [localExistingAdmins, setLocalExistingAdmins] = useState(existingAdmins || {});
 
     useEffect(() => {
         // Handle flash messages (notification prop)
@@ -26,62 +24,9 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
             }, 5000);
             return () => clearTimeout(timer);
         }
-
-        // Fetch student data from CIS API via proxy endpoint
-        const fetchStudents = async () => {
-            setLoading(true);
-            setError(null);
-        
-            try {
-                console.log('Sending request to /api/cis/students with credentials');
-                console.log('Request config:', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    withCredentials: true,
-                });
-                const response = await axios.get('/api/cis/students', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    withCredentials: true,
-                });
-                console.log('Response status:', response.status);
-                console.log('Response data:', response.data);
-        
-                if (Array.isArray(response.data)) {
-                    setStudents(response.data);
-                } else {
-                    console.error('Unexpected response format:', response.data);
-                    throw new Error('Unexpected response format from CIS API: Data is not an array');
-                }
-            } catch (err) {
-                console.error('Error fetching students from CIS API:', err);
-                if (err.response) {
-                    console.log('Error response status:', err.response.status);
-                    console.log('Error response data:', err.response.data);
-                    const { status, data } = err.response;
-                    if (status === 401) {
-                        setError('Gagal memuat data mahasiswa: Token autentikasi tidak valid. Silakan login kembali.');
-                    } else if (status === 500) {
-                        setError(`Gagal memuat data mahasiswa: ${data.error || 'Kesalahan server. Silakan coba lagi nanti.'}`);
-                    } else {
-                        setError(`Gagal memuat data mahasiswa: ${data.error || 'Terjadi kesalahan. Silakan coba lagi nanti.'}`);
-                    }
-                } else {
-                    setError(`Gagal memuat data mahasiswa: ${err.message}`);
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStudents();
     }, [notification]);
 
     const handleSetRole = (student, role) => {
-        // Prepare the data to send to the backend
         const studentData = {
             nim: student.nim,
             username: student.username,
@@ -91,17 +36,25 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
             role: role,
         };
 
-        // Send the POST request to set the role
         router.post(route('admin.organization-admins.setRole'), studentData, {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
-                // Refresh the student list after setting the role
-                const updatedStudents = students.map(s => {
-                    if (s.nim === student.nim) {
-                        return { ...s, role: role };
-                    }
-                    return s;
-                });
-                setStudents(updatedStudents);
+                // Perbarui localExistingAdmins secara manual
+                const updatedAdmins = { ...localExistingAdmins };
+                if (role === 'mahasiswa') {
+                    delete updatedAdmins[student.nim]; // Hapus dari existingAdmins jika role jadi mahasiswa
+                } else {
+                    updatedAdmins[student.nim] = {
+                        role: role,
+                        status: 'active',
+                    };
+                }
+                setLocalExistingAdmins(updatedAdmins);
+
+                setNotificationMessage(`Role berhasil diperbarui untuk ${student.name}`);
+                setNotificationType('success');
+                setShowNotification(true);
             },
             onError: (errors) => {
                 setNotificationMessage('Gagal memperbarui role. Silakan coba lagi.');
@@ -109,6 +62,23 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                 setShowNotification(true);
             },
         });
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        router.get(
+            route('admin.organization-admins.index'),
+            { search: searchInput, page: 1 },
+            { preserveState: true, preserveScroll: true }
+        );
+    };
+
+    const handlePageChange = (page) => {
+        router.get(
+            route('admin.organization-admins.index'),
+            { search: searchInput, page: page },
+            { preserveState: true, preserveScroll: true }
+        );
     };
 
     return (
@@ -201,76 +171,27 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                             </h1>
                             <p className="text-gray-500 mt-1">Atur role mahasiswa sebagai Admin BEM atau Admin MPM</p>
                         </div>
-                        <Link
-                            href={route('admin.organization-admins.create')}
-                            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
-                        >
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
+                        {/* Search Bar */}
+                        <form onSubmit={handleSearch} className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                placeholder="Cari berdasarkan NIM, nama, atau prodi..."
+                                className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 px-4 py-2 w-64"
+                            />
+                            <button
+                                type="submit"
+                                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                />
-                            </svg>
-                            Tambah Admin
-                        </Link>
+                                Cari
+                            </button>
+                        </form>
                     </div>
                 </div>
 
                 {/* Student Table */}
-                {loading ? (
-                    <div className="flex justify-center items-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
-                        <svg
-                            className="animate-spin h-10 w-10 text-blue-500"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            />
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                            />
-                        </svg>
-                    </div>
-                ) : error ? (
-                    <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
-                        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
-                            <svg
-                                className="w-12 h-12 text-red-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                            </svg>
-                        </div>
-                        <h3 className="text-xl font-medium text-gray-700 mb-2">
-                            {error}
-                        </h3>
-                    </div>
-                ) : students.length > 0 ? (
+                {students.data.length > 0 ? (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
@@ -302,9 +223,8 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {students.map((student) => {
-                                    // Check if the student exists in the existingAdmins (from your users table)
-                                    const existingAdmin = existingAdmins[student.nim];
+                                {students.data.map((student) => {
+                                    const existingAdmin = localExistingAdmins[student.nim];
                                     const currentRole = existingAdmin ? existingAdmin.role : student.role;
                                     const currentStatus = existingAdmin ? existingAdmin.status : 'N/A';
 
@@ -373,6 +293,29 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                 })}
                             </tbody>
                         </table>
+
+                        {/* Pagination Controls */}
+                        <div className="p-4 flex justify-between items-center">
+                            <p className="text-sm text-gray-600">
+                                Menampilkan {students.data.length} dari {students.total} mahasiswa
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handlePageChange(students.current_page - 1)}
+                                    disabled={students.current_page === 1}
+                                    className="px-4 py-2 bg-gray-200 text-gray-600 rounded-md disabled:opacity-50"
+                                >
+                                    Sebelumnya
+                                </button>
+                                <button
+                                    onClick={() => handlePageChange(students.current_page + 1)}
+                                    disabled={students.current_page === students.last_page}
+                                    className="px-4 py-2 bg-gray-200 text-gray-600 rounded-md disabled:opacity-50"
+                                >
+                                    Selanjutnya
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
