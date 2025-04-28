@@ -28,6 +28,7 @@ class RoleHelper
                 'achievementtype' => true,
                 'counseling' => true,
                 'aspiration' => true,
+                'aspirationcategory' => true, // Added explicit permission for aspiration category
                 'mpm' => true,
                 'bem' => true,
                 'downloads' => true,
@@ -45,6 +46,7 @@ class RoleHelper
                 'form' => false,
                 'counseling' => false,
                 'aspiration' => false,
+                'aspirationcategory' => false, // No access for adminbem
                 'bem' => true,
                 'mpm' => false,
                 'carousel' => false,
@@ -60,6 +62,7 @@ class RoleHelper
                 'form' => false,
                 'counseling' => false,
                 'aspiration' => true,
+                'aspirationcategory' => true, // Added explicit permission for aspiration category
                 'bem' => false,
                 'mpm' => true,
                 'carousel' => false,
@@ -76,17 +79,18 @@ class RoleHelper
                 'form' => false,
                 'counseling' => true,
                 'aspiration' => false,
+                'aspirationcategory' => false, // No access for mahasiswa
                 'bem' => false,
                 'carousel' => false,
                 'kegiatan' => true,
             ],
-            // Tambahkan peran 'guest' dengan izin terbatas
             'guest' => [
                 'pengumuman' => true,
                 'news' => true,
                 'achievements' => true,
                 'counseling' => true,
                 'aspiration' => true,
+                'aspirationcategory' => false, // No access for guest
                 'bem' => true,
                 'mpm' => true,
                 'downloads' => true,
@@ -313,13 +317,28 @@ class RoleHelper
             ];
         }
 
-        // Menu untuk Aspirasi
-        if ($permissions['aspiration'] ?? false) {
+        // Menu untuk Manajemen Aspirasi (Combine Aspiration and AspirationCategory)
+        if (($permissions['aspiration'] ?? false) || ($permissions['aspirationcategory'] ?? false)) {
+            $aspirationSubmenu = [];
+            if ($permissions['aspirationcategory'] ?? false) {
+                $aspirationSubmenu[] = [
+                    'name' => 'Kategori Aspirasi',
+                    'route' => 'admin.aspiration-category.index',
+                    'visible' => true,
+                ];
+            }
+            if ($permissions['aspiration'] ?? false) {
+                $aspirationSubmenu[] = [
+                    'name' => 'Aspirasi',
+                    'route' => $role === 'mahasiswa' ? 'aspiration.index' : 'admin.aspiration.index',
+                    'visible' => true,
+                ];
+            }
             $menuItems[] = [
-                'name' => 'Aspirasi',
-                'route' => $role === 'mahasiswa' ? 'aspiration.index' : 'admin.aspiration.index',
+                'name' => 'Manajemen Aspirasi',
                 'icon' => 'aspiration',
                 'visible' => true,
+                'submenu' => $aspirationSubmenu,
             ];
         }
 

@@ -2,17 +2,17 @@
 
 namespace App\Providers;
 
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth; // Import the Auth facade
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register(): void
+    public function register()
     {
         //
     }
@@ -22,15 +22,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Inertia::share([
-            'auth' => [
-                'user' => Auth::user() ? [
-                    'id' => Auth::user()->id,
-                    'name' => Auth::user()->name,
-                    'role' => Auth::user()->role,
-                ] : null,
-            ],
-        ]);
+        // Set the application timezone to Asia/Jakarta (WIB)
+        date_default_timezone_set('Asia/Jakarta');
+
+        // Share the CIS API URL with Inertia
+        Inertia::share('cisApiUrl', function () {
+            return config('app.cis_api_url');
+        });
+
+        // Share the CSRF token with Inertia
+        Inertia::share('csrf_token', function () {
+            return Session::token();
+        });
+
+        // Share authenticated user data (optional)
+        Inertia::share('auth', function () {
+            if (Auth::check()) { // Use Auth::check() instead of auth()->check()
+                return [
+                    'user' => Auth::user(), // Use Auth::user() instead of auth()->user()
+                    'role' => strtolower(Auth::user()->role),
+                ];
+            }
+            return null;
+        });
     }
 }
-// Jody was here <3

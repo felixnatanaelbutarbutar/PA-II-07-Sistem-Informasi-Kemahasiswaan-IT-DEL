@@ -5,45 +5,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'username',             
+        'username',
         'name',
         'email',
         'password',
         'role',
-        'status',     // Tambahkan status ke fillable
-        'nim',        // Tambahkan NIM (opsional, hanya untuk mahasiswa)
-        'asrama',     // Tambahkan asrama (opsional, hanya untuk mahasiswa)
-        'prodi',      // Tambahkan prodi (opsional, hanya untuk mahasiswa)
-        'fakultas',   // Tambahkan fakultas (opsional, hanya untuk mahasiswa)
-        'angkatan',   // Tambahkan angkatan (opsional, hanya untuk mahasiswa)
+        'status',
+        'nim',
+        'asrama',
+        'prodi',
+        'fakultas',
+        'angkatan',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -52,21 +38,8 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get the counseling requests for the user.
-     */
     public function counselings()
     {
         return $this->hasMany(Counseling::class, 'requestBy');
-    }
-
-    public function submissions()
-    {
-        return $this->hasMany(Submission::class);
-    }
-
-    public function submissionResponses()
-    {
-        return $this->hasMany(SubmissionResponse::class);
     }
 }

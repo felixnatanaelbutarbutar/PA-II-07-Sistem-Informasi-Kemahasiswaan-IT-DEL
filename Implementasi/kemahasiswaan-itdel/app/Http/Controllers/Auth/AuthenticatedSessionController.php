@@ -17,22 +17,17 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(): Response
+    public function __construct()
     {
-        return Inertia::render('Auth/Login', [
-            'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
-        ]);
+        $this->middleware('web')->only(['create', 'store']);
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(Request $request)
     {
+        Log::info('Middleware applied:', [
+            'middleware' => $request->route()->middleware(),
+        ]);
+
         // Validasi input
         $request->validate([
             'username' => 'required|string',
@@ -41,57 +36,6 @@ class AuthenticatedSessionController extends Controller
 
         Log::info('Login Attempt:', ['username' => $request->username]);
 
-        // Cek apakah user ada di database lokal dan memiliki role adminmpm atau adminbem
-        $user = User::where('username', $request->username)->first();
-
-        if ($user && in_array($user->role, ['adminmpm', 'adminbem']) && Hash::check($request->password, $user->password)) {
-            // Autentikasi lokal untuk adminmpm dan adminbem
-            Log::info('Local Authentication Successful:', ['username' => $user->username, 'role' => $user->role]);
-
-            // Periksa status user
-            if ($user->status === 'inactive') {
-                Log::warning('Login Failed: User is inactive', ['username' => $user->username]);
-                return back()
-                    ->withErrors(['username' => 'Akun Anda telah dinonaktifkan. Hubungi administrator.'])
-                    ->with('status', 'Akun Anda telah dinonaktifkan. Hubungi administrator.');
-            }
-
-            // Login pengguna ke session Laravel
-            Auth::login($user, $request->filled('remember'));
-            Log::info('User Logged In:', ['user_id' => $user->id]);
-
-            // Regenerate session
-            $request->session()->regenerate();
-
-            // Tentukan redirect berdasarkan role
-            $defaultRedirectRoute = match ($user->role) {
-                'superadmin' => route('superadmin.dashboard'),
-                'kemahasiswaan', 'adminbem', 'adminmpm' => route('admin.dashboard'),
-                'mahasiswa' => route('counseling.index'),
-                default => '/',
-            };
-
-            Log::info('Redirect Route:', ['route' => $defaultRedirectRoute]);
-
-            // Check if there's an intended URL
-            $intendedUrl = $request->session()->pull('url.intended', $defaultRedirectRoute);
-            Log::info('Intended URL:', ['url' => $intendedUrl]);
-
-            // Jika request adalah AJAX, kembalikan JSON
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'success',
-                    'username' => $user->username,
-                    'role' => $user->role,
-                    'redirect' => $intendedUrl,
-                ]);
-            }
-
-            // Redirect ke intended URL atau default route
-            return redirect()->intended($defaultRedirectRoute);
-        }
-
-        // Jika bukan adminmpm atau adminbem, lanjutkan autentikasi via API
         try {
             // Buat instance Guzzle Client
             $client = new Client();
@@ -114,7 +58,7 @@ class AuthenticatedSessionController extends Controller
 
             // Kirim request ke API CIS untuk login
             $response = $client->post($apiUrl, [
-                'verify' => false, // Nonaktifkan verifikasi SSL
+                'verify' => false,
                 'form_params' => [
                     'username' => $request->username,
                     'password' => $request->password,
@@ -151,7 +95,9 @@ class AuthenticatedSessionController extends Controller
                 'logistik' => 'kemahasiswaan',
                 'koordinator' => 'kemahasiswaan',
                 'authenticated user' => 'kemahasiswaan',
-                'staf administrasi akademik dan kemahasiswaan' => 'kemahasiswaan', // Role baru ditambahkan
+                'staf administrasi akademik dan kemahasiswaan' => 'kemahasiswaan',
+                'adminbem' => 'adminbem',
+                'adminmpm' => 'adminmpm',
             ];
 
             // Tentukan role pengguna
@@ -182,7 +128,7 @@ class AuthenticatedSessionController extends Controller
                 Log::info('Fetching mahasiswa data from:', ['url' => $mahasiswaApiUrl]);
 
                 $mahasiswaResponse = $client->get($mahasiswaApiUrl, [
-                    'verify' => false, // Nonaktifkan verifikasi SSL
+                    'verify' => false,
                     'headers' => [
                         'Authorization' => 'Bearer ' . $token,
                         'Accept' => 'application/json',
@@ -240,14 +186,27 @@ class AuthenticatedSessionController extends Controller
 
             // Login pengguna ke session Laravel
             Auth::login($user, $request->filled('remember'));
-            Log::info('User Logged In:', ['user_id' => $user->id]);
+            Log::info('User Logged In:', [
+                'user_id' => $user->id,
+                'session_id' => $request->session()->getId(),
+                'session_data' => $request->session()->all(),
+            ]);
 
             // Simpan token ke session untuk digunakan di request API berikutnya
             $request->session()->put('api_token', $token);
-            Log::info('API Token Stored in Session');
+            Log::info('API Token Stored in Session:', [
+                'token' => $token,
+                'session_id' => $request->session()->getId(),
+                'session_data' => $request->session()->all(),
+            ]);
 
             // Regenerate session
             $request->session()->regenerate();
+            Log::info('Session Regenerated:', [
+                'new_session_id' => $request->session()->getId(),
+                'session_data' => $request->session()->all(),
+                'queued_cookies' => app('cookie')->getQueuedCookies(),
+            ]);
 
             // Tentukan redirect berdasarkan role
             $defaultRedirectRoute = match ($user->role) {
@@ -265,17 +224,34 @@ class AuthenticatedSessionController extends Controller
 
             // Jika request adalah AJAX, kembalikan JSON
             if ($request->wantsJson()) {
-                return response()->json([
+                $response = response()->json([
                     'status' => 'success',
                     'username' => $user->username,
                     'role' => $user->role,
                     'redirect' => $intendedUrl,
                 ]);
+
+                Log::info('AJAX Login Response:', [
+                    'status' => 'success',
+                    'username' => $user->username,
+                    'role' => $user->role,
+                    'redirect' => $intendedUrl,
+                    'headers' => $response->headers->all(),
+                    'cookies' => $response->headers->getCookies(),
+                ]);
+
+                return $response;
             }
 
             // Redirect ke intended URL atau default route
-            return redirect()->intended($defaultRedirectRoute);
+            $redirectResponse = redirect()->intended($defaultRedirectRoute)
+                ->withCookie(cookie('laravel_session', $request->session()->getId(), 120));
+            Log::info('Redirect Response Headers:', [
+                'headers' => $redirectResponse->headers->all(),
+                'cookies' => $redirectResponse->headers->getCookies(),
+            ]);
 
+            return $redirectResponse;
         } catch (RequestException $e) {
             // Tangani error dari API
             $errorMessage = 'Terjadi kesalahan saat menghubungi server autentikasi.';
@@ -297,18 +273,28 @@ class AuthenticatedSessionController extends Controller
         }
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         // Hapus token dan data API dari session
         $request->session()->forget(['api_token', 'api_user']);
+        Log::info('Session Data Cleared Before Logout:', [
+            'session_data' => $request->session()->all(),
+        ]);
 
         Auth::guard('web')->logout();
+        Log::info('User Logged Out:', [
+            'user_id' => Auth::id(),
+        ]);
 
         $request->session()->invalidate();
+        Log::info('Session Invalidated:', [
+            'session_id' => $request->session()->getId(),
+        ]);
+
         $request->session()->regenerateToken();
+        Log::info('CSRF Token Regenerated:', [
+            'new_token' => $request->session()->token(),
+        ]);
 
         return redirect('/');
     }

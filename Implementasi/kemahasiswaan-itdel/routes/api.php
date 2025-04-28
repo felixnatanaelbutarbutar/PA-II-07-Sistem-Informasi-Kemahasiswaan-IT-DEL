@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\NewsController;
+use App\Http\Controllers\ApiProxyController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\CarouselController;
@@ -45,3 +47,16 @@ Route::get('/achievements-grouped', [AchievementController::class, 'getGroupedAc
 
 Route::get('/carousel/guest', [CarouselController::class, 'guestIndex'])->name('api.carousel.guest.index');
 
+// Route untuk Aspiration Categories (for Dashboard statistics)
+Route::get('/aspiration-categories', [DashboardController::class, 'getAspirationCategories'])->name('api.aspiration-categories');
+
+// Route::middleware(['debug.sanctum', 'session', 'auth:sanctum'])->group(function () {
+//     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
+// });
+Route::middleware(['debug.sanctum', 'session'])->group(function () {
+    Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
+});
+
+// Route::middleware(['session'])->group(function () {
+//     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
+// });

@@ -21,6 +21,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\AchievementTypeController;
 use App\Http\Controllers\OrganizationAdminController;
+use App\Http\Controllers\AspirationCategoryController;
 use App\Http\Controllers\ScholarshipCategoryController;
 use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -207,8 +208,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/organization-admins/create', [OrganizationAdminController::class, 'create'])->name('organization-admins.create');
             Route::post('/organization-admins', [OrganizationAdminController::class, 'store'])->name('organization-admins.store');
             Route::post('/organization-admins/{user}/toggle-status', [OrganizationAdminController::class, 'toggleStatus'])->name('organization-admins.toggleStatus');
-            Route::get('/organization-admins/{user}/edit-password', [OrganizationAdminController::class, 'editPassword'])->name('organization-admins.editPassword');
-            Route::post('/organization-admins/{user}/update-password', [OrganizationAdminController::class, 'updatePassword'])->name('organization-admins.updatePassword');
+            Route::post('/organization-admins/set-role', [OrganizationAdminController::class, 'setRole'])->name('organization-admins.setRole'); // New route for setting roles
 
             // === CAROUSEL ===
             Route::resource('carousel', CarouselController::class)->except(['show', 'destroy', 'update']);
@@ -226,6 +226,13 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('mpm', MpmController::class)->except(['destroy', 'update']);
             Route::post('mpm/{mpm}/update', [MpmController::class, 'update'])->name('mpm.update');
             Route::post('mpm/{mpm}/delete', [MpmController::class, 'destroy'])->name('mpm.delete');
+
+            // === ASPIRATION CATEGORY ===
+            Route::resource('aspiration-category', AspirationCategoryController::class)->except(['show', 'destroy', 'update']);
+            Route::post('aspiration-category/{aspiration_category}/update', [AspirationCategoryController::class, 'update'])->name('aspiration-category.update');
+            Route::post('aspiration-category/{aspiration_category}/delete', [AspirationCategoryController::class, 'destroy'])->name('aspiration-category.destroy');
+
+            Route::get('/admin/aspiration-categories', [AspirationCategoryController::class, 'getCategoriesWithAspirations'])->name('admin.aspiration-categories');
         });
     });
 });

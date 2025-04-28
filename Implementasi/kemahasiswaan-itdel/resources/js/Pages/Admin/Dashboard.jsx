@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
@@ -13,13 +13,27 @@ import {
     BookOpen,
     Download,
     MessageSquare,
-    Image as LucideImage, // Gunakan alias untuk menghindari konflik
+    Image as LucideImage,
 } from 'lucide-react';
 import axios from 'axios';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Dashboard({ auth, userRole, permissions, menu, totalMahasiswa }) {
-    const [activeActivities, setActiveActivities] = React.useState(0);
-    const [announcementsCount, setAnnouncementsCount] = React.useState(0);
+    const [activeActivities, setActiveActivities] = useState(0);
+    const [announcementsCount, setAnnouncementsCount] = useState(0);
+    const [aspirationData, setAspirationData] = useState([]);
+    const [aspirationError, setAspirationError] = useState(null);
+    const [aspirationLoading, setAspirationLoading] = useState(false);
+    const [achievementData, setAchievementData] = useState({
+        International: { Gold: 0, Silver: 0, Bronze: 0 },
+        National: { Gold: 0, Silver: 0, Bronze: 0 },
+        Regional: { Gold: 0, Silver: 0, Bronze: 0 },
+    });
+    const [achievementError, setAchievementError] = useState(null);
 
     // Icon mapping dari RoleHelper ke lucide-react
     const iconMap = {
@@ -39,6 +53,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
 
     useEffect(() => {
         console.log('User info:', auth.user);
+        console.log('User role:', userRole);
 
         // Fetch jumlah kegiatan aktif
         axios.get('/admin/activities/count')
@@ -57,7 +72,43 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
             .catch(error => {
                 console.error('Error fetching announcements count:', error);
             });
-    }, [auth.user]);
+
+        // Fetch aspiration data (for kemahasiswaan and adminmpm roles)
+        if (['kemahasiswaan', 'adminmpm'].includes(userRole)) {
+            setAspirationLoading(true);
+            axios.get('http://localhost:8000/api/aspiration-categories')
+                .then(response => {
+                    if (Array.isArray(response.data)) {
+                        setAspirationData(response.data);
+                    } else {
+                        throw new Error('Data aspirasi tidak sesuai format yang diharapkan.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching aspiration data:', error);
+                    setAspirationError('Gagal memuat data aspirasi. Silakan coba lagi nanti.');
+                })
+                .finally(() => {
+                    setAspirationLoading(false);
+                });
+        }
+
+        // Fetch achievement data (for kemahasiswaan role only)
+        if (userRole === 'kemahasiswaan') {
+            axios.get('http://localhost:8000/api/achievements-grouped')
+                .then(response => {
+                    if (response.data && typeof response.data === 'object') {
+                        setAchievementData(response.data);
+                    } else {
+                        throw new Error('Data prestasi tidak sesuai format yang diharapkan.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching achievement data:', error);
+                    setAchievementError('Gagal memuat data prestasi. Silakan coba lagi nanti.');
+                });
+        }
+    }, [auth.user, userRole]);
 
     // Fungsi untuk memeriksa apakah rute valid
     const isRouteValid = (routeName) => {
@@ -100,6 +151,116 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
         { bg: 'bg-red-50', hoverBg: 'bg-red-100', text: 'text-red-800', accent: 'bg-red-500', hoverText: 'text-red-600' },
         { bg: 'bg-indigo-50', hoverBg: 'bg-indigo-100', text: 'text-indigo-800', accent: 'bg-indigo-500', hoverText: 'text-indigo-600' },
     ];
+
+    // Prepare data for the aspiration bar chart
+    const aspirationChartData = {
+        labels: aspirationData.map(category => category.name),
+        datasets: [
+            {
+                label: 'Jumlah Aspirasi',
+                data: aspirationData.map(category => category.aspirations?.length || 0),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const aspirationChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: true,
+                text: 'Statistik Jumlah Aspirasi per Kategori',
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Jumlah Aspirasi',
+                },
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Kategori',
+                },
+            },
+        },
+    };
+
+    // Prepare data for the achievement bar chart
+    const achievementChartData = {
+        labels: ['International', 'National', 'Regional'],
+        datasets: [
+            {
+                label: 'Gold',
+                data: [
+                    achievementData['International']['Gold'],
+                    achievementData['National']['Gold'],
+                    achievementData['Regional']['Gold'],
+                ],
+                backgroundColor: 'rgba(255, 215, 0, 0.6)', // Gold color
+                borderColor: 'rgba(255, 215, 0, 1)',
+                borderWidth: 1,
+            },
+            {
+                label: 'Silver',
+                data: [
+                    achievementData['International']['Silver'],
+                    achievementData['National']['Silver'],
+                    achievementData['Regional']['Silver'],
+                ],
+                backgroundColor: 'rgba(192, 192, 192, 0.6)', // Silver color
+                borderColor: 'rgba(192, 192, 192, 1)',
+                borderWidth: 1,
+            },
+            {
+                label: 'Bronze',
+                data: [
+                    achievementData['International']['Bronze'],
+                    achievementData['National']['Bronze'],
+                    achievementData['Regional']['Bronze'],
+                ],
+                backgroundColor: 'rgba(205, 127, 50, 0.6)', // Bronze color
+                borderColor: 'rgba(205, 127, 50, 1)',
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const achievementChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: true,
+                text: 'Statistik Prestasi Mahasiswa',
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Jumlah Medali',
+                },
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Tingkat',
+                },
+            },
+        },
+    };
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
@@ -194,6 +355,104 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                             </p>
                         </div>
                     </div>
+
+                    {/* Aspiration Chart (Visible to kemahasiswaan and adminmpm) */}
+                    {['kemahasiswaan', 'adminmpm'].includes(userRole) && (
+                        <div className="mb-8">
+                            <div className={`rounded-xl shadow-lg p-6 border
+                                ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
+                                ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
+                                ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
+                                ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
+                                <h2 className={`text-xl font-semibold mb-4
+                                    ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                    Statistik Aspirasi per Kategori
+                                </h2>
+                                {aspirationLoading ? (
+                                    <div className="flex justify-center items-center h-64">
+                                        <svg
+                                            className="animate-spin h-10 w-10 text-blue-500"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                            />
+                                        </svg>
+                                    </div>
+                                ) : aspirationError ? (
+                                    <p className={`text-center text-red-500`}>
+                                        {aspirationError}
+                                    </p>
+                                ) : aspirationData.length > 0 ? (
+                                    <div className="w-full">
+                                        <Bar data={aspirationChartData} options={aspirationChartOptions} />
+                                    </div>
+                                ) : (
+                                    <p className={`text-center
+                                        ${document.documentElement.classList.contains('light') ? 'text-gray-500' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-gray-400' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-600' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-200' : ''}`}>
+                                        Tidak ada data aspirasi untuk ditampilkan.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Achievement Chart (Visible to kemahasiswaan only) */}
+                    {userRole === 'kemahasiswaan' && (
+                        <div className="mb-8">
+                            <div className={`rounded-xl shadow-lg p-6 border
+                                ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-100' : ''}
+                                ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
+                                ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-100' : ''}
+                                ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-900' : ''}`}>
+                                <h2 className={`text-xl font-semibold mb-4
+                                    ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                    Statistik Prestasi Mahasiswa
+                                </h2>
+                                {achievementError ? (
+                                    <p className={`text-center text-red-500`}>
+                                        {achievementError}
+                                    </p>
+                                ) : (
+                                    <div className="w-full">
+                                        <Bar data={achievementChartData} options={achievementChartOptions} />
+                                    </div>
+                                )}
+                                <div className="mt-4 text-center">
+                                    <Link
+                                        href="/admin/achievements"
+                                        className={`inline-block px-4 py-2 rounded-lg transition-all duration-300
+                                            ${document.documentElement.classList.contains('light') ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
+                                            ${document.documentElement.classList.contains('dark') ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
+                                            ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
+                                            ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-400 text-white hover:bg-blue-500' : ''}`}>
+                                        Lihat Manajemen Prestasi
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Fitur yang Tersedia */}
                     <div className="mt-10">

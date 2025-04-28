@@ -1,35 +1,114 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export default function OrganizationAdminIndex({ auth, userRole, permissions, navigation, admins, flash }) {
+export default function OrganizationAdminIndex({ permissions, navigation, existingAdmins, notification }) {
+    const { props } = usePage();
+    const { auth, userRole } = props; // Access auth and userRole from shared props
+
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
     const [notificationType, setNotificationType] = useState('success');
 
     useEffect(() => {
-        if (flash) {
-            if (flash.success) {
-                setNotificationMessage(flash.success);
-                setNotificationType('success');
-                setShowNotification(true);
-            } else if (flash.error) {
-                setNotificationMessage(flash.error);
+        // Handle flash messages (notification prop)
+        if (notification) {
+            setNotificationMessage(notification.message);
+            setNotificationType(notification.type);
+            setShowNotification(true);
+
+            const timer = setTimeout(() => {
+                setShowNotification(false);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+
+        // Fetch student data from CIS API via proxy endpoint
+        const fetchStudents = async () => {
+            setLoading(true);
+            setError(null);
+        
+            try {
+                console.log('Sending request to /api/cis/students with credentials');
+                console.log('Request config:', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    withCredentials: true,
+                });
+                const response = await axios.get('/api/cis/students', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    withCredentials: true,
+                });
+                console.log('Response status:', response.status);
+                console.log('Response data:', response.data);
+        
+                if (Array.isArray(response.data)) {
+                    setStudents(response.data);
+                } else {
+                    console.error('Unexpected response format:', response.data);
+                    throw new Error('Unexpected response format from CIS API: Data is not an array');
+                }
+            } catch (err) {
+                console.error('Error fetching students from CIS API:', err);
+                if (err.response) {
+                    console.log('Error response status:', err.response.status);
+                    console.log('Error response data:', err.response.data);
+                    const { status, data } = err.response;
+                    if (status === 401) {
+                        setError('Gagal memuat data mahasiswa: Token autentikasi tidak valid. Silakan login kembali.');
+                    } else if (status === 500) {
+                        setError(`Gagal memuat data mahasiswa: ${data.error || 'Kesalahan server. Silakan coba lagi nanti.'}`);
+                    } else {
+                        setError(`Gagal memuat data mahasiswa: ${data.error || 'Terjadi kesalahan. Silakan coba lagi nanti.'}`);
+                    }
+                } else {
+                    setError(`Gagal memuat data mahasiswa: ${err.message}`);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStudents();
+    }, [notification]);
+
+    const handleSetRole = (student, role) => {
+        // Prepare the data to send to the backend
+        const studentData = {
+            nim: student.nim,
+            username: student.username,
+            email: student.email,
+            name: student.name,
+            prodi: student.prodi || null,
+            role: role,
+        };
+
+        // Send the POST request to set the role
+        router.post(route('admin.organization-admins.setRole'), studentData, {
+            onSuccess: () => {
+                // Refresh the student list after setting the role
+                const updatedStudents = students.map(s => {
+                    if (s.nim === student.nim) {
+                        return { ...s, role: role };
+                    }
+                    return s;
+                });
+                setStudents(updatedStudents);
+            },
+            onError: (errors) => {
+                setNotificationMessage('Gagal memperbarui role. Silakan coba lagi.');
                 setNotificationType('error');
                 setShowNotification(true);
-            }
-
-            if (flash.success || flash.error) {
-                const timer = setTimeout(() => {
-                    setShowNotification(false);
-                }, 5000);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [flash]);
-
-    const handleToggleStatus = (userId) => {
-        router.post(route('admin.organization-admins.toggleStatus', userId));
+            },
+        });
     };
 
     return (
@@ -120,7 +199,7 @@ export default function OrganizationAdminIndex({ auth, userRole, permissions, na
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                                 Kelola Admin Organisasi
                             </h1>
-                            <p className="text-gray-500 mt-1">Kelola akun admin BEM dan MPM</p>
+                            <p className="text-gray-500 mt-1">Atur role mahasiswa sebagai Admin BEM atau Admin MPM</p>
                         </div>
                         <Link
                             href={route('admin.organization-admins.create')}
@@ -145,12 +224,60 @@ export default function OrganizationAdminIndex({ auth, userRole, permissions, na
                     </div>
                 </div>
 
-                {/* Tabel Admin */}
-                {admins.length > 0 ? (
+                {/* Student Table */}
+                {loading ? (
+                    <div className="flex justify-center items-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
+                        <svg
+                            className="animate-spin h-10 w-10 text-blue-500"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                            />
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
+                        </svg>
+                    </div>
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
+                        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                            <svg
+                                className="w-12 h-12 text-red-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                        </div>
+                        <h3 className="text-xl font-medium text-gray-700 mb-2">
+                            {error}
+                        </h3>
+                    </div>
+                ) : students.length > 0 ? (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                                 <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                        NIM
+                                    </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Username
                                     </th>
@@ -159,6 +286,9 @@ export default function OrganizationAdminIndex({ auth, userRole, permissions, na
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Email
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                        Prodi
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Role
@@ -172,51 +302,75 @@ export default function OrganizationAdminIndex({ auth, userRole, permissions, na
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {admins.map((admin) => (
-                                    <tr key={admin.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {admin.username}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {admin.name}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {admin.email}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {admin.role === 'adminbem' ? 'Admin BEM' : 'Admin MPM'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            <span
-                                                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                                    admin.status === 'active'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
-                                                }`}
-                                            >
-                                                {admin.status === 'active' ? 'Aktif' : 'Nonaktif'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                onClick={() => handleToggleStatus(admin.id)}
-                                                className={`mr-4 ${
-                                                    admin.status === 'active'
-                                                        ? 'text-red-600 hover:text-red-700'
-                                                        : 'text-green-600 hover:text-green-700'
-                                                } transition`}
-                                            >
-                                                {admin.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
-                                            </button>
-                                            <Link
-                                                href={route('admin.organization-admins.editPassword', admin.id)}
-                                                className="text-blue-600 hover:text-blue-700 transition"
-                                            >
-                                                Ubah Password
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {students.map((student) => {
+                                    // Check if the student exists in the existingAdmins (from your users table)
+                                    const existingAdmin = existingAdmins[student.nim];
+                                    const currentRole = existingAdmin ? existingAdmin.role : student.role;
+                                    const currentStatus = existingAdmin ? existingAdmin.status : 'N/A';
+
+                                    return (
+                                        <tr key={student.user_id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {student.nim}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {student.username}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {student.name}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {student.email}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {student.prodi || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                <span
+                                                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                                        currentRole === 'adminbem'
+                                                            ? 'bg-blue-100 text-blue-800'
+                                                            : currentRole === 'adminmpm'
+                                                            ? 'bg-purple-100 text-purple-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                    }`}
+                                                >
+                                                    {currentRole === 'adminbem'
+                                                        ? 'Admin BEM'
+                                                        : currentRole === 'adminmpm'
+                                                        ? 'Admin MPM'
+                                                        : 'Mahasiswa'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {currentStatus !== 'N/A' ? (
+                                                    <span
+                                                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                                            currentStatus === 'active'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : 'bg-red-100 text-red-800'
+                                                        }`}
+                                                    >
+                                                        {currentStatus === 'active' ? 'Aktif' : 'Nonaktif'}
+                                                    </span>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <select
+                                                    value={currentRole}
+                                                    onChange={(e) => handleSetRole(student, e.target.value)}
+                                                    className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                                                >
+                                                    <option value="mahasiswa">Mahasiswa</option>
+                                                    <option value="adminbem">Admin BEM</option>
+                                                    <option value="adminmpm">Admin MPM</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -239,31 +393,11 @@ export default function OrganizationAdminIndex({ auth, userRole, permissions, na
                             </svg>
                         </div>
                         <h3 className="text-xl font-medium text-gray-700 mb-2">
-                            Tidak ada admin organisasi yang tersedia
+                            Tidak ada data mahasiswa yang tersedia
                         </h3>
-                        <p className="text-gray-500 text-center max-w-md mb-6">
-                            Silakan tambahkan admin baru untuk memulai.
+                        <p className="text-gray-500 text-center max-w-md">
+                            Tidak ada data mahasiswa yang dapat ditampilkan dari CIS API.
                         </p>
-                        <Link
-                            href={route('admin.organization-admins.create')}
-                            className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
-                        >
-                            <svg
-                                className="w-5 h-5 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                />
-                            </svg>
-                            Tambah Admin Baru
-                        </Link>
                     </div>
                 )}
             </div>

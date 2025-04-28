@@ -2,19 +2,16 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
+use Illuminate\Auth\Middleware\Authenticate as Middleware;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
-class Authenticate
+class Authenticate extends Middleware
 {
-    public function handle(Request $request, Closure $next, ...$guards)
+    protected function redirectTo($request)
     {
-        if (!Auth::check()) {
-            // Jika pengguna belum login, arahkan ke halaman login
-            return redirect()->route('login');
+        if ($request->expectsJson()) {
+            return null; // Tidak ada redirect untuk permintaan JSON
         }
-
-        return $next($request);
+        return route('login'); // Redirect ke login untuk permintaan non-JSON
     }
 }
