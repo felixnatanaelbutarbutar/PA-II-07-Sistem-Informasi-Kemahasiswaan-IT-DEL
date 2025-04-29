@@ -13,13 +13,14 @@ class FormSetting extends Model
     protected $fillable = [
         'setting_id',
         'form_id',
-        'is_active',
         'accept_responses',
         'one_submission_per_email',
         'allow_edit',
+        'open_date',
         'submission_deadline',
         'max_submissions',
         'response_notification',
+        'is_active',
         'created_by',
         'updated_by',
     ];

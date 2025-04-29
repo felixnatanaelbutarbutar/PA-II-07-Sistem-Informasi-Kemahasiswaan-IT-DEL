@@ -31,6 +31,12 @@ class FormField extends Model
         return $this->belongsTo(ScholarshipForm::class, 'form_id', 'form_id');
     }
 
+    protected $casts = [
+        'is_active' => 'boolean', // Cast is_active as boolean
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by', 'id');

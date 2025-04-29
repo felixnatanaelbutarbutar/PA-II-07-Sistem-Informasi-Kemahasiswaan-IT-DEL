@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('issue')->nullable(); // The counseling issue or problem
             $table->string('noTelephone')->nullable(); // Telephone number
             $table->enum('status', ['pending', 'scheduled', 'completed', 'canceled'])->default('pending');
+            $table->boolean('is_active')->default(true);
             $table->timestamps(); // created_at and updated_at
         });
     }

@@ -11,6 +11,7 @@ return new class extends Migration {
             $table->string('type_id', 10)->primary();
             $table->string('type_name', 100)->unique();
             $table->text('description');
+            $table->boolean('is_active')->default(true);
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

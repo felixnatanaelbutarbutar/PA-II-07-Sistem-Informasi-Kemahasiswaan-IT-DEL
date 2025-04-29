@@ -2,80 +2,142 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function Index({ auth, userRole, permissions, menu, scholarships = [], flash }) {
-    const [searchTerm, setSearchTerm] = useState('');
+export default function Index({ auth, permissions, userRole, menu }) {
+    const { scholarships = { data: [], links: [] }, flash, filters = {} } = usePage().props;
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [statusFilter, setStatusFilter] = useState(filters.status || '');
+    const [dateFilter, setDateFilter] = useState(filters.date_filter || 'terbaru');
+    const [viewMode, setViewMode] = useState('table'); // table atau grid
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
     const [notificationType, setNotificationType] = useState('success');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [scholarshipIdToDelete, setScholarshipIdToDelete] = useState(null);
+    const [showToggleModal, setShowToggleModal] = useState(false);
+    const [scholarshipToDelete, setScholarshipToDelete] = useState(null);
+    const [scholarshipToToggle, setScholarshipToToggle] = useState(null);
+    const [toggleAction, setToggleAction] = useState(''); // activate atau deactivate
     const [isDeleting, setIsDeleting] = useState(false);
-    const [isGridView, setIsGridView] = useState(true);
 
+    // Handle flash messages untuk notifikasi
     useEffect(() => {
-        if (flash) {
-            if (flash.success) {
-                setNotificationMessage(flash.success);
-                setNotificationType('success');
-                setShowNotification(true);
-            } else if (flash.error) {
-                setNotificationMessage(flash.error);
-                setNotificationType('error');
-                setShowNotification(true);
-            }
+        if (flash?.success) {
+            setNotificationMessage(flash.success);
+            setNotificationType('success');
+            setShowNotification(true);
+        } else if (flash?.error) {
+            setNotificationMessage(flash.error);
+            setNotificationType('error');
+            setShowNotification(true);
+        }
 
-            if (flash.success || flash.error) {
-                const timer = setTimeout(() => {
-                    setShowNotification(false);
-                }, 5000);
-                return () => clearTimeout(timer);
-            }
+        if (flash?.success || flash?.error) {
+            const timer = setTimeout(() => setShowNotification(false), 5000);
+            return () => clearTimeout(timer);
         }
     }, [flash]);
 
-    const handleDeleteClick = (scholarship_id) => {
-        setScholarshipIdToDelete(scholarship_id);
+    // Handle filter dan pencarian
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const queryParams = {
+                search: searchTerm.trim() || undefined,
+                status: statusFilter || undefined,
+                date_filter: dateFilter || undefined,
+            };
+
+            router.get(
+                route('admin.scholarship.index'),
+                queryParams,
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                }
+            );
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm, statusFilter, dateFilter]);
+
+    // Handle klik tombol hapus
+    const handleDeleteClick = (scholarship) => {
+        if (!scholarship?.scholarship_id) {
+            setNotificationMessage('Gagal: ID Beasiswa tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        setScholarshipToDelete(scholarship);
         setShowDeleteModal(true);
     };
 
-    const confirmDelete = () => {
-        if (scholarshipIdToDelete) {
-            setIsDeleting(true);
-            router.post(route('admin.scholarship.destroy', scholarshipIdToDelete), {}, {
-                preserveState: true,
-                preserveScroll: true,
-                onError: (errors) => {
-                    setNotificationMessage('Gagal menghapus beasiswa: ' + (errors.error || 'Terjadi kesalahan.'));
-                    setNotificationType('error');
-                    setShowNotification(true);
-                    setIsDeleting(false);
-                    setShowDeleteModal(false);
-                    setScholarshipIdToDelete(null);
-                },
-                onSuccess: () => {
-                    setNotificationMessage('Beasiswa berhasil dihapus!');
-                    setNotificationType('success');
-                    setShowNotification(true);
-                    setIsDeleting(false);
-                    setShowDeleteModal(false);
-                    setScholarshipIdToDelete(null);
-                },
-                onFinish: () => {
-                    setIsDeleting(false);
-                },
-            });
+    // Handle klik tombol toggle status
+    const handleToggleClick = (scholarship) => {
+        if (!scholarship?.scholarship_id) {
+            setNotificationMessage('Gagal: ID Beasiswa tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
         }
+        setScholarshipToToggle(scholarship);
+        setToggleAction(scholarship.is_active ? 'deactivate' : 'activate');
+        setShowToggleModal(true);
     };
 
+    // Konfirmasi penghapusan
+    const confirmDelete = () => {
+        if (!scholarshipToDelete?.scholarship_id) return;
+        setIsDeleting(true);
+        router.delete(route('admin.scholarship.destroy', scholarshipToDelete.scholarship_id), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setShowDeleteModal(false);
+                setScholarshipToDelete(null);
+                setIsDeleting(false);
+            },
+            onError: (errors) => {
+                setShowNotification(true);
+                setNotificationMessage(errors.error || 'Gagal menghapus beasiswa.');
+                setNotificationType('error');
+                setShowDeleteModal(false);
+                setScholarshipToDelete(null);
+                setIsDeleting(false);
+            },
+        });
+    };
+
+    // Batalkan penghapusan
     const cancelDelete = () => {
         setShowDeleteModal(false);
-        setScholarshipIdToDelete(null);
+        setScholarshipToDelete(null);
     };
 
-    const filteredScholarships = scholarships.filter((item) =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.category && item.category.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    // Konfirmasi toggle status
+    const confirmToggle = () => {
+        if (!scholarshipToToggle?.scholarship_id) return;
+        router.post(route('admin.scholarship.toggleActive', scholarshipToToggle.scholarship_id), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setShowToggleModal(false);
+                setScholarshipToToggle(null);
+            },
+            onError: (errors) => {
+                setShowNotification(true);
+                setNotificationMessage(errors.error || 'Gagal mengubah status beasiswa.');
+                setNotificationType('error');
+                setShowToggleModal(false);
+                setScholarshipToToggle(null);
+            },
+        });
+    };
+
+    // Batalkan toggle status
+    const cancelToggle = () => {
+        setShowToggleModal(false);
+        setScholarshipToToggle(null);
+    };
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
@@ -132,7 +194,12 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                 } focus:outline-none focus:ring-2`}
                             >
                                 <span className="sr-only">Dismiss</span>
-                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <svg
+                                    className="h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
                                     <path
                                         fillRule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -169,7 +236,7 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                         </div>
                         <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
                         <p className="text-gray-600 text-center mb-6">
-                            Apakah Anda yakin ingin menghapus beasiswa ini? Tindakan ini tidak dapat dibatalkan.
+                            Apakah Anda yakin ingin menghapus beasiswa "{scholarshipToDelete?.name}"? Tindakan ini tidak dapat dibatalkan.
                         </p>
                         <div className="flex justify-center space-x-4">
                             <button
@@ -198,7 +265,66 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                     />
                                 </svg>
-                                {isDeleting ? 'Menghapus...' : 'Hapus'}
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Toggle Status Confirmation Modal */}
+            {showToggleModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-yellow-100 rounded-full p-3">
+                                <svg
+                                    className="w-8 h-8 text-yellow-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Perubahan Status</h3>
+                        <p className="text-gray-600 text-center mb-6">
+                            Apakah Anda yakin ingin {toggleAction === 'activate' ? 'mengaktifkan' : 'menonaktifkan'} beasiswa "
+                            {scholarshipToToggle?.name}"?
+                        </p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={cancelToggle}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmToggle}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
+                            >
+                                <svg
+                                    className="w-4 h-4 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                Konfirmasi
                             </button>
                         </div>
                     </div>
@@ -215,11 +341,12 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                             </h1>
                             <p className="text-gray-500 mt-1">Kelola beasiswa untuk website</p>
                         </div>
-                        <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                            {/* Search */}
                             <div className="relative flex-grow md:flex-grow-0 md:w-64">
                                 <input
                                     type="text"
-                                    placeholder="Cari beasiswa..."
+                                    placeholder="Cari nama atau kategori beasiswa..."
                                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -239,11 +366,35 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                     />
                                 </svg>
                             </div>
+                            {/* Status Filter */}
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="border p-2 rounded-lg"
+                            >
+                                <option value="">Semua Status</option>
+                                <option value="active">Aktif</option>
+                                <option value="inactive">Non-Aktif</option>
+                            </select>
+                            {/* Date Filter */}
+                            <select
+                                value={dateFilter}
+                                onChange={(e) => setDateFilter(e.target.value)}
+                                className="border p-2 rounded-lg"
+                            >
+                                <option value="terbaru">Terbaru</option>
+                                <option value="terlama">Terlama</option>
+                            </select>
                             {/* View Toggle */}
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
-                                    onClick={() => setIsGridView(true)}
-                                    className={`p-1.5 rounded ${isGridView ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-2 rounded-md ${
+                                        viewMode === 'grid'
+                                            ? 'bg-white shadow-sm text-blue-600'
+                                            : 'text-gray-500 hover:text-gray-700'
+                                    } transition-all duration-200`}
+                                    title="Tampilan Grid"
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -261,8 +412,13 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                     </svg>
                                 </button>
                                 <button
-                                    onClick={() => setIsGridView(false)}
-                                    className={`p-1.5 rounded ${!isGridView ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    onClick={() => setViewMode('table')}
+                                    className={`p-2 rounded-md ${
+                                        viewMode === 'table'
+                                            ? 'bg-white shadow-sm text-blue-600'
+                                            : 'text-gray-500 hover:text-gray-700'
+                                    } transition-all duration-200`}
+                                    title="Tampilan Tabel"
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -280,6 +436,7 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                     </svg>
                                 </button>
                             </div>
+                            {/* Buttons */}
                             <Link
                                 href={route('admin.scholarship.create')}
                                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
@@ -300,32 +457,47 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                 </svg>
                                 Tambah Beasiswa
                             </Link>
+                            <a
+                                href={route('admin.scholarship.pdf')}
+                                className="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-2.5 rounded-lg hover:from-green-700 hover:to-teal-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
+                            >
+                                <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                    />
+                                </svg>
+                                Unduh PDF
+                            </a>
                         </div>
                     </div>
                 </div>
 
                 {/* Grid View */}
-                {isGridView ? (
+                {viewMode === 'grid' && scholarships.data.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredScholarships.map((scholarship) => (
+                        {scholarships.data.map((scholarship) => (
                             <div
                                 key={scholarship.scholarship_id}
                                 className="group bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]"
                             >
-                                {/* Image Container */}
-                                <div className="h-52 overflow-hidden relative">
+                                <div className="relative">
                                     <img
-                                        src={scholarship.poster ? `/storage/${scholarship.poster}` : '/images/scholarship-placeholder.png'}
+                                        src={scholarship.poster || '/images/default-scholarship-poster.jpg'}
                                         alt={scholarship.name}
-                                        className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                                        onError={(e) => (e.target.src = '/images/scholarship-placeholder.png')}
+                                        className="w-full h-40 object-cover rounded-t-xl"
+                                        onError={(e) => (e.target.src = '/images/default-scholarship-poster.jpg')}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1 text-sm rounded-bl-lg shadow-md">
-                                        {scholarship.category ? scholarship.category.category_name : 'Uncategorized'}
-                                    </div>
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
                                 </div>
-                                {/* Content */}
                                 <div className="p-5 flex flex-col flex-grow">
                                     <h2 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition">
                                         {scholarship.name}
@@ -355,8 +527,11 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                                   month: 'long',
                                                   year: 'numeric',
                                               })}`
-                                            : '-'}
+                                            : 'Tanggal tidak ditentukan'}
                                     </div>
+                                    <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                                        {scholarship.description || 'Tidak ada deskripsi'}
+                                    </p>
                                     <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
                                         <Link
                                             href={route('admin.scholarship.edit', scholarship.scholarship_id)}
@@ -379,7 +554,29 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                             Edit
                                         </Link>
                                         <button
-                                            onClick={() => handleDeleteClick(scholarship.scholarship_id)}
+                                            onClick={() => handleToggleClick(scholarship)}
+                                            className={`flex items-center ${
+                                                scholarship.is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'
+                                            } transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-${scholarship.is_active ? 'red' : 'green'}-50`}
+                                        >
+                                            <svg
+                                                className="w-4 h-4 mr-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d={scholarship.is_active ? 'M6 18L18 6M6 6l12 12' : 'M5 13l4 4L19 7'}
+                                                />
+                                            </svg>
+                                            {scholarship.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteClick(scholarship)}
                                             className="flex items-center text-red-600 hover:text-red-700 transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-red-50"
                                             disabled={isDeleting}
                                         >
@@ -404,58 +601,69 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                             </div>
                         ))}
                     </div>
-                ) : (
+                )}
+
+                {/* Table View */}
+                {viewMode === 'table' && scholarships.data.length > 0 && (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nama Beasiswa
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Kategori
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Periode
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Dibuat Oleh
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poster</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredScholarships.map((scholarship) => (
-                                    <tr
-                                        key={scholarship.scholarship_id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {scholarship.name}
+                                {scholarships.data.map((scholarship) => (
+                                    <tr key={scholarship.scholarship_id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <img
+                                                src={scholarship.poster || '/images/default-scholarship-poster.jpg'}
+                                                alt={scholarship.name}
+                                                className="w-16 h-10 object-cover rounded"
+                                                onError={(e) => (e.target.src = '/images/default-scholarship-poster.jpg')}
+                                            />
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {scholarship.category?.category_name || '-'}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{scholarship.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {scholarship.category_name || 'Tidak ada'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {scholarship.start_date && scholarship.end_date
-                                                ? `${new Date(scholarship.start_date).toLocaleDateString('id-ID')} - ${new Date(scholarship.end_date).toLocaleDateString('id-ID')}`
-                                                : '-'}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{scholarship.status}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {scholarship.start_date
+                                                ? `${new Date(scholarship.start_date).toLocaleDateString('id-ID', {
+                                                      day: 'numeric',
+                                                      month: 'long',
+                                                      year: 'numeric',
+                                                  })} - ${new Date(scholarship.end_date).toLocaleDateString('id-ID', {
+                                                      day: 'numeric',
+                                                      month: 'long',
+                                                      year: 'numeric',
+                                                  })}`
+                                                : 'Tanggal tidak ditentukan'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {scholarship.creator?.name || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <Link
                                                 href={route('admin.scholarship.edit', scholarship.scholarship_id)}
-                                                className="text-blue-600 hover:text-blue-700 transition mr-4"
+                                                className="text-blue-600 hover:text-blue-800 mr-4"
                                             >
                                                 Edit
                                             </Link>
                                             <button
-                                                onClick={() => handleDeleteClick(scholarship.scholarship_id)}
-                                                className="text-red-600 hover:text-red-700 transition"
+                                                onClick={() => handleToggleClick(scholarship)}
+                                                className={`${
+                                                    scholarship.is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'
+                                                } mr-4`}
+                                            >
+                                                {scholarship.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(scholarship)}
+                                                className="text-red-600 hover:text-red-800"
                                                 disabled={isDeleting}
                                             >
                                                 Hapus
@@ -468,8 +676,8 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                     </div>
                 )}
 
-                {/* Empty State */}
-                {filteredScholarships.length === 0 && (
+                {/* No Data */}
+                {scholarships.data.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
                         <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                             <svg
@@ -489,13 +697,15 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                         </div>
                         <h3 className="text-xl font-medium text-gray-700 mb-2">Tidak ada beasiswa yang tersedia</h3>
                         <p className="text-gray-500 text-center max-w-md mb-6">
-                            {searchTerm
-                                ? 'Tidak ada hasil yang cocok dengan pencarian Anda'
-                                : 'Silahkan tambahkan beasiswa baru untuk mulai mengelola program beasiswa.'}
+                            {searchTerm || statusFilter ? 'Tidak ada hasil yang cocok dengan pencarian Anda' : 'Silakan tambahkan beasiswa baru untuk mulai mengelola'}
                         </p>
-                        {searchTerm ? (
+                        {searchTerm || statusFilter ? (
                             <button
-                                onClick={() => setSearchTerm('')}
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setStatusFilter('');
+                                    setDateFilter('terbaru');
+                                }}
                                 className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
                             >
                                 <svg
@@ -505,12 +715,7 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                     viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg"
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 Reset Pencarian
                             </button>
@@ -526,16 +731,33 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                                     viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg"
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                    />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                 </svg>
                                 Tambah Beasiswa Baru
                             </Link>
                         )}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {scholarships.data.length > 0 && (
+                    <div className="mt-6 flex justify-center">
+                        <div className="inline-flex rounded-md shadow-sm" role="group">
+                            {scholarships.links.map((link, index) => (
+                                <Link
+                                    key={index}
+                                    href={link.url}
+                                    className={`px-4 py-2 border border-gray-300 text-sm font-medium ${
+                                        link.active
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                    } ${index === 0 ? 'rounded-l-md' : ''} ${
+                                        index === scholarships.links.length - 1 ? 'rounded-r-md' : ''
+                                    }`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                />
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

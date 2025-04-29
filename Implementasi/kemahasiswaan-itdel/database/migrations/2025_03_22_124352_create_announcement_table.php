@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->string('file', 255)->nullable();
             $table->text('content');
             $table->string('category_id', 10);
+            $table->boolean('is_active')->default(true);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

@@ -1,3 +1,424 @@
+import { Head, Link } from '@inertiajs/react';
+import GuestLayout from '@/Layouts/GuestLayout';
+import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import FooterLayout from '@/Layouts/FooterLayout';
+import { usePage } from '@inertiajs/react';
+
+export default function Scholarship({ scholarships }) {
+    const { url } = usePage();
+
+    // Fungsi untuk mendapatkan judul halaman
+    const getPageTitle = () => {
+        switch (url) {
+            case '/':
+                return 'Beranda';
+            case '/newsguest':
+                return 'Berita';
+            case '/announcement':
+                return 'Pengumuman';
+            case '/struktur':
+                return 'Struktur Organisasi';
+            case '/kegiatan':
+                return 'Kegiatan';
+            case '/counseling':
+                return 'Konseling';
+            default:
+                if (url.startsWith('/counseling')) return 'Konseling';
+                if (url.startsWith('/beasiswa')) return 'Beasiswa';
+                if (url.startsWith('/downloads')) return 'Unduhan';
+                if (url.startsWith('/asrama')) return 'Asrama';
+                if (url.startsWith('/bem')) return 'BEM';
+                if (url.startsWith('/mpm')) return 'MPM';
+                return 'Beranda';
+        }
+    };
+
+    // Fungsi untuk membuat breadcrumb
+    const getBreadcrumb = () => {
+        const title = getPageTitle();
+        const breadcrumbItems = [];
+
+        breadcrumbItems.push(
+            <Link key="beranda" href="/" className="hover:underline">
+                Beranda
+            </Link>
+        );
+
+        if (url === '/') return breadcrumbItems;
+
+        if (['/newsguest', '/announcement', '/struktur', '/kegiatan'].includes(url)) {
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <Link key={title} href={url} className="hover:underline">
+                    {title}
+                </Link>
+            );
+        } else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') ||
+                   url.startsWith('/downloads') || url.startsWith('/asrama')) {
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <span key="layanan">Layanan Kemahasiswaan</span>,
+                <span key="separator-2" className="mx-2">/</span>,
+                <Link key={title} href={url} className="hover:underline">
+                    {title}
+                </Link>
+            );
+        } else if (url.startsWith('/bem') || url.startsWith('/mpm')) {
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <span key="organisasi">Organisasi</span>,
+                <span key="separator-2" className="mx-2">/</span>,
+                <Link key={title} href={url} className="hover:underline">
+                    {title}
+                </Link>
+            );
+        } else {
+            breadcrumbItems.push(
+                <span key="separator-1" className="mx-2">/</span>,
+                <Link key={title} href={url} className="hover:underline">
+                    {title}
+                </Link>
+            );
+        }
+
+        return breadcrumbItems;
+    };
+
+    // Format tanggal ke dalam format DD MMMM YYYY
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Tidak Diketahui';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+        });
+    };
+
+    return (
+        <GuestLayout>
+            <NavbarGuestLayoutPage />
+            <Head title="Tentang Beasiswa IT Del" />
+
+            {/* CSS Styles */}
+            <style>
+                {`
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-family: 'Inter', Arial, sans-serif;
+                        background: #f8fafc;
+                    }
+                    .main-container {
+                        min-height: 100vh;
+                        padding: 60px 20px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    .header-section {
+                        width: 100%;
+                        height: 400px;
+                        background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
+                        background-size: cover;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #ffffff;
+                        text-align: center;
+                        position: relative;
+                        margin-bottom: 40px;
+                    }
+                    .header-section::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.5);
+                    }
+                    .header-section h1 {
+                        font-size: 48px;
+                        font-weight: 700;
+                        position: relative;
+                        z-index: 1;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                    }
+                    .header-section p {
+                        font-size: 18px;
+                        position: relative;
+                        z-index: 1;
+                        margin-top: 10px;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    }
+                    .header-section p a, .header-section p span {
+                        color: #ffffff;
+                        font-weight: 500;
+                    }
+                    .info-section, .scholarships-section {
+                        max-width: 1200px;
+                        width: 100%;
+                        margin-bottom: 40px;
+                    }
+                    .info-section h2, .scholarships-section h2 {
+                        font-size: 32px;
+                        font-weight: 700;
+                        color: #1e40af;
+                        margin-bottom: 20px;
+                    }
+                    .info-content {
+                        display: flex;
+                        gap: 40px;
+                        background: #ffffff;
+                        border: 2px solid #1e40af;
+                        border-radius: 16px;
+                        padding: 40px;
+                        margin-bottom: 20px;
+                    }
+                    .info-text {
+                        flex: 2;
+                    }
+                    .info-text p {
+                        font-size: 16px;
+                        color: #4b5563;
+                        line-height: 1.6;
+                        margin-bottom: 15px;
+                    }
+                    .info-text ul {
+                        list-style-type: none;
+                        padding-left: 0;
+                        margin-bottom: 20px;
+                        color: #4b5563;
+                        font-size: 16px;
+                    }
+                    .info-text ul li {
+                        margin-bottom: 10px;
+                        position: relative;
+                        padding-left: 20px;
+                        color: #1e40af;
+                    }
+                    .info-text ul li::before {
+                        content: '✓';
+                        position: absolute;
+                        left: 0;
+                        color: #1e40af;
+                    }
+                    .info-image {
+                        flex: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .info-image img {
+                        max-width: 100%;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .info-stats {
+                        display: flex;
+                        gap: 20px;
+                        justify-content: center;
+                        margin-top: 20px;
+                    }
+                    .stat-card {
+                        background: #e6f0ff;
+                        border-radius: 12px;
+                        padding: 20px;
+                        text-align: center;
+                        flex: 1;
+                        max-width: 200px;
+                    }
+                    .stat-card h3 {
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #1e40af;
+                        margin-bottom: 5px;
+                    }
+                    .stat-card p {
+                        font-size: 14px;
+                        color: #4b5563;
+                    }
+                    .scholarships-section h2 {
+                        text-align: center;
+                    }
+                    .scholarship-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                        gap: 20px;
+                    }
+                    .scholarship-card {
+                        background: #ffffff;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 12px;
+                        padding: 20px;
+                        text-align: center;
+                        transition: transform 0.3s ease, box-shadow 0.3s ease;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        height: 100%;
+                        cursor: pointer;
+                    }
+                    .scholarship-card:hover {
+                        transform: translateY(-5px);
+                        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+                    }
+                    .scholarship-card img {
+                        width: 48px;
+                        height: 48px;
+                        margin: 0 auto 15px;
+                    }
+                    .scholarship-card h4 {
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #1f2937;
+                        margin-bottom: 10px;
+                        line-height: 1.4;
+                    }
+                    .scholarship-card p {
+                        font-size: 14px;
+                        color: #6b7280;
+                        margin-bottom: 15px;
+                        flex-grow: 1;
+                    }
+                    .scholarship-card .date-info {
+                        font-size: 13px;
+                        color: #4b5563;
+                        margin-top: 10px;
+                    }
+                    .scholarship-card .date-info span {
+                        display: block;
+                        margin: 2px 0;
+                    }
+                    .more-button {
+                        display: block;
+                        margin: 30px auto 0;
+                        padding: 12px 24px;
+                        background: #1e40af;
+                        color: #ffffff;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: background 0.3s ease;
+                    }
+                    .more-button:hover {
+                        background: #1e3a8a;
+                    }
+                    @media (max-width: 768px) {
+                        .main-container {
+                            padding: 40px 15px;
+                        }
+                        .header-section {
+                            height: 300px;
+                        }
+                        .header-section h1 {
+                            font-size: 32px;
+                        }
+                        .header-section p {
+                            font-size: 16px;
+                        }
+                        .info-content {
+                            flex-direction: column;
+                            padding: 30px;
+                        }
+                        .info-image img {
+                            max-width: 100%;
+                        }
+                        .info-stats {
+                            flex-direction: column;
+                            align-items: center;
+                        }
+                        .stat-card {
+                            max-width: 100%;
+                        }
+                        .scholarship-grid {
+                            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                        }
+                    }
+                `}
+            </style>
+
+            {/* Main Container */}
+            <div className="main-container">
+                {/* Header Section */}
+                <div className="header-section">
+                    <h1>{getPageTitle()}</h1>
+                    <p className="flex flex-wrap justify-center gap-1">
+                        {getBreadcrumb()}
+                    </p>
+                </div>
+
+                {/* Scholarship Info Section */}
+                <div className="info-section">
+                    <h2>Tentang Beasiswa IT Del</h2>
+                    <div className="info-content">
+                        <div className="info-text">
+                            <p>
+                                Banyak lembaga yang bekerjasama dengan Institut Teknologi Del terkait program beasiswa bantuan uang pendidikan mau pun biaya hidup Mahasiswa. Lembaga tersebut antara lain, Pemerintah Kota/Kabupaten, PT Inalum, KIP Kuliah, dan masih banyak lagi.
+                            </p>
+                            <ul>
+                                <li>Membantu Mahasiswa yang Kurang Mampu Secara Finansial</li>
+                                <li>Mendorong Prestasi Akademik</li>
+                                <li>Meningkatkan Akses Pendidikan yang Lebih Merata</li>
+                            </ul>
+                        </div>
+                        <div className="info-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1524178232363-64f36b2e8139?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80"
+                                alt="Students Gathering"
+                            />
+                        </div>
+                    </div>
+                    <div className="info-stats">
+                        <div className="stat-card">
+                            <h3>129+</h3>
+                            <p>Beasiswa Prestasi</p>
+                        </div>
+                        <div className="stat-card">
+                            <h3>66+</h3>
+                            <p>Beasiswa Pelangi</p>
+                        </div>
+                        <div className="stat-card">
+                            <h3>129+</h3>
+                            <p>Beasiswa Prestasi</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Scholarships Section */}
+                <div className="scholarships-section">
+                    <h2>Informasi Beasiswa</h2>
+                    <div className="scholarship-grid">
+                        {scholarships.map((scholarship) => (
+                            <Link
+                                key={scholarship.scholarship_id}
+                                href={`/beasiswa/${scholarship.scholarship_id}`}
+                                className="scholarship-card"
+                            >
+                                <img
+                                    src="https://img.icons8.com/ios-filled/50/1e40af/handshake.png"
+                                    alt="Handshake Icon"
+                                />
+                                <h4>{scholarship.name}</h4>
+                                <p>{scholarship.description}</p>
+                                <div className="date-info">
+                                    <span>{formatDate(scholarship.start_date)}</span>
+                                    <span>{formatDate(scholarship.end_date)}</span>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                    <button className="more-button">Lihat Lebih Banyak</button>
+                </div>
+            </div>
+
+            <FooterLayout />
+        </GuestLayout>
+    );
+}
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';

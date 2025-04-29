@@ -25,6 +25,7 @@ use App\Http\Controllers\OrganizationAdminController;
 use App\Http\Controllers\AspirationCategoryController;
 use App\Http\Controllers\ScholarshipCategoryController;
 use App\Http\Controllers\AnnouncementCategoryController;
+use App\Http\Controllers\FormSettingsController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 // Public Routes (Accessible to Guests)
@@ -75,9 +76,13 @@ Route::get('/mpm', [MpmController::class, 'show'])->name('mpm.show');
 // Routes untuk unduhan di sisi guest
 Route::get('/downloads', [DownloadController::class, 'guestIndex'])->name('downloads.guest.index');
 
-// Scholarship Routes for Guests
-Route::get('/scholarships', [ScholarshipController::class, 'guestIndex'])->name('scholarships.guest.index');
-Route::get('/scholarships/{scholarship_id}', [ScholarshipController::class, 'show'])->name('scholarships.show');
+Route::get('/beasiswa', [ScholarshipController::class, 'guestIndex'])->name('scholarship.guestIndex');
+
+
+Route::get('/beasiswa', [ScholarshipController::class, 'guestIndex'])->name('guest.scholarship.index');
+Route::get('/beasiswa/{scholarship_id}', [ScholarshipController::class, 'guestShow'])->name('guest.scholarship.show');
+Route::get('/beasiswa/{form_id}/form', [FormController::class, 'showForm'])->name('guest.form.show');
+Route::post('/submit-form', [FormController::class, 'submit'])->name('form.submit');
 
 
 // Login Route
@@ -149,6 +154,38 @@ Route::middleware(['auth'])->group(function () {
             Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
         });
 
+        Route::middleware(['feature:layanan'])->group(function () {
+            Route::get('/layanan', function () {
+                return Inertia::render('Admin/Layanan', [
+                    'auth' => [
+                        'user' => Auth::user(),
+                    ],
+                ]);
+            })->name('layanan');
+        });
+
+        Route::middleware(['feature:kegiatan'])->group(function () {
+            Route::get('/kegiatan', function () {
+                return Inertia::render('Admin/Kegiatan', [
+                    'auth' => [
+                        'user' => Auth::user(),
+                    ],
+                ]);
+            })->name('kegiatan');
+        });
+
+        Route::middleware(['feature:organisasi'])->group(function () {
+            Route::get('/organisasi', function () {
+                return Inertia::render('Admin/Organisasi', [
+                    'auth' => [
+                        'user' => Auth::user(),
+                    ],
+                ]);
+            })->name('organisasi');
+        });
+
+
+
         // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
             Route::resource('news', NewsController::class)->except(['show', 'destroy', 'update']);
@@ -198,11 +235,13 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('scholarship-category', ScholarshipCategoryController::class)->except(['show', 'destroy', 'update']);
             Route::post('scholarship-category/{scholarship_category}/update', [ScholarshipCategoryController::class, 'update'])->name('scholarship-category.update');
             Route::post('scholarship-category/{scholarship_category}/delete', [ScholarshipCategoryController::class, 'destroy'])->name('scholarship-category.destroy');
-
+            Route::patch('scholarship-category/{category_id}/toggle-active', [ScholarshipCategoryController::class, 'toggleActive'])->name('scholarship-category.toggle-active');
             // === SCHOLARSHIP ===
             Route::resource('scholarship', ScholarshipController::class)->except(['show', 'destroy', 'update']);
             Route::post('scholarship/{scholarship}/update', [ScholarshipController::class, 'update'])->name('scholarship.update');
             Route::post('scholarship/{scholarship}/delete', [ScholarshipController::class, 'destroy'])->name('scholarship.destroy');
+            Route::patch('scholarship/{scholarship_id}/toggle-active', [ScholarshipController::class, 'toggleActive'])->name('scholarship.toggle-active');
+
 
             // Rute untuk Organization Admins menggunakan ApiProxyController
             Route::get('/organization-admins', [ApiProxyController::class, 'showStudents'])->name('organization-admins.index');
@@ -220,7 +259,17 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('form', FormController::class)->except(['show', 'destroy', 'update']);
             Route::post('form/{form}/update', [FormController::class, 'update'])->name('form.update');
             Route::post('form/{form}/delete', [FormController::class, 'destroy'])->name('form.destroy');
-            Route::post('form/{form}/toggleActive', [FormController::class, 'toggleActive'])->name('admin.form.toggleActive');
+            Route::post('form/{form}/toggleActive', [FormController::class, 'toggleActive'])->name('form.toggleActive');
+
+
+            Route::get('form/{form}/settings', [FormController::class, 'settings'])->name('form.settings');
+            Route::put('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
+            Route::get('form/form-settings/{form}/edit', [FormController::class, 'edit'])->name('form_settings.edit');
+
+
+
+
+
         });
 
         // MPM Routes (AdminMPM) - Ditambahkan

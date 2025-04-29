@@ -272,7 +272,18 @@ class RoleHelper
             ];
         }
 
-        // Menu untuk Manajemen Prestasi
+
+        if ($permissions['form'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Managemen Form',
+                'route' => 'admin.form.index',
+                'icon' => 'organization',
+                'visible' => true,
+            ];
+        }
+
+
+        // Mengelompokkan Prestasi dan Jenis Prestasi dalam dropdown "Manajemen Prestasi"
         if (($permissions['achievements'] ?? false) || ($permissions['achievementtype'] ?? false)) {
             $achievementSubmenu = [];
             if ($permissions['achievementtype'] ?? false) {
@@ -297,15 +308,6 @@ class RoleHelper
             ];
         }
 
-        // Menu untuk Manajemen Form
-        if ($permissions['form'] ?? false) {
-            $menuItems[] = [
-                'name' => 'Manajemen Form',
-                'route' => 'admin.form.index',
-                'icon' => 'organization',
-                'visible' => true,
-            ];
-        }
 
         // Menu untuk Konseling
         if ($permissions['counseling'] ?? false) {

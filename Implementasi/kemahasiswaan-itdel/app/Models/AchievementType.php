@@ -2,52 +2,40 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AchievementType extends Model
 {
-    use HasFactory;
-
     protected $table = 'achievement_types';
     protected $primaryKey = 'type_id';
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
+        'type_id',
         'type_name',
         'description',
         'created_by',
         'updated_by',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
+    protected $casts = [
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
 
-        // Event saat membuat record baru
-        static::creating(function ($model) {
-            $model->type_id = self::generateTypeId();
-        });
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
-    // Generate ID otomatis "type001", "type002", "type003", ...
-    public static function generateTypeId()
+    public function updater()
     {
-        $lastType = self::latest('type_id')->first();
-
-        if ($lastType) {
-            $lastNumber = (int) substr($lastType->type_id, 4);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return 'type' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return $this->belongsTo(User::class, 'updated_by', 'id');
     }
 
     public function achievements()
     {
-        return $this->hasMany(Achievement::class, 'achievement_type', 'type_id');
+        return $this->hasMany(Achievement::class, 'type_id', 'type_id');
     }
 }

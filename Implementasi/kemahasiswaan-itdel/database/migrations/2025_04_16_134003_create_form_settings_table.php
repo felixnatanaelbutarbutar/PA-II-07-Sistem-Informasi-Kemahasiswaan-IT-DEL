@@ -21,6 +21,7 @@ return new class extends Migration
             $table->dateTime('submission_deadline')->nullable(); // Deadline pengumpulan
             $table->unsignedInteger('max_submissions')->nullable(); // Maksimal submit
             $table->boolean('response_notification')->default(false); // Notifikasi submit
+            $table->boolean('is_active')->default(true); // Aktif atau tidak
             $table->unsignedBigInteger('created_by'); // User pembuat
             $table->unsignedBigInteger('updated_by')->nullable(); // User pengubah
             $table->timestamps();

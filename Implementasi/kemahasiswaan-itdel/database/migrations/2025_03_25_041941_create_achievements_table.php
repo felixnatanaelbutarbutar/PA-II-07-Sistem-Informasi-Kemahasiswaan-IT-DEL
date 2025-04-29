@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->enum('medal', ['Gold', 'Silver', 'Bronze'])->nullable();
             $table->string('event_name', 255);
             $table->date('event_date');
+            $table->boolean('is_active')->default(true);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

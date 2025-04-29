@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\FormField;
 use Illuminate\Database\Eloquent\Model;
 
 class ScholarshipForm extends Model
@@ -16,8 +15,16 @@ class ScholarshipForm extends Model
         'scholarship_id',
         'form_name',
         'description',
+        'is_active', // Added is_active to fillable
         'created_by',
         'updated_by',
+    ];
+
+
+    protected $casts = [
+        'is_active' => 'boolean', // Cast is_active as boolean
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     // Relationships

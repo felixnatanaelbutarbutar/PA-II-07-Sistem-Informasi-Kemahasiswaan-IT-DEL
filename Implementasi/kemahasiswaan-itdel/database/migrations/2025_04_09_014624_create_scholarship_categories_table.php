@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('category_id', 10)->primary();
             $table->string('category_name', 100)->unique();
             $table->text('description');
+            $table->boolean('is_active')->default(true);
             $table->unsignedBigInteger('created_by'); // Mengarah ke id di tabel users
             $table->unsignedBigInteger('updated_by')->nullable(); // Mengarah ke id di tabel users, boleh kosong
             $table->timestamps();
