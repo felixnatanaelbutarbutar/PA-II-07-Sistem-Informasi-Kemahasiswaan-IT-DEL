@@ -2,121 +2,40 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
 import FooterLayout from '@/Layouts/FooterLayout';
-import { useState, useEffect } from 'react';
 
 export default function NewsDetail() {
-    const { news_id } = usePage().props;
-    const [news, setNews] = useState(null);
-    const [otherNews, setOtherNews] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [otherNewsLoading, setOtherNewsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [otherNewsError, setOtherNewsError] = useState(null);
+    // Ambil data dari props yang dikirim oleh NewsController@show
+    const { news, news_id, newsItems, categories } = usePage().props;
 
-    // Fetch main news and other news from API
-    useEffect(() => {
-        if (!news_id) {
-            setError('ID berita tidak ditemukan.');
-            setLoading(false);
-            return;
-        }
+    // Filter berita lainnya dari newsItems
+    const otherNews = newsItems
+        .filter(item => item.news_id !== news_id)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 3);
 
-        // Fetch main news
-        fetch(`http://localhost:8000/api/news/${news_id}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Gagal mengambil data berita');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Data berita dari API:', data);
-                setNews(data);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching news detail:', error);
-                setError('Gagal memuat detail berita. Silakan coba lagi nanti.');
-                setLoading(false);
-            });
-
-        // Fetch other news
-        fetch(`http://localhost:8000/api/news`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Gagal mengambil berita lainnya');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response API untuk berita lainnya:', data);
-                if (!data.data || !Array.isArray(data.data)) {
-                    throw new Error('Format data berita lainnya tidak valid');
-                }
-                const filteredNews = data.data
-                    .filter(item => item.id !== parseInt(news_id))
-                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                    .slice(0, 3);
-                console.log('Berita lainnya setelah filter:', filteredNews);
-                setOtherNews(filteredNews);
-                setOtherNewsLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching other news:', error);
-                setOtherNewsError('Gagal memuat berita lainnya.');
-                setOtherNewsLoading(false);
-            });
-    }, [news_id]);
-
-    const LoadingState = () => (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="flex flex-col items-center">
-                <div className="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin"></div>
-                <p className="mt-4 text-lg font-medium text-gray-600">Memuat berita...</p>
-            </div>
-        </div>
-    );
-
-    const ErrorState = ({ message }) => (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="max-w-md p-6 text-center bg-white rounded-lg shadow-xl">
-                <svg className="w-16 h-16 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <h3 className="mt-4 text-xl font-bold text-gray-800">{message}</h3>
-                <Link
-                    href="/newsguest"
-                    className="inline-block px-6 py-3 mt-6 text-sm font-medium text-white transition-colors duration-300 bg-blue-600 rounded-lg hover:bg-blue-700"
-                >
-                    Kembali ke Halaman Berita
-                </Link>
-            </div>
-        </div>
-    );
-
-    if (loading) return (
-        <GuestLayout>
-            <NavbarGuestLayout />
-            <LoadingState />
-            <FooterLayout />
-        </GuestLayout>
-    );
-
-    if (error) return (
-        <GuestLayout>
-            <NavbarGuestLayout />
-            <ErrorState message={error} />
-            <FooterLayout />
-        </GuestLayout>
-    );
-
-    if (!news) return (
-        <GuestLayout>
-            <NavbarGuestLayout />
-            <ErrorState message="Berita tidak ditemukan." />
-            <FooterLayout />
-        </GuestLayout>
-    );
+    // Jika news tidak ada (misalnya karena error di backend)
+    if (!news) {
+        return (
+            <GuestLayout>
+                <NavbarGuestLayout />
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="max-w-md p-6 text-center bg-white rounded-lg shadow-xl">
+                        <svg className="w-16 h-16 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <h3 className="mt-4 text-xl font-bold text-gray-800">Berita tidak ditemukan.</h3>
+                        <Link
+                            href="/newsguest"
+                            className="inline-block px-6 py-3 mt-6 text-sm font-medium text-white transition-colors duration-300 bg-blue-600 rounded-lg hover:bg-blue-700"
+                        >
+                            Kembali ke Halaman Berita
+                        </Link>
+                    </div>
+                </div>
+                <FooterLayout />
+            </GuestLayout>
+        );
+    }
 
     return (
         <GuestLayout>
@@ -265,18 +184,12 @@ export default function NewsDetail() {
                                         Berita Lainnya
                                     </h2>
                                     
-                                    {otherNewsLoading ? (
-                                        <div className="flex items-center justify-center py-10">
-                                            <div className="w-8 h-8 border-t-2 border-blue-600 border-solid rounded-full animate-spin"></div>
-                                        </div>
-                                    ) : otherNewsError ? (
-                                        <p className="text-red-500 py-4">{otherNewsError}</p>
-                                    ) : otherNews.length > 0 ? (
+                                    {otherNews.length > 0 ? (
                                         <div className="space-y-6">
                                             {otherNews.map((item) => (
                                                 <Link
-                                                    key={news.news_id}
-                                                    href={route('news.show', news.news_id)}
+                                                    key={item.news_id} // Gunakan item.news_id
+                                                    href={route('news.show', item.news_id)} // Gunakan item.news_id
                                                     className="flex group rounded-xl overflow-hidden transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                                                 >
                                                     {item.image && (
@@ -333,11 +246,14 @@ export default function NewsDetail() {
                                 <div className="bg-white rounded-2xl shadow-xl p-6 mt-6">
                                     <h3 className="text-xl font-bold text-gray-800 mb-4">Kategori Populer</h3>
                                     <div className="flex flex-wrap gap-2">
-                                        <span className="px-3 py-1 bg-blue-100 text-blue-600 text-sm font-medium rounded-full hover:bg-blue-200 transition-colors cursor-pointer">Berita Terkini</span>
-                                        <span className="px-3 py-1 bg-green-100 text-green-600 text-sm font-medium rounded-full hover:bg-green-200 transition-colors cursor-pointer">Ekonomi</span>
-                                        <span className="px-3 py-1 bg-purple-100 text-purple-600 text-sm font-medium rounded-full hover:bg-purple-200 transition-colors cursor-pointer">Teknologi</span>
-                                        <span className="px-3 py-1 bg-amber-100 text-amber-600 text-sm font-medium rounded-full hover:bg-amber-200 transition-colors cursor-pointer">Olahraga</span>
-                                        <span className="px-3 py-1 bg-red-100 text-red-600 text-sm font-medium rounded-full hover:bg-red-200 transition-colors cursor-pointer">Politik</span>
+                                        {categories.map((category) => (
+                                            <span
+                                                key={category.category_id}
+                                                className="px-3 py-1 bg-blue-100 text-blue-600 text-sm font-medium rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                                            >
+                                                {category.category_name}
+                                            </span>
+                                        ))}
                                     </div>
                                 </div>
                             </div>

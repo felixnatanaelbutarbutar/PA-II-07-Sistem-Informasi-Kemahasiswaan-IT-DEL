@@ -22,7 +22,7 @@ class NewsController extends Controller
 
         $news = News::with('category')->get();
         $categories = NewsCategory::all();
-        
+
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -199,15 +199,15 @@ class NewsController extends Controller
 
     public function show($news_id)
     {
-        $news = News::with('category')->findOrFail($news_id);
+        $news = News::with('category')->where('news_id', $news_id)->firstOrFail();
         $newsItems = News::with('category')->orderBy('created_at', 'desc')->get();
-        $categories = NewsCategory::all();  
+        $categories = NewsCategory::all();
 
         return Inertia::render('NewsDetail', [
             'newsItems' => $newsItems,
             'categories' => $categories,
-
             'news' => $news,
+            'news_id' => $news_id, // Kirim news_id sebagai prop
         ]);
     }
 }

@@ -43,14 +43,24 @@ export default function Login({ status, error, canResetPassword }) {
                         <img
                             src="/assets/images/login-logo/sub-logo.png"
                             alt="SPMB IT DEL"
-                            className="mx-auto h-24 w-auto drop-shadow-lg"
+                            className="mx-auto h-28 w-auto drop-shadow-lg"
                         />
+                        {/* <h1 className="mt-4 text-3xl font-bold text-white drop-shadow-lg">
+                            Kemahasiswaan IT DEL
+                        </h1>
+                        <p className="mt-2 text-lg text-white font-medium drop-shadow-md">
+                            Sistem Informasi Manajemen Kemahasiswaan
+                        </p> */}
                     </div>
 
-                    <div className="hover:shadow-3xl transform overflow-hidden rounded-xl bg-white p-12 shadow-2xl transition-all duration-300 ease-in-out hover:scale-[1.02]">
-                        <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">
-                            Login
-                        </h2>
+                    <div className="hover:shadow-3xl transform overflow-hidden rounded-xl bg-white p-12 shadow-2xl transition-all duration-300 ease-in-out hover:scale-[1.02] border-t-4 border-[#001B3F]">
+                        <div className="flex items-center justify-center mb-6">
+                            <div className="h-1 w-12 bg-gray-200 rounded-full"></div>
+                            <h2 className="mx-4 text-center text-2xl font-bold text-gray-800">
+                                Login Akun
+                            </h2>
+                            <div className="h-1 w-12 bg-gray-200 rounded-full"></div>
+                        </div>
 
                         {/* NOTIFIKASI SUKSES (HIJAU) */}
                         {status && (
@@ -187,7 +197,7 @@ export default function Login({ status, error, canResetPassword }) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="relative w-full overflow-hidden rounded-lg bg-[#001B3F] px-4 py-5 text-center text-lg font-semibold text-white shadow-lg transition-all hover:bg-blue-900 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
+                                    className="relative w-full overflow-hidden rounded-lg bg-gradient-to-r from-[#001B3F] to-[#0051a8] px-4 py-5 text-center text-lg font-semibold text-white shadow-lg transition-all hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
                                 >
                                     {processing ? (
                                         <span className="flex items-center justify-center">
@@ -210,30 +220,20 @@ export default function Login({ status, error, canResetPassword }) {
                                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 0 7.938l3-2.647z"
                                                 />
                                             </svg>
-                                            Signing in...
+                                            Logging in...
                                         </span>
                                     ) : (
-                                        'Sign In'
+                                        'Masuk'
                                     )}
                                 </button>
                             </div>
                         </form>
-
-                        {canResetPassword && (
-                            <div className="mt-8 w-full rounded-lg bg-gray-50 p-4">
-                                <div className="text-center">
-                                    <p className="text-sm text-gray-600">
-                                        Lupa Password?{' '}
-                                        <Link
-                                            href={route('password.request')}
-                                            className="font-medium text-[#001B3F] transition-colors hover:text-blue-900"
-                                        >
-                                            Reset Password
-                                        </Link>
-                                    </p>
-                                </div>
-                            </div>
-                        )}
+                        
+                        <div className="mt-6 text-center">
+                            <p className="text-sm font-medium text-gray-500">
+                                Portal Sistem Kemahasiswaan IT DEL &copy; {new Date().getFullYear()}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

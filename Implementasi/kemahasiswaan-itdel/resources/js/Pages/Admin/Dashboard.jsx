@@ -293,7 +293,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                     </div>
 
                     {/* Statistik */}
-                    <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+                    {/* <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div className={`group rounded-xl p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1
                             ${document.documentElement.classList.contains('light') ? 'bg-blue-50 hover:bg-blue-100' : ''}
                             ${document.documentElement.classList.contains('dark') ? 'bg-blue-900/30 hover:bg-blue-900/50' : ''}
@@ -356,7 +356,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                                 {announcementsCount}
                             </p>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Statistik - 2 Column Layout */}
                     <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">

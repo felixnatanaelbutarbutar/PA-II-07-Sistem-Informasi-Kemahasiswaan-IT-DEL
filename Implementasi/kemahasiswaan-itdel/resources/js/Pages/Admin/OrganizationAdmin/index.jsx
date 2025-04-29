@@ -199,9 +199,9 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         NIM
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    {/* <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Username
-                                    </th>
+                                    </th> */}
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Nama
                                     </th>
@@ -214,9 +214,9 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Role
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    {/* <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Status
-                                    </th>
+                                    </th> */}
                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
                                         Aksi
                                     </th>
@@ -233,9 +233,9 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {student.nim}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {student.username}
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {student.name}
                                             </td>
@@ -262,7 +262,7 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                                         : 'Mahasiswa'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {currentStatus !== 'N/A' ? (
                                                     <span
                                                         className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -276,7 +276,7 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                                 ) : (
                                                     '-'
                                                 )}
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <select
                                                     value={currentRole}
