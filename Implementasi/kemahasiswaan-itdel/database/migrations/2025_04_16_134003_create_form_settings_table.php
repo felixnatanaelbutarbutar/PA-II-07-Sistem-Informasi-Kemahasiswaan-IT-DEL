@@ -11,19 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // database/migrations/xxxx_xx_xx_create_form_settings_table.php
         Schema::create('form_settings', function (Blueprint $table) {
-            $table->string('setting_id', 10)->primary(); // ID seperti FS001
-            $table->string('form_id', 10); // Relasi ke scholarship_forms
-            $table->boolean('is_active')->default(true); // Aktif atau tidak
-            $table->boolean('accept_responses')->default(true); // Menerima respons atau tidak
-            $table->boolean('one_submission_per_email')->default(false); // Satu submit per email
-            $table->boolean('allow_edit')->default(true); // Boleh edit setelah submit
-            $table->dateTime('submission_deadline')->nullable(); // Deadline pengumpulan
-            $table->unsignedInteger('max_submissions')->nullable(); // Maksimal submit
-            $table->boolean('response_notification')->default(false); // Notifikasi submit
-            $table->boolean('is_active')->default(true); // Aktif atau tidak
-            $table->unsignedBigInteger('created_by'); // User pembuat
-            $table->unsignedBigInteger('updated_by')->nullable(); // User pengubah
+            $table->string('setting_id', 10)->primary();
+            $table->string('form_id', 10);
+            $table->boolean('accept_responses')->default(true);
+            $table->boolean('one_submission_per_email')->default(false);
+            $table->boolean('allow_edit')->default(true);
+            $table->dateTime('submission_deadline')->nullable();
+            $table->unsignedInteger('max_submissions')->nullable();
+            $table->boolean('response_notification')->default(false);
+            $table->boolean('is_active')->default(true); // Keep only one is_active
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
             // Foreign keys
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
 
-            $table->index('form_id'); // Optimasi query
+            $table->index('form_id');
         });
     }
 

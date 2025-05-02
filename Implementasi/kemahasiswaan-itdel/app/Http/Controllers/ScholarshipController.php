@@ -153,13 +153,16 @@ class ScholarshipController extends Controller
             ]);
 
             return redirect()->route('admin.scholarship.index')
-                ->with('success', 'Beasiswa berhasil dit今年的。');
+                ->with('success', 'Beasiswa berhasil ditambahkan.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error creating scholarship: ' . json_encode($e->errors()), ['trace' => $e->getTraceAsString()]);
+            return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            Log::error('Error creating scholarship: ' . $e->getMessage());
+            Log::error('Error creating scholarship: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->withErrors(['error' => 'Gagal membuat beasiswa: ' . $e->getMessage()])->withInput();
         }
     }
-
+    
     public function edit(Scholarship $scholarship)
     {
         $user = Auth::user();

@@ -1,5 +1,6 @@
 <?php
 
+// app/Models/FormField.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -25,17 +26,18 @@ class FormField extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'is_required' => 'boolean',
+        'is_active' => 'boolean',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     // Relationships
     public function form()
     {
         return $this->belongsTo(ScholarshipForm::class, 'form_id', 'form_id');
     }
-
-    protected $casts = [
-        'is_active' => 'boolean', // Cast is_active as boolean
-        'created_by' => 'integer',
-        'updated_by' => 'integer',
-    ];
 
     public function creator()
     {

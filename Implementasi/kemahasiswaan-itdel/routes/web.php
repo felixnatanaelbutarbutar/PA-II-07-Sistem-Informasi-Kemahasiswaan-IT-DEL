@@ -241,7 +241,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('scholarship/{scholarship}/update', [ScholarshipController::class, 'update'])->name('scholarship.update');
             Route::post('scholarship/{scholarship}/delete', [ScholarshipController::class, 'destroy'])->name('scholarship.destroy');
             Route::patch('scholarship/{scholarship_id}/toggle-active', [ScholarshipController::class, 'toggleActive'])->name('scholarship.toggle-active');
-
+            Route::get('/scholarship/pdf', [ScholarshipController::class, 'exportPDF'])->name('scholarship.pdf');
 
             // Rute untuk Organization Admins menggunakan ApiProxyController
             Route::get('/organization-admins', [ApiProxyController::class, 'showStudents'])->name('organization-admins.index');
