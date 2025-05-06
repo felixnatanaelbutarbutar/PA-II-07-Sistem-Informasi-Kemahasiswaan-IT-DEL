@@ -28,45 +28,53 @@ class RoleHelper
                 'achievementtype' => true,
                 'counseling' => true,
                 'aspiration' => true,
-                'aspirationcategory' => true, // Added explicit permission for aspiration category
+                'aspirationcategory' => true,
                 'mpm' => true,
                 'bem' => true,
                 'downloads' => true,
+                'download-categories' => true, // Tambahkan izin untuk download-categories
                 'organizationadmin' => true,
                 'carousel' => true,
                 'kegiatan' => true,
+                'chatbot' => true,
             ],
             'adminbem' => [
                 'pengumuman' => true,
+                'newscategory' => true,
                 'news' => true,
-                'newscategory' => false,
                 'achievements' => true,
                 'achievementtype' => false,
                 'scholarship' => false,
                 'form' => false,
                 'counseling' => false,
                 'aspiration' => false,
-                'aspirationcategory' => false, // No access for adminbem
+                'aspirationcategory' => false,
                 'bem' => true,
                 'mpm' => false,
                 'carousel' => false,
                 'kegiatan' => true,
+                'chatbot' => true,
+                'downloads' => true,
+                'download-categories' => true, // Tambahkan izin untuk download-categories
             ],
             'adminmpm' => [
                 'pengumuman' => true,
-                'news' => false,
-                'newscategory' => false,
+                'newscategory' => true,
+                'news' => true,
                 'achievements' => false,
                 'achievementtype' => false,
                 'scholarship' => false,
                 'form' => false,
                 'counseling' => false,
                 'aspiration' => true,
-                'aspirationcategory' => true, // Added explicit permission for aspiration category
+                'aspirationcategory' => true,
                 'bem' => false,
                 'mpm' => true,
                 'carousel' => false,
                 'kegiatan' => true,
+                'chatbot' => true,
+                'downloads' => true,
+                'download-categories' => true, // Tambahkan izin untuk download-categories
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -79,22 +87,13 @@ class RoleHelper
                 'form' => false,
                 'counseling' => true,
                 'aspiration' => false,
-                'aspirationcategory' => false, // No access for mahasiswa
+                'aspirationcategory' => false,
                 'bem' => false,
                 'carousel' => false,
                 'kegiatan' => true,
-            ],
-            'guest' => [
-                'pengumuman' => true,
-                'news' => true,
-                'achievements' => true,
-                'counseling' => true,
-                'aspiration' => true,
-                'aspirationcategory' => false, // No access for guest
-                'bem' => true,
-                'mpm' => true,
-                'downloads' => true,
-                'kegiatan' => true,
+                'chatbot' => false,
+                'downloads' => false, // Mahasiswa hanya bisa lihat unduhan, tidak edit
+                'download-categories' => false, // Mahasiswa tidak memiliki akses ke kategori unduhan
             ],
         ];
 
@@ -319,7 +318,7 @@ class RoleHelper
             ];
         }
 
-        // Menu untuk Manajemen Aspirasi (Combine Aspiration and AspirationCategory)
+        // Menu untuk Manajemen Aspirasi
         if (($permissions['aspiration'] ?? false) || ($permissions['aspirationcategory'] ?? false)) {
             $aspirationSubmenu = [];
             if ($permissions['aspirationcategory'] ?? false) {
@@ -366,11 +365,24 @@ class RoleHelper
 
         // Menu untuk Unduhan
         if ($permissions['downloads'] ?? false) {
-            $menuItems[] = [
+            $downloadSubmenu = [];
+            if ($permissions['download-categories'] ?? false) {
+                $downloadSubmenu[] = [
+                    'name' => 'Kategori Unduhan',
+                    'route' => 'admin.download-categories.index',
+                    'visible' => true,
+                ];
+            }
+            $downloadSubmenu[] = [
                 'name' => 'Unduhan',
                 'route' => 'admin.downloads.index',
+                'visible' => true,
+            ];
+            $menuItems[] = [
+                'name' => 'Unduhan',
                 'icon' => 'download',
                 'visible' => true,
+                'submenu' => $downloadSubmenu,
             ];
         }
 
@@ -400,6 +412,16 @@ class RoleHelper
                 'name' => 'Kegiatan',
                 'route' => $role === 'guest' ? 'activities.guest.index' : 'admin.activities.index',
                 'icon' => 'calendar',
+                'visible' => true,
+            ];
+        }
+
+        // Menu untuk Kelola Chatbot Rules
+        if ($permissions['chatbot'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Kelola Aturan Chatbot',
+                'route' => 'admin.chatbot-rules.index',
+                'icon' => 'chatbot',
                 'visible' => true,
             ];
         }

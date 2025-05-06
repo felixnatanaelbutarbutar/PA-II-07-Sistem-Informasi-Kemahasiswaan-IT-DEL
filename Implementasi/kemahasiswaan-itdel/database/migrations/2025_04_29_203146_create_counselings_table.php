@@ -15,10 +15,15 @@ return new class extends Migration
             $table->string('id')->primary(); // Custom ID (e.g., csl001)
             $table->foreignId('requestBy')->constrained('users')->onDelete('cascade'); // Relates to users table
             $table->text('issue')->nullable(); // The counseling issue or problem
-            $table->string('noTelephone')->nullable(); // Telephone number
-            $table->enum('status', ['pending', 'scheduled', 'completed', 'canceled'])->default('pending');
-            $table->boolean('is_active')->default(true);
+            $table->string('noWhatsApp')->nullable(); // Changed from noTelephone to noWhatsApp
+            $table->date('booking_date'); // Booking date
+            $table->time('booking_time'); // Booking time
+            $table->enum('status', ['menunggu', 'ditolak', 'disetujui'])->default('menunggu'); // Updated status values
+            $table->text('rejection_reason')->nullable(); // Add rejection_reason column for rejection reason
             $table->timestamps(); // created_at and updated_at
+
+            // Unique constraint to prevent double booking on the same date and time
+            $table->unique(['booking_date', 'booking_time'], 'unique_booking_slot');
         });
     }
 

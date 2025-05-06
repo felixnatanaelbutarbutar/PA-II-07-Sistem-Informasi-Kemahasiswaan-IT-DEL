@@ -13,14 +13,17 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ApiProxyController;
 use App\Http\Controllers\CarouselController;
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AspirationController;
 use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\ChatbotRuleController;
 use App\Http\Controllers\KegiatanBEMController;
 use App\Http\Controllers\ScholarshipController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\AchievementTypeController;
+use App\Http\Controllers\DownloadCategoryController;
 use App\Http\Controllers\OrganizationAdminController;
 use App\Http\Controllers\AspirationCategoryController;
 use App\Http\Controllers\ScholarshipCategoryController;
@@ -47,8 +50,9 @@ Route::get('/announcement/{announcement_id}', [AnnouncementController::class, 's
 
 // Counseling Routes (Accessible to Guests and Mahasiswa)
 Route::get('/counseling', [CounselingController::class, 'index'])->name('counseling.index');
-Route::post('/counseling', [CounselingController::class, 'store'])->name('counseling.store');
-
+Route::post('/counseling', [CounselingController::class, 'store'])
+    ->middleware(['auth', 'role:mahasiswa'])
+    ->name('counseling.store');
 // Activity Calendar for Guests
 Route::get('/activities', [ActivityController::class, 'guestIndex'])->name('activities.guest.index');
 Route::get('/activities/export/pdf', [ActivityController::class, 'guestExportToPDF'])->name('activities.guest.export.pdf');
@@ -91,18 +95,18 @@ Route::get('/login', function () {
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        // Redirect based on role
+        // Redirect based on role using Inertia::location()
         switch ($role) {
             case 'superadmin':
-                return redirect()->route('superadmin.dashboard');
+                return Inertia::location(route('superadmin.dashboard'));
             case 'kemahasiswaan':
             case 'adminbem':
             case 'adminmpm':
-                return redirect()->route('admin.dashboard');
+                return Inertia::location(route('admin.dashboard'));
             case 'mahasiswa':
-                return redirect()->route('counseling.index'); // Redirect mahasiswa ke halaman counseling
+                return Inertia::location(route('counseling.index')); // Redirect mahasiswa ke halaman counseling
             default:
-                return redirect('/');
+                return Inertia::location('/');
         }
     }
     return Inertia::render('Auth/Login', [
@@ -118,40 +122,41 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('l
 Route::middleware(['auth'])->group(function () {
     // Admin Routes (Kemahasiswaan, AdminBEM, AdminMPM)
     Route::prefix('admin')->name('admin.')->middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
-        Route::get('/dashboard', function () {
-            $user = Auth::user();
-            $role = strtolower($user->role);
-            $menuItems = RoleHelper::getNavigationMenu($role);
-            $permissions = RoleHelper::getRolePermissions($role);
-            $totalMahasiswa = User::where('role', 'mahasiswa')->count();
 
-            // Ambil data pengguna dari session (data dari API CIS)
-            $apiUser = session('api_user', [
-                'user_id' => $user->id,
-                'user_name' => $user->username,
-                'email' => $user->email,
-                'role' => $role,
-                'status' => 1,
-                'jabatan' => []
-            ]);
-
-            return Inertia::render('Admin/Dashboard', [
-                'auth' => [
-                    'user' => $user, // Kirim data dari API CIS
-                ],
-                'userRole' => $role,
-                'permissions' => $permissions,
-                'menu' => $menuItems,
-                'totalMahasiswa' => $totalMahasiswa,
-            ]);
-        })->name('dashboard');
 
         // Rute untuk Kalender Kegiatan (Kemahasiswaan, AdminBEM, AdminMPM)
         Route::middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
+
+            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/activities/count', [DashboardController::class, 'getActiveActivitiesCount'])->name('activities.count');
+            Route::get('/announcements/count', [DashboardController::class, 'getAnnouncementsCount'])->name('announcements.count');
+            
             Route::resource('activities', ActivityController::class)->except(['show']);
             Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.destroy');
             // Tambahkan rute untuk ekspor PDF
             Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
+
+            Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
+            Route::post('news-category/{news_category}/update', [NewsCategoryController::class, 'update'])->name('news-category.update');
+            Route::post('news-category/{news_category}/delete', [NewsCategoryController::class, 'destroy'])->name('news-category.destroy');
+
+            // Rute untuk Chatbot Rules (Kemahasiswaan, AdminBEM, AdminMPM)
+            Route::resource('chatbot-rules', ChatbotRuleController::class)->except(['show', 'destroy', 'update']);
+            Route::post('chatbot-rules/{chatbot_rule}/update', [ChatbotRuleController::class, 'update'])->name('chatbot-rules.update');
+            Route::post('chatbot-rules/{chatbot_rule}/delete', [ChatbotRuleController::class, 'destroy'])->name('chatbot-rules.destroy');
+
+            Route::resource('download-categories', DownloadCategoryController::class)->except(['show', 'destroy', 'update']);
+            Route::post('download-categories/{downloadCategory}/update', [DownloadCategoryController::class, 'update'])->name('download-categories.update');
+            Route::post('download-categories/{downloadCategory}/delete', [DownloadCategoryController::class, 'destroy'])->name('download-categories.destroy');
+
+            Route::resource('news', NewsController::class)->except(['show', 'destroy', 'update']);
+            Route::post('news/{news}/update', [NewsController::class, 'update'])->name('news.update');
+            Route::post('news/{news}/delete', [NewsController::class, 'destroy'])->name('news.destroy');
+
+            Route::resource('downloads', DownloadController::class)->except(['show', 'destroy', 'update']);
+            Route::post('downloads/{download}/update', [DownloadController::class, 'update'])->name('downloads.update');
+            Route::post('downloads/{download}/delete', [DownloadController::class, 'destroy'])->name('downloads.destroy');
         });
 
         Route::middleware(['feature:layanan'])->group(function () {
@@ -188,9 +193,6 @@ Route::middleware(['auth'])->group(function () {
 
         // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
-            Route::resource('news', NewsController::class)->except(['show', 'destroy', 'update']);
-            Route::post('news/{news}/update', [NewsController::class, 'update'])->name('news.update');
-            Route::post('news/{news}/delete', [NewsController::class, 'destroy'])->name('news.destroy');
 
             Route::resource('announcement', AnnouncementController::class)->except(['show', 'destroy', 'update']);
             Route::post('announcement/{announcement}/update', [AnnouncementController::class, 'update'])->name('announcement.update');
@@ -216,21 +218,9 @@ Route::middleware(['auth'])->group(function () {
             Route::post('announcement-category/{announcement_category}/update', [AnnouncementCategoryController::class, 'update'])->name('announcement-category.update');
             Route::post('announcement-category/{announcement_category}/delete', [AnnouncementCategoryController::class, 'destroy'])->name('announcement-category.destroy');
 
-            Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
-            Route::post('news-category/{news_category}/update', [NewsCategoryController::class, 'update'])->name('news-category.update');
-            Route::post('news-category/{news_category}/delete', [NewsCategoryController::class, 'destroy'])->name('news-category.destroy');
 
             Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
             Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');
-
-            // Routes untuk sisi admin (kemahasiswaan)
-            Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
-            Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
-            Route::post('/aspiration/{id}/delete', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
-
-            Route::resource('downloads', DownloadController::class)->except(['show', 'destroy', 'update']);
-            Route::post('downloads/{download}/update', [DownloadController::class, 'update'])->name('downloads.update');
-            Route::post('downloads/{download}/delete', [DownloadController::class, 'destroy'])->name('downloads.destroy');
 
             Route::resource('scholarship-category', ScholarshipCategoryController::class)->except(['show', 'destroy', 'update']);
             Route::post('scholarship-category/{scholarship_category}/update', [ScholarshipCategoryController::class, 'update'])->name('scholarship-category.update');
@@ -277,6 +267,11 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('mpm', MpmController::class)->except(['destroy', 'update']);
             Route::post('mpm/{mpm}/update', [MpmController::class, 'update'])->name('mpm.update');
             Route::post('mpm/{mpm}/delete', [MpmController::class, 'destroy'])->name('mpm.delete');
+
+            // Routes untuk sisi admin (kemahasiswaan)
+            Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
+            Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
+            Route::post('/aspiration/{id}/delete', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
 
             // === ASPIRATION CATEGORY ===
             Route::resource('aspiration-category', AspirationCategoryController::class)->except(['show', 'destroy', 'update']);
