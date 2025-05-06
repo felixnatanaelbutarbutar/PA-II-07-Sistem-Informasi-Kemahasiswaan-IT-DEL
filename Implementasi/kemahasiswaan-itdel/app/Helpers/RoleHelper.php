@@ -301,7 +301,7 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Manajemen Form',
                 'route' => 'admin.form.index',
-                'icon' => 'organization',
+                'icon' => 'form',
                 'visible' => true,
             ];
         }

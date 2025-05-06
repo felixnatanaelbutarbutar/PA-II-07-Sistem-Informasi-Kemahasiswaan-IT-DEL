@@ -21,6 +21,7 @@ import {
     Download,
     MessageSquare,
     Image,
+    Clipboard, // Tambahkan ikon Clipboard untuk form
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -47,8 +48,9 @@ export default function AdminLayout({
         download: Download,
         aspiration: MessageSquare,
         carousel: Image,
-        chatbot: MessageSquare, // Tambahkan ikon untuk chatbot
-        calendar: Bell, // Pastikan ikon calendar ada jika digunakan
+        chatbot: MessageSquare,
+        calendar: Bell,
+        form: Clipboard, // Tambahkan mapping untuk ikon form
     };
 
     // Theme definitions with their icons
