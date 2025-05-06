@@ -17,6 +17,7 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
             start: new Date(activity.start_date),
             end: activity.end_date ? new Date(activity.end_date) : new Date(activity.start_date),
             description: activity.description,
+            creatorRole: activity.creator?.role.toLowerCase(), // Ambil role pembuat kegiatan
         }));
     }, [activities]);
 
@@ -28,7 +29,7 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
     const [activityIdToDelete, setActivityIdToDelete] = useState(null);
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
-    const [notificationType, setNotificationType] = useState('success'); // 'success' atau 'error'
+    const [notificationType, setNotificationType] = useState('success');
 
     useEffect(() => {
         if (flash) {
@@ -68,7 +69,7 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
                     setNotificationMessage('Kegiatan berhasil dihapus!');
                     setNotificationType('success');
                     setShowNotification(true);
-                    setSelectedEvent(null); // Reset selected event after deletion
+                    setSelectedEvent(null);
                 },
                 onError: (errors) => {
                     setNotificationMessage('Gagal menghapus kegiatan: ' + (errors.error || 'Terjadi kesalahan.'));
@@ -103,6 +104,23 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
     const exportUrl = startDate && endDate 
         ? `${route('admin.activities.export.pdf')}?start_date=${startDate}&end_date=${endDate}`
         : route('admin.activities.export.pdf');
+
+    const eventStyleGetter = (event, start, end, isSelected) => {
+        let backgroundColor = '#F54243'; // Kemahasiswaan
+        if (event.creatorRole === 'adminbem') backgroundColor = '#22A7F4'; // Admin BEM
+        if (event.creatorRole === 'adminmpm') backgroundColor = '#E7E73E'; // Admin MPM
+
+        return {
+            style: {
+                backgroundColor,
+                borderRadius: '5px',
+                opacity: 0.8,
+                color: 'black',
+                border: 'none',
+                display: 'block',
+            },
+        };
+    };
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
@@ -281,6 +299,64 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
                                 </Link>
                             </div>
                         </div>
+
+                        {/* Color Guide */}
+                        <div className="mt-6">
+                            <h3 className={`text-lg font-semibold mb-3
+                                ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                Panduan Warna Kegiatan
+                            </h3>
+                            <div className="flex flex-wrap gap-4">
+                                <div className="flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 hover:shadow-md
+                                    bg-opacity-80 hover:bg-opacity-100
+                                    ${document.documentElement.classList.contains('light') ? 'bg-gray-50' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'bg-zinc-700' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-100' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-900' : ''}">
+                                    <div className="w-8 h-8 rounded-full" style={{ backgroundColor: '#F54243' }}></div>
+                                    <span className={`text-sm
+                                        ${document.documentElement.classList.contains('light') ? 'text-gray-700' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-gray-300' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-300' : ''}`}>
+                                        Kegiatan dari Kemahasiswaan
+                                    </span>
+                                </div>
+                                <div className="flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 hover:shadow-md
+                                    bg-opacity-80 hover:bg-opacity-100
+                                    ${document.documentElement.classList.contains('light') ? 'bg-gray-50' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'bg-zinc-700' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-100' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-900' : ''}">
+                                    <div className="w-8 h-8 rounded-full" style={{ backgroundColor: '#22A7F4' }}></div>
+                                    <span className={`text-sm
+                                        ${document.documentElement.classList.contains('light') ? 'text-gray-700' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-gray-300' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-300' : ''}`}>
+                                        Kegiatan dari Admin BEM
+                                    </span>
+                                </div>
+                                <div className="flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 hover:shadow-md
+                                    bg-opacity-80 hover:bg-opacity-100
+                                    ${document.documentElement.classList.contains('light') ? 'bg-gray-50' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'bg-zinc-700' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-100' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-900' : ''}">
+                                    <div className="w-8 h-8 rounded-full" style={{ backgroundColor: '#E7E73E' }}></div>
+                                    <span className={`text-sm
+                                        ${document.documentElement.classList.contains('light') ? 'text-gray-700' : ''}
+                                        ${document.documentElement.classList.contains('dark') ? 'text-gray-300' : ''}
+                                        ${document.documentElement.classList.contains('light-blue') ? 'text-blue-700' : ''}
+                                        ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-300' : ''}`}>
+                                        Kegiatan dari Admin MPM
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Modal untuk memilih rentang tanggal */}
@@ -377,6 +453,7 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
                             endAccessor="end"
                             style={{ height: 600 }}
                             onSelectEvent={handleSelectEvent}
+                            eventPropGetter={eventStyleGetter}
                             className="rbc-calendar-custom"
                         />
                     </div>

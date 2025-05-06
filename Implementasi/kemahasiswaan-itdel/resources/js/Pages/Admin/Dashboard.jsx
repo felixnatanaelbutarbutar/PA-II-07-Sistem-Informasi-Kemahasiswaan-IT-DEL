@@ -54,8 +54,8 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
     };
 
     useEffect(() => {
-        console.log('User info:', auth.user);
-        console.log('User role:', userRole);
+        // console.log('User info:', auth.user);
+        // console.log('User role:', userRole);
 
         // Fetch jumlah kegiatan aktif
         axios.get('/admin/activities/count')
@@ -124,7 +124,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                 console.warn(`Route URL is undefined for route name: ${routeName}`);
                 return false;
             }
-            console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
+            // console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
             return true;
         } catch (e) {
             console.error(`Error checking route for ${routeName}:`, e);

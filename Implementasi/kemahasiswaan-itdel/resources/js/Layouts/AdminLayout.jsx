@@ -101,7 +101,7 @@ export default function AdminLayout({
 
     const menuItems = navigation.length > 0 ? navigation : defaultNavigation;
 
-    console.log('Navigation Menu Items:', menuItems);
+    // console.log('Navigation Menu Items:', menuItems);
 
     const isRouteValid = (routeName) => {
         if (!routeName) {
@@ -114,7 +114,7 @@ export default function AdminLayout({
                 console.warn(`Route URL is undefined for route name: ${routeName}`);
                 return false;
             }
-            console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
+            // console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
             return true;
         } catch (e) {
             console.error(`Error checking route for ${routeName}:`, e);
@@ -203,7 +203,7 @@ export default function AdminLayout({
                             const isOpen = expandedMenu === index;
                             const Icon = item.icon && iconMap[item.icon] ? iconMap[item.icon] : LayoutDashboard;
 
-                            console.log(`Icon for ${item.name}:`, item.icon, 'Mapped Icon:', Icon ? Icon.name : 'Not found');
+                            {/* console.log(`Icon for ${item.name}:`, item.icon, 'Mapped Icon:', Icon ? Icon.name : 'Not found'); */}
 
                             if (hasSubmenu) {
                                 const isSubmenuActive = item.submenu.some(subItem => {
