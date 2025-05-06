@@ -30,7 +30,7 @@ export default function AdminLayout({
     navigation = []
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [theme, setTheme] = useState('light'); // Ganti darkMode menjadi theme
+    const [theme, setTheme] = useState('light');
     const [expandedMenu, setExpandedMenu] = useState(null);
     const [showThemeDropdown, setShowThemeDropdown] = useState(false);
     const { url } = usePage();
@@ -47,6 +47,8 @@ export default function AdminLayout({
         download: Download,
         aspiration: MessageSquare,
         carousel: Image,
+        chatbot: MessageSquare, // Tambahkan ikon untuk chatbot
+        calendar: Bell, // Pastikan ikon calendar ada jika digunakan
     };
 
     // Theme definitions with their icons
@@ -80,7 +82,7 @@ export default function AdminLayout({
         themes.forEach(t => document.documentElement.classList.remove(t.name));
         // Add the selected theme class
         document.documentElement.classList.add(newTheme);
-        setShowThemeDropdown(false); // Tutup dropdown setelah memilih tema
+        setShowThemeDropdown(false);
     };
 
     const defaultNavigation = [

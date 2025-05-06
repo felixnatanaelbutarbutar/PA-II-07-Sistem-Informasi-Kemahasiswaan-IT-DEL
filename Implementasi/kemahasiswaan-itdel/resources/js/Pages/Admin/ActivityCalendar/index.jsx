@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -9,6 +9,7 @@ import { PlusCircle, Edit, Trash2, Download, Calendar } from 'lucide-react';
 const localizer = momentLocalizer(moment);
 
 export default function ActivityCalendar({ auth, userRole, permissions, menu, activities }) {
+    const { flash } = usePage().props ?? {};
     const events = useMemo(() => {
         return activities.map(activity => ({
             id: activity.id,
@@ -23,9 +24,68 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [activityIdToDelete, setActivityIdToDelete] = useState(null);
+    const [showNotification, setShowNotification] = useState(false);
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationType, setNotificationType] = useState('success'); // 'success' atau 'error'
+
+    useEffect(() => {
+        if (flash) {
+            if (flash.success) {
+                setNotificationMessage(flash.success);
+                setNotificationType('success');
+                setShowNotification(true);
+            } else if (flash.error) {
+                setNotificationMessage(flash.error);
+                setNotificationType('error');
+                setShowNotification(true);
+            }
+        }
+
+        if (showNotification) {
+            const timer = setTimeout(() => {
+                setShowNotification(false);
+                setNotificationMessage('');
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     const handleSelectEvent = (event) => {
         setSelectedEvent(event);
+    };
+
+    const handleDeleteClick = (activityId) => {
+        setActivityIdToDelete(activityId);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        if (activityIdToDelete) {
+            router.post(route('admin.activities.destroy', activityIdToDelete), {}, {
+                onSuccess: () => {
+                    setNotificationMessage('Kegiatan berhasil dihapus!');
+                    setNotificationType('success');
+                    setShowNotification(true);
+                    setSelectedEvent(null); // Reset selected event after deletion
+                },
+                onError: (errors) => {
+                    setNotificationMessage('Gagal menghapus kegiatan: ' + (errors.error || 'Terjadi kesalahan.'));
+                    setNotificationType('error');
+                    setShowNotification(true);
+                },
+                onFinish: () => {
+                    setShowDeleteModal(false);
+                    setActivityIdToDelete(null);
+                },
+            });
+        }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setActivityIdToDelete(null);
     };
 
     const handleExportPDF = () => {
@@ -47,6 +107,131 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
             <Head title="Kalender Kegiatan" />
+
+            {/* Notifikasi */}
+            {showNotification && (
+                <div
+                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
+                        notificationType === 'success'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
+                            : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
+                    }`}
+                >
+                    <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                            <svg
+                                className={`h-5 w-5 ${
+                                    notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                }`}
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                {notificationType === 'success' ? (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clipRule="evenodd"
+                                    />
+                                ) : (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
+                                        clipRule="evenodd"
+                                    />
+                                )}
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p
+                                className={`text-sm font-medium ${
+                                    notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                                }`}
+                            >
+                                {notificationMessage}
+                            </p>
+                        </div>
+                        <div className="ml-auto pl-3">
+                            <button
+                                onClick={() => setShowNotification(false)}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notificationType === 'success'
+                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                                } focus:outline-none focus:ring-2`}
+                            >
+                                <span className="sr-only">Dismiss</span>
+                                <svg
+                                    className="h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Konfirmasi Penghapusan */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className={`bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100
+                        ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-200' : ''}
+                        ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700' : ''}
+                        ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-200' : ''}
+                        ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-800' : ''}`}>
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-red-100 rounded-full p-3">
+                                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 className={`text-lg font-semibold text-center mb-2
+                            ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                            ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                            ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                            ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                            Konfirmasi Penghapusan
+                        </h3>
+                        <p className={`text-center mb-6
+                            ${document.documentElement.classList.contains('light') ? 'text-gray-600' : ''}
+                            ${document.documentElement.classList.contains('dark') ? 'text-gray-400' : ''}
+                            ${document.documentElement.classList.contains('light-blue') ? 'text-blue-600' : ''}
+                            ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-200' : ''}`}>
+                            Apakah Anda yakin ingin menghapus kegiatan ini? Tindakan ini tidak dapat dibatalkan.
+                        </p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={cancelDelete}
+                                className={`px-4 py-2 rounded-lg
+                                    ${document.documentElement.classList.contains('light') ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'bg-zinc-600 text-gray-200 hover:bg-zinc-500' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-200 text-blue-800 hover:bg-blue-300' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-800 text-blue-200 hover:bg-blue-700' : ''}`}>
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className={`flex items-center px-4 py-2 rounded-lg
+                                    ${document.documentElement.classList.contains('light') ? 'bg-red-600 text-white hover:bg-red-700' : ''}
+                                    ${document.documentElement.classList.contains('dark') ? 'bg-red-700 text-white hover:bg-red-800' : ''}
+                                    ${document.documentElement.classList.contains('light-blue') ? 'bg-red-500 text-white hover:bg-red-600' : ''}
+                                    ${document.documentElement.classList.contains('dark-blue') ? 'bg-red-800 text-white hover:bg-red-900' : ''}`}>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="py-10">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -222,10 +407,8 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
                                         <Edit className="h-4 w-4 mr-1" />
                                         Edit
                                     </Link>
-                                    <Link
-                                        href={route('admin.activities.destroy', selectedEvent.id)}
-                                        method="post"
-                                        as="button"
+                                    <button
+                                        onClick={() => handleDeleteClick(selectedEvent.id)}
                                         className={`flex items-center px-3 py-1 rounded-full
                                             ${document.documentElement.classList.contains('light') ? 'bg-red-100 text-red-800 hover:bg-red-200' : ''}
                                             ${document.documentElement.classList.contains('dark') ? 'bg-red-900 text-red-300 hover:bg-red-800' : ''}
@@ -233,7 +416,7 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
                                             ${document.documentElement.classList.contains('dark-blue') ? 'bg-red-800 text-red-200 hover:bg-red-700' : ''}`}>
                                         <Trash2 className="h-4 w-4 mr-1" />
                                         Hapus
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                             <p className={`text-sm
@@ -261,6 +444,24 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
                     )}
                 </div>
             </div>
+
+            <style>
+                {`
+                    @keyframes slide-in-right {
+                        0% {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        100% {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    .animate-slide-in-right {
+                        animation: slide-in-right 0.5s ease-out forwards;
+                    }
+                `}
+            </style>
         </AdminLayout>
     );
 }

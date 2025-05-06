@@ -54,15 +54,15 @@ class RoleHelper
                 'carousel' => false,
                 'kegiatan' => true,
                 'chatbot' => true,
-                'downloads' => true,
-                'download-categories' => true, // Tambahkan izin untuk download-categories
+                'downloads' => false, // Admin BEM tidak memiliki akses ke unduhan
+                'download-categories' => false, // Admin BEM tidak memiliki akses ke kategori unduhan
             ],
             'adminmpm' => [
                 'pengumuman' => true,
                 'newscategory' => true,
                 'news' => true,
                 'achievements' => false,
-                'achievementtype' => false,
+                'achievementtype' => true,
                 'scholarship' => false,
                 'form' => false,
                 'counseling' => false,
@@ -73,8 +73,8 @@ class RoleHelper
                 'carousel' => false,
                 'kegiatan' => true,
                 'chatbot' => true,
-                'downloads' => true,
-                'download-categories' => true, // Tambahkan izin untuk download-categories
+                'downloads' => false, // Admin MPM tidak memiliki akses ke unduhan
+                'download-categories' => false, // Admin MPM tidak memiliki akses ke kategori unduhan
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -271,18 +271,7 @@ class RoleHelper
             ];
         }
 
-
-        if ($permissions['form'] ?? false) {
-            $menuItems[] = [
-                'name' => 'Managemen Form',
-                'route' => 'admin.form.index',
-                'icon' => 'organization',
-                'visible' => true,
-            ];
-        }
-
-
-        // Mengelompokkan Prestasi dan Jenis Prestasi dalam dropdown "Manajemen Prestasi"
+        // Menu untuk Manajemen Prestasi
         if (($permissions['achievements'] ?? false) || ($permissions['achievementtype'] ?? false)) {
             $achievementSubmenu = [];
             if ($permissions['achievementtype'] ?? false) {
@@ -307,6 +296,15 @@ class RoleHelper
             ];
         }
 
+        // Menu untuk Manajemen Form
+        if ($permissions['form'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Manajemen Form',
+                'route' => 'admin.form.index',
+                'icon' => 'organization',
+                'visible' => true,
+            ];
+        }
 
         // Menu untuk Konseling
         if ($permissions['counseling'] ?? false) {
