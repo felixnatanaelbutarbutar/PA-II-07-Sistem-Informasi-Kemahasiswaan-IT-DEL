@@ -153,6 +153,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('news', NewsController::class)->except(['show', 'destroy', 'update']);
             Route::post('news/{news}/update', [NewsController::class, 'update'])->name('news.update');
             Route::post('news/{news}/delete', [NewsController::class, 'destroy'])->name('news.destroy');
+            Route::post('{news_id}/toggle-active', [NewsController::class, 'toggleActive'])->name('news.toggleActive');
 
             Route::resource('downloads', DownloadController::class)->except(['show', 'destroy', 'update']);
             Route::post('downloads/{download}/update', [DownloadController::class, 'update'])->name('downloads.update');

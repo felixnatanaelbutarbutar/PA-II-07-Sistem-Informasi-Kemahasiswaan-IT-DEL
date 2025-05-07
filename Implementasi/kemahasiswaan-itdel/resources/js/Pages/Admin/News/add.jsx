@@ -37,6 +37,7 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         content: '',
         category_id: '',
         image: null,
+        is_active: true, // Default to true as per migration
         created_by: auth.user.id,
         updated_by: null,
     });
@@ -76,6 +77,7 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         formData.append('title', data.title);
         formData.append('content', data.content);
         formData.append('category_id', data.category_id);
+        formData.append('is_active', data.is_active ? '1' : '0'); // Convert boolean to string for form data
         formData.append('created_by', data.created_by);
         if (data.image) {
             formData.append('image', data.image);
@@ -98,6 +100,7 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                 content: '',
                 category_id: '',
                 image: null,
+                is_active: true,
                 created_by: auth.user.id,
                 updated_by: null,
             });
@@ -286,20 +289,21 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
             )}
 
             <div className="py-12 max-w-5xl mx-auto px-6 sm:px-8">
-            {/* New Styled Header */}
+                {/* Styled Header */}
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50 flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                             Tambah Berita
                         </h1>
-                            <p className="text-gray-500 mt-1">Tambahkan berita yang baru</p>
+                        <p className="text-gray-500 mt-1">Tambahkan berita yang baru</p>
                     </div>
-                        <Link
-                            href={route('admin.news.index')}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center">
-                                ← Kembali
-                        </Link>
-                     </div>
+                    <Link
+                        href={route('admin.news.index')}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center"
+                    >
+                        ← Kembali
+                    </Link>
+                </div>
                 <div className="bg-white rounded-xl shadow-md p-8 mb-8">
                     <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6" noValidate>
                         <div className="space-y-2">
@@ -420,6 +424,23 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                             {errors.content && (
                                 <p className="text-red-500 text-xs mt-1">{errors.content}</p>
                             )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Status Aktif
+                            </label>
+                            <label className="inline-flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={data.is_active}
+                                    onChange={(e) => setData((prev) => ({ ...prev, is_active: e.target.checked }))}
+                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                    Aktifkan Berita (Jika dicentang, berita akan langsung ditampilkan di halaman publik)
+                                </span>
+                            </label>
                         </div>
 
                         <div className="flex justify-end space-x-4 pt-4 border-t">
