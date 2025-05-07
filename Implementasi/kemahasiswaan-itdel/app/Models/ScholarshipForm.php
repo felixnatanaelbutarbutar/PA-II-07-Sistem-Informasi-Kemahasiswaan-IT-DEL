@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ScholarshipForm extends Model
 {
+    use HasFactory;
+
+    protected $table = 'scholarship_forms';
     protected $primaryKey = 'form_id';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -15,19 +19,17 @@ class ScholarshipForm extends Model
         'scholarship_id',
         'form_name',
         'description',
-        'is_active', // Added is_active to fillable
+        'is_active',
         'created_by',
         'updated_by',
     ];
 
-
     protected $casts = [
-        'is_active' => 'boolean', // Cast is_active as boolean
+        'is_active' => 'boolean',
         'created_by' => 'integer',
         'updated_by' => 'integer',
     ];
 
-    // Relationships
     public function scholarship()
     {
         return $this->belongsTo(Scholarship::class, 'scholarship_id', 'scholarship_id');
@@ -35,12 +37,12 @@ class ScholarshipForm extends Model
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by', 'id');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function updater()
     {
-        return $this->belongsTo(User::class, 'updated_by', 'id');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function fields()

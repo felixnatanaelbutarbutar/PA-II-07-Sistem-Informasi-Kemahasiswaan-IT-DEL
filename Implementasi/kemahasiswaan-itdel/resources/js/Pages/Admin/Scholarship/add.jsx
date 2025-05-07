@@ -1,12 +1,45 @@
 import { useState, useEffect } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import axios from 'axios';
+import Quill from 'quill';
+import ImageResize from 'quill-image-resize-module-react';
+
+// Register the ImageResize module with Quill
+Quill.register('modules/imageResize', ImageResize);
+
+// Define custom toolbar for ReactQuill
+const quillModules = {
+    toolbar: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }], // Headers
+        ['bold', 'italic', 'underline', 'strike'], // Text formatting
+        [{ 'align': [] }, { 'align': 'center' }, { 'align': 'right' }, { 'align': 'justify' }], // Alignment
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }], // Lists
+        [{ 'indent': '-1' }, { 'indent': '+1' }], // Indentation
+        ['blockquote', 'code-block'], // Blockquote and code block
+        [{ 'color': [] }, { 'background': [] }], // Text and background color
+        ['link', 'image', 'video'], // Link, image, and video
+        ['clean'], // Clear formatting
+    ],
+    imageResize: {
+        parchment: Quill.import('parchment'),
+        modules: ['Resize', 'DisplaySize', 'Toolbar'], // Enable resize, display size, and toolbar
+    },
+};
+
+const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'align', 'list', 'bullet', 'indent',
+    'blockquote', 'code-block',
+    'color', 'background',
+    'link', 'image', 'video',
+];
 
 export default function Add({ auth, permissions, userRole, menu, categories }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const [data, setData] = useState({
         name: '',
         description: '',
         poster: null,
@@ -17,68 +50,64 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         created_by: auth.user.id,
         updated_by: null,
     });
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
+    const [errors, setErrors] = useState({});
     const [posterPreview, setPosterPreview] = useState(null);
-
-    // Quill toolbar configuration
-    const quillModules = {
-        toolbar: [
-            [{ header: [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['link', 'image'],
-            ['clean'],
-        ],
-    };
 
     useEffect(() => {
         if (notification.show) {
             const timer = setTimeout(() => {
-                setNotification({ show: false, type: '', message: '' });
+                setNotification({ ...notification, show: false });
             }, 5000);
             return () => clearTimeout(timer);
         }
     }, [notification]);
 
-    const handleFileChange = (e) => {
+    const handleInputChange = (key, value) => {
+        setData((prev) => ({ ...prev, [key]: value }));
+        // Clear error for the field when user starts typing
+        if (errors[key]) {
+            setErrors((prev) => ({ ...prev, [key]: undefined }));
+        }
+    };
+
+    const handlePosterChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
-            const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+            const allowedTypes = ['image/jpeg', 'image/png'];
             if (file.size > maxSizeInBytes) {
-                setNotification({
-                    show: true,
-                    type: 'error',
-                    message: 'Ukuran file terlalu besar. Maksimal 2MB.',
-                });
-                setData('poster', null);
+                setErrors((prev) => ({
+                    ...prev,
+                    poster: 'Ukuran file terlalu besar. Maksimal 2MB.',
+                }));
+                setData((prev) => ({ ...prev, poster: null }));
                 setPosterPreview(null);
                 return;
             }
             if (!allowedTypes.includes(file.type)) {
-                setNotification({
-                    show: true,
-                    type: 'error',
-                    message: 'File harus berupa JPG, PNG, atau PDF.',
-                });
-                setData('poster', null);
+                setErrors((prev) => ({
+                    ...prev,
+                    poster: 'File harus berupa JPG atau PNG.',
+                }));
+                setData((prev) => ({ ...prev, poster: null }));
                 setPosterPreview(null);
                 return;
             }
-            setData('poster', file);
-            if (file.type.includes('image')) {
-                setPosterPreview(URL.createObjectURL(file));
-            } else {
-                setPosterPreview('pdf'); // Indicate PDF for icon display
-            }
+            setErrors((prev) => ({ ...prev, poster: undefined }));
+            setData((prev) => ({ ...prev, poster: file }));
+            const reader = new FileReader();
+            reader.onloadend = () => setPosterPreview(reader.result);
+            reader.readAsDataURL(file);
         } else {
-            setData('poster', null);
+            setErrors((prev) => ({ ...prev, poster: undefined }));
+            setData((prev) => ({ ...prev, poster: null }));
             setPosterPreview(null);
         }
     };
 
-    const handleQuillImage = async (e) => {
+    const handleQuillImageUpload = async (quill) => {
         const input = document.createElement('input');
         input.setAttribute('type', 'file');
         input.setAttribute('accept', 'image/*');
@@ -92,38 +121,58 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                     setNotification({
                         show: true,
                         type: 'error',
-                        message: 'Ukuran gambar terlalu besar. Maksimal 2MB.',
+                        message: 'Ukuran gambar di konten terlalu besar. Maksimal 2MB.',
                     });
                     return;
                 }
+
+                const formData = new FormData();
+                formData.append('image', file);
+
                 try {
-                    const formData = new FormData();
-                    formData.append('image', file);
                     const response = await axios.post(route('admin.upload.image'), formData, {
                         headers: { 'Content-Type': 'multipart/form-data' },
                     });
-                    const quill = e.getEditor();
-                    const range = quill.getSelection();
-                    quill.insertEmbed(range.index, 'image', response.data.url);
+
+                    const imageUrl = response.data.url;
+                    const range = quill.getSelection(true);
+                    quill.insertEmbed(range.index, 'image', imageUrl);
+                    quill.format('align', 'left');
                 } catch (error) {
                     setNotification({
                         show: true,
                         type: 'error',
-                        message: 'Gagal mengunggah gambar. Silakan coba lagi.',
+                        message: 'Gagal mengunggah gambar ke konten.',
                     });
                 }
             }
         };
     };
 
-    const handleSubmit = (e) => {
+    const setupQuill = (quill) => {
+        const toolbar = quill.getModule('toolbar');
+        toolbar.addHandler('image', () => handleQuillImageUpload(quill));
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setErrors({});
 
         // Client-side validation
         const newErrors = {};
         if (!data.name.trim()) newErrors.name = 'Nama beasiswa wajib diisi.';
         if (!data.description.replace(/<(.|\n)*?>/g, '').trim())
             newErrors.description = 'Deskripsi wajib diisi.';
+        if (data.poster) {
+            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            const allowedTypes = ['image/jpeg', 'image/png'];
+            if (data.poster.size > maxSizeInBytes) {
+                newErrors.poster = 'Ukuran file terlalu besar. Maksimal 2MB.';
+            } else if (!allowedTypes.includes(data.poster.type)) {
+                newErrors.poster = 'File harus berupa JPG atau PNG.';
+            }
+        }
         if (!data.start_date) newErrors.start_date = 'Tanggal mulai wajib diisi.';
         if (!data.end_date) newErrors.end_date = 'Tanggal selesai wajib diisi.';
         if (data.end_date && data.start_date && new Date(data.end_date) < new Date(data.start_date)) {
@@ -132,46 +181,73 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         if (!data.category_id) newErrors.category_id = 'Kategori wajib dipilih.';
 
         if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setIsSubmitting(false);
             setNotification({
                 show: true,
                 type: 'error',
                 message: 'Harap lengkapi semua kolom yang diperlukan dengan benar.',
             });
-            setErrors(newErrors);
             return;
         }
 
-        post(route('admin.scholarship.store'), {
-            preserveState: true,
-            preserveScroll: true,
-            forceFormData: true,
-            onSuccess: () => {
-                setNotification({
-                    show: true,
-                    type: 'success',
-                    message: 'Beasiswa berhasil ditambahkan!',
-                });
-                reset();
-                setPosterPreview(null);
-                setTimeout(() => {
-                    router.visit(route('admin.scholarship.index'));
-                }, 1500);
-            },
-            onError: (serverErrors) => {
-                setNotification({
-                    show: true,
-                    type: 'error',
-                    message: 'Gagal menambahkan beasiswa. Periksa kembali isian Anda.',
-                });
-                setErrors(serverErrors);
-            },
-        });
+        const formData = new FormData();
+        formData.append('name', data.name);
+        formData.append('description', data.description);
+        formData.append('start_date', data.start_date);
+        formData.append('end_date', data.end_date);
+        formData.append('category_id', data.category_id);
+        formData.append('is_active', data.is_active ? 1 : 0);
+        formData.append('created_by', data.created_by);
+        if (data.poster) {
+            formData.append('poster', data.poster);
+        }
+
+        try {
+            await axios.post(route('admin.scholarship.store'), formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            setNotification({
+                show: true,
+                type: 'success',
+                message: 'Beasiswa berhasil ditambahkan!',
+            });
+
+            setData({
+                name: '',
+                description: '',
+                poster: null,
+                start_date: '',
+                end_date: '',
+                category_id: '',
+                is_active: true,
+                created_by: auth.user.id,
+                updated_by: null,
+            });
+            setPosterPreview(null);
+
+            setTimeout(() => {
+                router.visit(route('admin.scholarship.index'));
+            }, 1500);
+        } catch (error) {
+            if (error.response && error.response.status === 422) {
+                setErrors(error.response.data.errors);
+            }
+            setNotification({
+                show: true,
+                type: 'error',
+                message: 'Gagal menambahkan beasiswa: ' + (error.response?.data?.message || 'Terjadi kesalahan.'),
+            });
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
-            <Head title="Tambah Beasiswa" />
+            <Head title="Tambah Beasiswa Baru" />
 
+            {/* Notification */}
             {notification.show && (
                 <div
                     className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
@@ -182,33 +258,28 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                 >
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
-                            {notification.type === 'success' ? (
-                                <svg
-                                    className="h-5 w-5 text-emerald-500"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
+                            <svg
+                                className={`h-5 w-5 ${
+                                    notification.type === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                }`}
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                {notification.type === 'success' ? (
                                     <path
                                         fillRule="evenodd"
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                         clipRule="evenodd"
                                     />
-                                </svg>
-                            ) : (
-                                <svg
-                                    className="h-5 w-5 text-rose-500"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
+                                ) : (
                                     <path
                                         fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
                                         clipRule="evenodd"
                                     />
-                                </svg>
-                            )}
+                                )}
+                            </svg>
                         </div>
                         <div className="ml-3">
                             <p
@@ -221,7 +292,7 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                         </div>
                         <div className="ml-auto pl-3">
                             <button
-                                onClick={() => setNotification({ show: false, type: '', message: '' })}
+                                onClick={() => setNotification({ ...notification, show: false })}
                                 className={`inline-flex rounded-md p-1.5 ${
                                     notification.type === 'success'
                                         ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
@@ -272,7 +343,7 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                             <input
                                 type="text"
                                 value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
                                 className={`w-full px-4 py-3 border rounded-lg transition ${
                                     errors.name
                                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
@@ -285,113 +356,11 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
 
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
-                                Deskripsi <span className="text-red-500">*</span>
-                            </label>
-                            <ReactQuill
-                                value={data.description}
-                                onChange={(content) => setData('description', content)}
-                                modules={{
-                                    ...quillModules,
-                                    toolbar: {
-                                        container: quillModules.toolbar,
-                                        handlers: { image: handleQuillImage },
-                                    },
-                                }}
-                                theme="snow"
-                                className={`border rounded-lg ${
-                                    errors.description
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.description && (
-                                <p className="text-red-500 text-xs mt-1">{errors.description}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Poster</label>
-                            <input
-                                type="file"
-                                onChange={handleFileChange}
-                                accept=".jpg,.jpeg,.png,.pdf"
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.poster
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                Format yang didukung: JPG, PNG, PDF. Ukuran maksimal: 2MB
-                            </p>
-                            {posterPreview && (
-                                <div className="mt-2">
-                                    {posterPreview === 'pdf' ? (
-                                        <div className="flex items-center space-x-2">
-                                            <svg
-                                                className="w-12 h-12 text-red-500"
-                                                fill="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path d="M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6H6zm0 2h7v5h5v11H6V4zm2 8h8v2H8v-2zm0 4h8v2H8v-2z" />
-                                            </svg>
-                                            <span>PDF Selected</span>
-                                        </div>
-                                    ) : (
-                                        <img
-                                            src={posterPreview}
-                                            alt="Poster Preview"
-                                            className="max-w-xs h-auto rounded-lg shadow-md"
-                                        />
-                                    )}
-                                </div>
-                            )}
-                            {errors.poster && <p className="text-red-500 text-xs mt-1">{errors.poster}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Mulai <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.start_date}
-                                onChange={(e) => setData('start_date', e.target.value)}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.start_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.start_date && (
-                                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Selesai <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.end_date}
-                                onChange={(e) => setData('end_date', e.target.value)}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.end_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
                                 Kategori <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={data.category_id}
-                                onChange={(e) => setData('category_id', e.target.value)}
+                                onChange={(e) => handleInputChange('category_id', e.target.value)}
                                 className={`w-full px-4 py-3 border rounded-lg transition ${
                                     errors.category_id
                                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
@@ -410,6 +379,116 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                             )}
                         </div>
 
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Poster Beasiswa
+                            </label>
+                            <div className="flex items-center space-x-4">
+                                <div className="flex-1">
+                                    <div
+                                        className={`relative border rounded-lg px-4 py-3 ${
+                                            errors.poster ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    >
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png"
+                                            onChange={handlePosterChange}
+                                            className="w-full cursor-pointer"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Format yang didukung: JPG, PNG. Ukuran maksimal: 2MB
+                                    </p>
+                                    {errors.poster && (
+                                        <p className="text-red-500 text-xs mt-1">{errors.poster}</p>
+                                    )}
+                                </div>
+                                {posterPreview && (
+                                    <div className="relative">
+                                        <img
+                                            src={posterPreview}
+                                            alt="Poster Preview"
+                                            className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setPosterPreview(null);
+                                                setData((prev) => ({ ...prev, poster: null }));
+                                                setErrors((prev) => ({ ...prev, poster: undefined }));
+                                            }}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Deskripsi Beasiswa <span className="text-red-500">*</span>
+                            </label>
+                            <div
+                                className={`border rounded-lg overflow-hidden transition ${
+                                    errors.description
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            >
+                                <ReactQuill
+                                    value={data.description}
+                                    onChange={(content) => handleInputChange('description', content)}
+                                    modules={quillModules}
+                                    formats={quillFormats}
+                                    onEditorCreated={setupQuill}
+                                    className="bg-white"
+                                    style={{ height: '300px' }}
+                                />
+                            </div>
+                            {errors.description && (
+                                <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Tanggal Mulai <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={data.start_date}
+                                onChange={(e) => handleInputChange('start_date', e.target.value)}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.start_date
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {errors.start_date && (
+                                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Tanggal Selesai <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={data.end_date}
+                                onChange={(e) => handleInputChange('end_date', e.target.value)}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.end_date
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
+                        </div>
+
                         <div className="flex justify-end space-x-4 pt-4 border-t">
                             <Link
                                 href={route('admin.scholarship.index')}
@@ -420,9 +499,9 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                             <button
                                 type="submit"
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
-                                disabled={processing}
+                                disabled={isSubmitting}
                             >
-                                {processing ? (
+                                {isSubmitting ? (
                                     <>
                                         <span className="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full mr-2"></span>
                                         Menyimpan...

@@ -246,19 +246,23 @@ Route::middleware(['auth'])->group(function () {
             Route::post('carousel/{carousel}/update', [CarouselController::class, 'update'])->name('carousel.update');
             Route::post('carousel/{carousel}/delete', [CarouselController::class, 'destroy'])->name('carousel.destroy');
 
+            // Route::resource('form', FormController::class)->except(['show', 'destroy', 'update']);
+            // Route::post('form/{form}/update', [FormController::class, 'update'])->name('form.update');
+            // Route::post('form/{form}/delete', [FormController::class, 'destroy'])->name('form.destroy');
+            // Route::post('form/{form}/toggleActive', [FormController::class, 'toggleActive'])->name('form.toggleActive');
+            // Route::get('/form/{form}/show', [FormController::class, 'show'])->name('admin.form.show');
+
+
+            // Route::get('form/{form}/settings', [FormController::class, 'settings'])->name('form.settings');
+            // Route::put('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
+            // Route::get('form/form-settings/{form}/edit', [FormController::class, 'edit'])->name('form_settings.edit');
+
             Route::resource('form', FormController::class)->except(['show', 'destroy', 'update']);
-            Route::post('form/{form}/update', [FormController::class, 'update'])->name('form.update');
+            Route::put('form/{form}/update', [FormController::class, 'update'])->name('form.update');
             Route::post('form/{form}/delete', [FormController::class, 'destroy'])->name('form.destroy');
-            Route::post('form/{form}/toggleActive', [FormController::class, 'toggleActive'])->name('form.toggleActive');
-
-
+            Route::get('/form/{form}/show', [FormController::class, 'show'])->name('form.show');
             Route::get('form/{form}/settings', [FormController::class, 'settings'])->name('form.settings');
-            Route::put('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
-            Route::get('form/form-settings/{form}/edit', [FormController::class, 'edit'])->name('form_settings.edit');
-
-
-
-
+            Route::post('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
 
         });
 

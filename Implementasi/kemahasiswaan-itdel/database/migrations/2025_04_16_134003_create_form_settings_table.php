@@ -11,17 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // database/migrations/xxxx_xx_xx_create_form_settings_table.php
         Schema::create('form_settings', function (Blueprint $table) {
             $table->string('setting_id', 10)->primary();
             $table->string('form_id', 10);
             $table->boolean('accept_responses')->default(true);
             $table->boolean('one_submission_per_email')->default(false);
             $table->boolean('allow_edit')->default(true);
-            $table->dateTime('submission_deadline')->nullable();
+            $table->dateTime('submission_start')->nullable(); // waktu mulai ditambahkan
+            $table->dateTime('submission_deadline')->nullable(); // waktu tutup
             $table->unsignedInteger('max_submissions')->nullable();
             $table->boolean('response_notification')->default(false);
-            $table->boolean('is_active')->default(true); // Keep only one is_active
+            $table->boolean('is_active')->default(false); // default non-aktif, akan aktif otomatis sesuai waktu mulai
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

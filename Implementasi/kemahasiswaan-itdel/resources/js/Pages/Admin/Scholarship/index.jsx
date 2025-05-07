@@ -6,8 +6,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
     const { scholarships = { data: [], links: [] }, flash, filters = {} } = usePage().props;
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
-    const [dateFilter, setDateFilter] = useState(filters.date_filter || 'terbaru');
-    const [viewMode, setViewMode] = useState('table'); // table atau grid
+    const [viewMode, setViewMode] = useState('grid'); // grid atau table
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
     const [notificationType, setNotificationType] = useState('success');
@@ -42,7 +41,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
             const queryParams = {
                 search: searchTerm.trim() || undefined,
                 status: statusFilter || undefined,
-                date_filter: dateFilter || undefined,
             };
 
             router.get(
@@ -57,7 +55,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
         }, 300);
 
         return () => clearTimeout(timer);
-    }, [searchTerm, statusFilter, dateFilter]);
+    }, [searchTerm, statusFilter]);
 
     // Handle klik tombol hapus
     const handleDeleteClick = (scholarship) => {
@@ -95,6 +93,9 @@ export default function Index({ auth, permissions, userRole, menu }) {
                 setShowDeleteModal(false);
                 setScholarshipToDelete(null);
                 setIsDeleting(false);
+                setNotificationMessage('Beasiswa berhasil dihapus!');
+                setNotificationType('success');
+                setShowNotification(true);
             },
             onError: (errors) => {
                 setShowNotification(true);
@@ -122,6 +123,9 @@ export default function Index({ auth, permissions, userRole, menu }) {
             onSuccess: () => {
                 setShowToggleModal(false);
                 setScholarshipToToggle(null);
+                setNotificationMessage(`Beasiswa berhasil ${toggleAction === 'activate' ? 'diaktifkan' : 'dinonaktifkan'}!`);
+                setNotificationType('success');
+                setShowNotification(true);
             },
             onError: (errors) => {
                 setShowNotification(true);
@@ -137,6 +141,12 @@ export default function Index({ auth, permissions, userRole, menu }) {
     const cancelToggle = () => {
         setShowToggleModal(false);
         setScholarshipToToggle(null);
+    };
+
+    // Strip HTML tags untuk deskripsi
+    const stripHtmlTags = (html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        return doc.body.textContent || "";
     };
 
     return (
@@ -370,73 +380,32 @@ export default function Index({ auth, permissions, userRole, menu }) {
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="border p-2 rounded-lg"
+                                className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="">Semua Status</option>
                                 <option value="active">Aktif</option>
                                 <option value="inactive">Non-Aktif</option>
                             </select>
-                            {/* Date Filter */}
-                            <select
-                                value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
-                                className="border p-2 rounded-lg"
-                            >
-                                <option value="terbaru">Terbaru</option>
-                                <option value="terlama">Terlama</option>
-                            </select>
                             {/* View Toggle */}
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`p-2 rounded-md ${
-                                        viewMode === 'grid'
-                                            ? 'bg-white shadow-sm text-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                    } transition-all duration-200`}
-                                    title="Tampilan Grid"
+                                    className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
-                                    <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                                        />
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                                     </svg>
                                 </button>
                                 <button
                                     onClick={() => setViewMode('table')}
-                                    className={`p-2 rounded-md ${
-                                        viewMode === 'table'
-                                            ? 'bg-white shadow-sm text-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                    } transition-all duration-200`}
-                                    title="Tampilan Tabel"
+                                    className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
-                                    <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                                        />
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                                     </svg>
                                 </button>
                             </div>
-                            {/* Buttons */}
+                            {/* Button */}
                             <Link
                                 href={route('admin.scholarship.create')}
                                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
@@ -457,26 +426,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                 </svg>
                                 Tambah Beasiswa
                             </Link>
-                            <a
-                                href={route('admin.scholarship.pdf')}
-                                className="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-2.5 rounded-lg hover:from-green-700 hover:to-teal-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
-                            >
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                    />
-                                </svg>
-                                Unduh PDF
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -489,33 +438,28 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                 key={scholarship.scholarship_id}
                                 className="group bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]"
                             >
-                                <div className="relative">
+                                {/* Enhanced Image Container with Gradient Overlay */}
+                                <div className="h-52 overflow-hidden relative">
                                     <img
                                         src={scholarship.poster || '/images/default-scholarship-poster.jpg'}
                                         alt={scholarship.name}
-                                        className="w-full h-40 object-cover rounded-t-xl"
+                                        className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                                         onError={(e) => (e.target.src = '/images/default-scholarship-poster.jpg')}
                                     />
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1 text-sm rounded-bl-lg shadow-md">
+                                        {scholarship.category_name || 'Uncategorized'}
+                                    </div>
                                 </div>
+
+                                {/* Enhanced Content */}
                                 <div className="p-5 flex flex-col flex-grow">
-                                    <h2 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition">
-                                        {scholarship.name}
-                                    </h2>
+                                    <h2 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition">{scholarship.name}</h2>
+
+                                    {/* Date Info with Enhanced Style */}
                                     <div className="flex items-center text-sm text-gray-500 mb-3">
-                                        <svg
-                                            className="w-4 h-4 mr-1 text-blue-500"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                            />
+                                        <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
                                         {scholarship.start_date && scholarship.end_date
                                             ? `${new Date(scholarship.start_date).toLocaleDateString('id-ID', {
@@ -529,27 +473,22 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                               })}`
                                             : 'Tanggal tidak ditentukan'}
                                     </div>
-                                    <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                                        {scholarship.description || 'Tidak ada deskripsi'}
-                                    </p>
+
+                                    {/* Content Preview with Enhanced Design */}
+                                    <div className="mb-4">
+                                        <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+                                            {stripHtmlTags(scholarship.description || 'Tidak ada deskripsi')}
+                                        </p>
+                                    </div>
+
+                                    {/* Enhanced Action Buttons */}
                                     <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
                                         <Link
                                             href={route('admin.scholarship.edit', scholarship.scholarship_id)}
                                             className="flex items-center text-blue-600 hover:text-blue-700 transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-blue-50"
                                         >
-                                            <svg
-                                                className="w-4 h-4 mr-1"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                />
+                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                             Edit
                                         </Link>
@@ -559,13 +498,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                                 scholarship.is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'
                                             } transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-${scholarship.is_active ? 'red' : 'green'}-50`}
                                         >
-                                            <svg
-                                                className="w-4 h-4 mr-1"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
+                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                 <path
                                                     strokeLinecap="round"
                                                     strokeLinejoin="round"
@@ -580,19 +513,8 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                             className="flex items-center text-red-600 hover:text-red-700 transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-red-50"
                                             disabled={isDeleting}
                                         >
-                                            <svg
-                                                className="w-4 h-4 mr-1"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                />
+                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                             Hapus
                                         </button>
@@ -632,7 +554,17 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {scholarship.category_name || 'Tidak ada'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{scholarship.status}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                    scholarship.is_active
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}
+                                            >
+                                                {scholarship.is_active ? 'Aktif' : 'Non-Aktif'}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {scholarship.start_date
                                                 ? `${new Date(scholarship.start_date).toLocaleDateString('id-ID', {
@@ -649,23 +581,37 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <Link
                                                 href={route('admin.scholarship.edit', scholarship.scholarship_id)}
-                                                className="text-blue-600 hover:text-blue-800 mr-4"
+                                                className="flex items-center text-blue-600 hover:text-blue-700 transition px-3 py-1.5 rounded-md hover:bg-blue-50 mr-4"
                                             >
+                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                                 Edit
                                             </Link>
                                             <button
                                                 onClick={() => handleToggleClick(scholarship)}
-                                                className={`${
-                                                    scholarship.is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'
-                                                } mr-4`}
+                                                className={`flex items-center ${
+                                                    scholarship.is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'
+                                                } transition px-3 py-1.5 rounded-md hover:bg-${scholarship.is_active ? 'red' : 'green'}-50 mr-4`}
                                             >
+                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d={scholarship.is_active ? 'M6 18L18 6M6 6l12 12' : 'M5 13l4 4L19 7'}
+                                                    />
+                                                </svg>
                                                 {scholarship.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteClick(scholarship)}
-                                                className="text-red-600 hover:text-red-800"
+                                                className="flex items-center text-red-600 hover:text-red-700 transition px-3 py-1.5 rounded-md hover:bg-red-50"
                                                 disabled={isDeleting}
                                             >
+                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                                 Hapus
                                             </button>
                                         </td>
@@ -704,7 +650,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                 onClick={() => {
                                     setSearchTerm('');
                                     setStatusFilter('');
-                                    setDateFilter('terbaru');
                                 }}
                                 className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
                             >
