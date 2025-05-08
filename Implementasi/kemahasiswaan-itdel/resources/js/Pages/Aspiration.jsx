@@ -4,7 +4,7 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
 import FooterLayout from '@/Layouts/FooterLayout';
 
-export default function Aspiration({ categories }) {
+export default function Aspiration({ categories, mpm }) {
     // Initialize form data, checking for query parameters
     const { props } = usePage();
     const urlParams = new URLSearchParams(window.location.search);
@@ -16,8 +16,32 @@ export default function Aspiration({ categories }) {
         category_id: initialCategoryId,
         image: null,
     });
-
     const [errors, setErrors] = useState({});
+    const [showNotification, setShowNotification] = useState(false);
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationType, setNotificationType] = useState('success');
+
+    // Handle flash messages for notifications
+    useEffect(() => {
+        if (props.flash) {
+            if (props.flash.success) {
+                setNotificationMessage(props.flash.success);
+                setNotificationType('success');
+                setShowNotification(true);
+            } else if (props.flash.error) {
+                setNotificationMessage(props.flash.error);
+                setNotificationType('error');
+                setShowNotification(true);
+            }
+
+            if (props.flash.success || props.flash.error) {
+                const timer = setTimeout(() => {
+                    setShowNotification(false);
+                }, 5000);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [props.flash]);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -47,6 +71,9 @@ export default function Aspiration({ categories }) {
             onSuccess: () => {
                 // Reset form after successful submission
                 setFormData({ story: '', category_id: '', image: null });
+                setNotificationMessage('Aspirasi berhasil dikirim!');
+                setNotificationType('success');
+                setShowNotification(true);
             },
         });
     };
@@ -58,10 +85,97 @@ export default function Aspiration({ categories }) {
         }
     }, [initialStory, initialCategoryId]);
 
+    // Informasi penting menyuarakan aspirasi
+    const importanceInfo = [
+        {
+            title: "Memperkuat Suara Kolektif",
+            description: "Aspirasi Anda membantu membentuk kebijakan yang mencerminkan kebutuhan bersama."
+        },
+        {
+            title: "Mendorong Perubahan Positif",
+            description: "Setiap suara dapat menjadi pemicu perbaikan lingkungan akademik dan sosial."
+        },
+        {
+            title: "Meningkatkan Transparansi",
+            description: "Menyebarkan aspirasi secara anonim memastikan proses yang terbuka dan adil."
+        },
+    ];
+
     return (
         <GuestLayout>
             <NavbarGuestLayout />
             <Head title="Formulir Aspirasi" />
+
+            {/* Notification */}
+            {showNotification && (
+                <div
+                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
+                        notificationType === 'success'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
+                            : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
+                    }`}
+                >
+                    <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                            <svg
+                                className={`h-5 w-5 ${
+                                    notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                }`}
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                {notificationType === 'success' ? (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clipRule="evenodd"
+                                    />
+                                ) : (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
+                                        clipRule="evenodd"
+                                    />
+                                )}
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p
+                                className={`text-sm font-medium ${
+                                    notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                                }`}
+                            >
+                                {notificationMessage}
+                            </p>
+                        </div>
+                        <div className="ml-auto pl-3">
+                            <button
+                                onClick={() => setShowNotification(false)}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notificationType === 'success'
+                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                                } focus:outline-none focus:ring-2`}
+                            >
+                                <span className="sr-only">Dismiss</span>
+                                <svg
+                                    className="h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* CSS Styles */}
             <style>
@@ -69,7 +183,8 @@ export default function Aspiration({ categories }) {
                     body {
                         margin: 0;
                         padding: 0;
-                        font-family: Arial, sans-serif;
+                        font-family: 'Poppins', sans-serif;
+                        background: #f5f7fa;
                     }
                     .main-container {
                         background: linear-gradient(135deg, #e6f0fa 0%, #f5f7fa 100%);
@@ -84,167 +199,253 @@ export default function Aspiration({ categories }) {
                         width: 100%;
                         display: grid;
                         grid-template-columns: 1fr 1fr;
-                        gap: 30px;
+                        gap: 40px;
+                        margin: 0 auto;
                     }
                     .form-section, .content-section {
                         background: #ffffff;
-                        border-radius: 15px;
-                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-                        padding: 30px;
+                        border-radius: 20px;
+                        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+                        padding: 40px;
                         transition: transform 0.3s ease, box-shadow 0.3s ease;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    .form-section::before, .content-section::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 5px;
+                        background: linear-gradient(90deg, #3498db, #2980b9);
                     }
                     .form-section:hover, .content-section:hover {
                         transform: translateY(-5px);
-                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+                        box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
                     }
                     .header {
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        margin-bottom: 20px;
-                    }
-                    .header img {
-                        vertical-align: middle;
-                        margin-right: 10px;
+                        margin-bottom: 25px;
+                        gap: 10px;
                     }
                     .header h2 {
-                        font-size: 28px;
-                        font-weight: bold;
+                        font-size: 30px;
+                        font-weight: 700;
                         background: linear-gradient(90deg, #3498db, #2980b9);
                         -webkit-background-clip: text;
                         -webkit-text-fill-color: transparent;
+                    }
+                    .header svg {
+                        width: 30px;
+                        height: 30px;
+                        color: #3498db;
                     }
                     .subheader {
                         text-align: center;
                         color: #666666;
                         font-size: 16px;
-                        margin-bottom: 20px;
+                        margin-bottom: 25px;
+                        font-style: italic;
                     }
                     .form-table {
                         width: 100%;
                     }
                     .form-table td {
-                        padding: 5px;
+                        padding: 8px;
                     }
                     .form-table label {
-                        font-weight: bold;
+                        font-weight: 600;
                         color: #2c3e50;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                    }
+                    .form-table label svg {
+                        width: 18px;
+                        height: 18px;
+                        color: #3498db;
                     }
                     .form-table textarea,
                     .form-table select,
-                    .form-table input[type="file"] {
-                        border: 1px solid #3498db;
-                        border-radius: 8px;
-                        padding: 10px;
+                    .form-table input[type="file"],
+                    .form-table .submit-button {
+                        border: 2px solid #3498db;
+                        border-radius: 10px;
+                        padding: 12px;
                         width: 100%;
                         box-sizing: border-box;
                         font-size: 14px;
                         color: #333333;
-                        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+                        background: #f9fbfd;
+                        transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+                    }
+                    .form-table textarea:hover,
+                    .form-table select:hover,
+                    .form-table input[type="file"]:hover {
+                        background: #ffffff;
+                        box-shadow: 0 0 10px rgba(52, 152, 219, 0.1);
                     }
                     .form-table textarea:focus,
                     .form-table select:focus,
                     .form-table input[type="file"]:focus {
                         border-color: #2980b9;
-                        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+                        box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
                         outline: none;
+                        background: #ffffff;
                     }
                     .form-table textarea {
                         resize: vertical;
+                        min-height: 120px;
+                    }
+                    .form-table .disabled {
+                        background: #e0e0e0;
+                        border-color: #cccccc;
+                        color: #888888;
+                        cursor: not-allowed;
+                        pointer-events: none;
+                    }
+                    .form-table .disabled:hover {
+                        background: #e0e0e0;
+                        box-shadow: none;
                     }
                     .form-table .error {
                         color: #e74c3c;
                         font-size: 12px;
+                        margin-top: 5px;
                         animation: pulse 1s infinite;
                     }
                     .form-table .submit-button {
                         background: linear-gradient(90deg, #3498db, #2980b9);
                         color: #ffffff;
-                        padding: 10px 20px;
+                        padding: 12px 25px;
                         border: none;
-                        border-radius: 8px;
+                        border-radius: 10px;
                         font-size: 16px;
-                        font-weight: bold;
+                        font-weight: 600;
                         cursor: pointer;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        gap: 5px;
-                        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                        transition: transform 0.3s ease, box-shadow 0.3s ease;
+                        gap: 8px;
+                        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+                        transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+                        width: 100%;
+                        margin-top: 10px;
                     }
                     .form-table .submit-button:hover {
                         transform: translateY(-3px);
-                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+                        background: linear-gradient(90deg, #2980b9, #3498db);
                     }
-                    .form-table .submit-button img {
-                        vertical-align: middle;
+                    .form-table .submit-button:disabled {
+                        background: #cccccc;
+                        cursor: not-allowed;
+                        transform: none;
+                        box-shadow: none;
                     }
                     .content-section h3 {
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 24px;
-                        font-weight: bold;
+                        font-size: 26px;
+                        font-weight: 700;
                         color: #2c3e50;
-                        margin-bottom: 20px;
+                        margin-bottom: 25px;
+                        gap: 10px;
                     }
-                    .content-section h3 img {
-                        vertical-align: middle;
-                        margin-right: 10px;
+                    .content-section h3 svg {
+                        width: 26px;
+                        height: 26px;
+                        color: #3498db;
                     }
                     .content-section p {
                         text-align: justify;
                         color: #666666;
                         font-size: 16px;
-                        margin-bottom: 15px;
-                    }
-                    .content-section img {
-                        display: block;
-                        margin: 0 auto 20px;
+                        margin-bottom: 20px;
+                        line-height: 1.6;
                     }
                     .content-section ul {
-                        list-style-type: disc;
-                        padding-left: 20px;
+                        list-style-type: none;
+                        padding-left: 0;
                         color: #666666;
                         font-size: 16px;
-                        margin-bottom: 20px;
+                        margin-bottom: 25px;
                     }
-                    .content-section .quote {
-                        text-align: center;
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #3498db;
-                    }
-                    .success-toast {
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: #28a745;
-                        color: #ffffff;
-                        padding: 15px 20px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                    .content-section ul li {
                         display: flex;
                         align-items: center;
                         gap: 10px;
-                        animation: fadeInOut 3s ease-in-out;
-                        z-index: 1000;
+                        margin-bottom: 15px;
+                    }
+                    .content-section ul li svg {
+                        width: 20px;
+                        height: 20px;
+                        color: #3498db;
+                    }
+                    .content-section .quote {
+                        text-align: center;
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #3498db;
+                        background: #e6f0fa;
+                        padding: 15px;
+                        border-radius: 10px;
+                        border-left: 4px solid #2980b9;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
                     }
                     @keyframes pulse {
                         0% { opacity: 1; }
                         50% { opacity: 0.5; }
                         100% { opacity: 1; }
                     }
-                    @keyframes fadeInOut {
-                        0% { opacity: 0; transform: translateY(-20px); }
-                        10% { opacity: 1; transform: translateY(0); }
-                        90% { opacity: 1; transform: translateY(0); }
-                        100% { opacity: 0; transform: translateY(-20px); }
+                    @keyframes slide-in-right {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    @keyframes fade-in {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                    .fade-in {
+                        animation: fade-in 0.6s ease-out forwards;
                     }
                     @media (max-width: 768px) {
                         .grid-container {
                             grid-template-columns: 1fr;
+                            gap: 30px;
+                        }
+                        .form-section, .content-section {
+                            padding: 25px;
+                        }
+                        .header h2 {
+                            font-size: 24px;
+                        }
+                        .header svg {
+                            width: 24px;
+                            height: 24px;
+                        }
+                        .content-section h3 {
+                            font-size: 22px;
+                        }
+                        .content-section h3 svg {
+                            width: 22px;
+                            height: 22px;
                         }
                     }
                 `}
@@ -254,174 +455,275 @@ export default function Aspiration({ categories }) {
             <div className="main-container">
                 <div className="grid-container">
                     {/* Left Side: Form Section */}
-                    <div className="form-section">
+                    <div className="form-section fade-in">
                         <div className="header">
-                            <img
-                                src="data:image/png;base64,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                    k8VQv47WDPRFO7WIluH748Qt/eiJC01Rrbv20kLsKZWpx0nf/7nApt1IkKnMpnAAiunlA0qziZCCerS9CZ/9kDEFm6s9L4xSP/XgokwZhK0f/EDSBosWZO/AX9mOk8IcsWM/2ybbhH3d5fqah1qA6c85uQcBI45XSLEBxx2PRC7RQ8muPlXCLPdK4NP4TQTxsFCKnyEdSiltOae20ywo6olBpWSe5/cF7GNkuspWQpAi2UwXMYhKM7bZqk095l932rOf8c4jN8oArjidOq5P8JvFZSrTqHZAdv1zHMu3n2W6stb3+MYzoJxFWY9xPFDGN7Fk3Z7MrMzjf+vm3EnwvYYJJgt4gdL0jAIQo75GhLNGsNJNwxn/ZDayXjRHjbi1ILZf322ONupA3SeCBXhtl1UGzoFgwpSSrBrfBvcJK3xvQ4z2PLRqthtVSz3IGKdn7R8C/fFqochMMv2LXywKj4lge6bkcvNA161iBX66Q1Gtu9VEuSh6okk8C+FQWehCFk+fZzoXrqq3zMWbq52YJL9d7vlhhAbQChUapeyevKWcuEp4UurjasOLepd/YD1bCfbqomEoTtkUGP5oFx91g+AUBq6p4WK9arOzThiospMjSXCO9VOZ1VGnEFYIdS7m4nON8pl41kpt88AHBChXP3U4zdUE2RVvk6wEIrZf5VKV8lmF0y9F335QY2Bqi+cAjRrNawCNvsy8cDZNd22RISzv3T186esVFBBDsvi75DgVnRohHp5SZWoeB+IR0GoBNBn5WF2lbeyNQek4yBcycZ3oCMhfEc6PMIcGsfvd/3jIDx6r4iN63/N0pOnL4SnT18IT5++EJ4+fSE8ffpCePr0hfD06Qvh6dMXwtOnL4SnT18IT5++EJ4+fSE8ffpCePr0hfD0aYUQG6vt+VSej0nYJW6N8N2SfAckQmU2SwnVtVufjWQ2SwnHKSo+JeEs/c6ZYKrgU342AkyKh7a0qHqa1Ccki9r/MH5c//NT0/f/B+0IY/+i/NJSAAAAAElFTkSuQmCC"
-                                width="30"
-                                height="30"
-                                alt="Idea Icon"
-                            />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                                />
+                            </svg>
                             <h2>Formulir Aspirasi</h2>
                         </div>
-                        <p className="subheader">
-                            Silakan isi formulir berikut untuk menyampaikan aspirasi Anda.
-                        </p>
-                        <form onSubmit={handleSubmit} encType="multipart/form-data">
-                            <table className="form-table">
-                                {/* Story Field */}
-                                <tr>
-                                    <td>
-                                        <label htmlFor="story">Cerita Aspirasi Anda</label>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <textarea
-                                            id="story"
-                                            name="story"
-                                            rows="5"
-                                            value={formData.story}
-                                            onChange={handleChange}
-                                            placeholder="Ceritakan aspirasi atau ide Anda..."
-                                            required
-                                        ></textarea>
-                                    </td>
-                                </tr>
-                                {errors.story && (
-                                    <tr>
-                                        <td>
-                                            <span className="error">{errors.story}</span>
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {/* Category Field */}
-                                <tr>
-                                    <td>
-                                        <label htmlFor="category_id">Kategori</label>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <select
-                                            id="category_id"
-                                            name="category_id"
-                                            value={formData.category_id}
-                                            onChange={handleChange}
-                                            required
-                                        >
-                                            <option value="">Pilih Kategori</option>
-                                            {categories.map((category) => (
-                                                <option key={category.id} value={category.id}>
-                                                    {category.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                </tr>
-                                {errors.category_id && (
-                                    <tr>
-                                        <td>
-                                            <span className="error">{errors.category_id}</span>
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {/* Image Field */}
-                                <tr>
-                                    <td>
-                                        <label htmlFor="image">Upload Gambar</label>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <input
-                                            type="file"
-                                            id="image"
-                                            name="image"
-                                            accept="image/*"
-                                            onChange={handleChange}
+                        <div className="subheader">
+                            {mpm?.aspiration_status === 'OPEN'
+                                ? 'Sampaikan aspirasi Anda secara anonim untuk perubahan yang lebih baik.'
+                                : 'Pendataan aspirasi saat ini ditutup. Baca informasi di bawah untuk mengapa menyuarakan aspirasi itu penting.'}
+                        </div>
+                        {mpm?.aspiration_status === 'OPEN' ? (
+                            <form onSubmit={handleSubmit}>
+                                <table className="form-table">
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <label>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M3 7h18M3 11h18m-6 4h6m-6 4h6"
+                                                        />
+                                                    </svg>
+                                                    Kategori
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <select
+                                                    name="category_id"
+                                                    value={formData.category_id}
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value="">Pilih Kategori</option>
+                                                    {categories.map((category) => (
+                                                        <option key={category.id} value={category.id}>
+                                                            {category.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {errors.category_id && <div className="error">{errors.category_id}</div>}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <label>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M15 12H9m6-3H9m6 6H9m-6 6h18a2 2 0 002-2V6a2 2 0 00-2-2H3a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                        />
+                                                    </svg>
+                                                    Cerita Aspirasi
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <textarea
+                                                    name="story"
+                                                    value={formData.story}
+                                                    onChange={handleChange}
+                                                    placeholder="Ceritakan aspirasi Anda di sini..."
+                                                    rows="5"
+                                                ></textarea>
+                                                {errors.story && <div className="error">{errors.story}</div>}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <label>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M4 16l4-4m0 0l4 4m-4-4v8m8-12H8a4 4 0 00-4 4v8h16v-8a4 4 0 00-4-4z"
+                                                        />
+                                                    </svg>
+                                                    Gambar (Opsional)
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="file"
+                                                    name="image"
+                                                    onChange={handleChange}
+                                                    accept="image/*"
+                                                />
+                                                {errors.image && <div className="error">{errors.image}</div>}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colSpan="2">
+                                                <button type="submit" className="submit-button">
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        className="w-5 h-5"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                    Kirim Aspirasi
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </form>
+                        ) : (
+                            <div className="content-section fade-in">
+                                <h3>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                         />
-                                    </td>
-                                </tr>
-                                {errors.image && (
-                                    <tr>
-                                        <td>
-                                            <span className="error">{errors.image}</span>
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {/* Submit Button */}
-                                <tr>
-                                    <td align="center">
-                                        <button type="submit" className="submit-button">
-                                            <img
-                                                src="https://img.icons8.com/ios-filled/50/ffffff/checkmark.png"
-                                                width="20"
-                                                height="20"
-                                                alt="Checkmark Icon"
-                                            />
-                                            Kirim Aspirasi
-                                        </button>
-                                    </td>
-                                </tr>
-                            </table>
-                        </form>
+                                    </svg>
+                                    Kenapa Penting Menyuarakan Aspirasi?
+                                </h3>
+                                <p>
+                                    Meskipun pendataan aspirasi saat ini ditutup, menyuarakan aspirasi tetap menjadi langkah penting untuk membangun komunitas yang lebih baik. Berikut alasannya:
+                                </p>
+                                <ul>
+                                    {importanceInfo.map((item, index) => (
+                                        <li key={index}>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M5 13l4 4L19 7"
+                                                />
+                                            </svg>
+                                            <strong>{item.title}</strong>: {item.description}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <div className="quote">
+                                    "Suara Anda adalah kekuatan untuk perubahan, tunggu pembukaan berikutnya!"
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Right Side: Aspiration Content Section */}
-                    <div className="content-section">
+                    {/* Right Side: Content Section */}
+                    <div className="content-section fade-in">
                         <h3>
-                            <img
-                                src="https://img.icons8.com/?size=100&id=10884&format=png&color=000000"
-                                width="200"
-                                height="200"
-                                alt="Idea Icon"
-                            />
-                            Pentingnya Menyampaikan Aspirasi
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                />
+                            </svg>
+                            Petunjuk Pengisian
                         </h3>
                         <p>
-                            Aspirasi adalah cara bagi Anda untuk menyampaikan ide, saran, atau kritik yang dapat membantu meningkatkan kualitas lingkungan akademik dan sosial di kampus. Dengan menyampaikan aspirasi, Anda berkontribusi dalam menciptakan perubahan positif.
+                            Aspirasi Anda akan diterima secara anonim. Pastikan untuk memilih kategori yang sesuai dan jelaskan cerita Anda dengan detail. Anda juga dapat melampirkan gambar sebagai pendukung jika diperlukan.
                         </p>
-                        <p>
-                            Setiap suara sangat berarti. Aspirasi Anda dapat menjadi inspirasi bagi perbaikan sistem, kegiatan kemahasiswaan, atau bahkan kebijakan kampus yang lebih baik.
-                        </p>
-                        <img
-                            src="https://img.icons8.com/color/96/000000/idea-sharing.png"
-                            width="150"
-                            height="150"
-                            alt="Idea Sharing Image"
-                        />
-                        <h3>Manfaat Menyampaikan Aspirasi</h3>
                         <ul>
-                            <li>Mendorong perubahan positif di lingkungan kampus.</li>
-                            <li>Meningkatkan keterlibatan dalam pengambilan keputusan.</li>
-                            <li>Mempererat hubungan antara mahasiswa dan pihak kemahasiswaan.</li>
-                            <li>Membantu menyelesaikan masalah yang dihadapi.</li>
-                            <li>Menciptakan lingkungan akademik yang lebih inklusif.</li>
+                            <li>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                Pilih kategori yang paling relevan dengan aspirasi Anda.
+                            </li>
+                            <li>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                Tulis cerita dengan jelas dan singkat (maksimal 1000 karakter).
+                            </li>
+                            <li>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                Gambar yang diunggah harus berformat JPG, PNG, atau JPEG, maksimal 2MB.
+                            </li>
                         </ul>
-                        <p className="quote">
-                            "Suara Anda adalah kekuatan untuk perubahan. Jangan ragu untuk berbicara!"
-                        </p>
+                        <div className="quote">
+                            "Aspirasi Anda adalah langkah awal untuk perubahan yang lebih baik!"
+                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* Success Notification */}
-            {props.flash?.success && (
-                <div className="success-toast">
-                    <img
-                        src="https://img.icons8.com/ios-filled/50/ffffff/checkmark.png"
-                        width="20"
-                        height="20"
-                        alt="Success Icon"
-                    />
-                    {props.flash.success}
-                </div>
-            )}
-
             <FooterLayout />
         </GuestLayout>
     );

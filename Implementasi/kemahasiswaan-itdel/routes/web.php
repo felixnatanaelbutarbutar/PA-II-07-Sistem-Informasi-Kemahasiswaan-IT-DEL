@@ -123,7 +123,6 @@ Route::middleware(['auth'])->group(function () {
     // Admin Routes (Kemahasiswaan, AdminBEM, AdminMPM)
     Route::prefix('admin')->name('admin.')->middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
 
-
         // Rute untuk Kalender Kegiatan (Kemahasiswaan, AdminBEM, AdminMPM)
         Route::middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
 
@@ -158,6 +157,15 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('downloads', DownloadController::class)->except(['show', 'destroy', 'update']);
             Route::post('downloads/{download}/update', [DownloadController::class, 'update'])->name('downloads.update');
             Route::post('downloads/{download}/delete', [DownloadController::class, 'destroy'])->name('downloads.destroy');
+
+            Route::resource('announcement', AnnouncementController::class)->except(['show', 'destroy', 'update']);
+            Route::post('announcement/{announcement}/update', [AnnouncementController::class, 'update'])->name('announcement.update');
+            Route::post('announcement/{announcement}/delete', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
+
+            Route::resource('announcement-category', AnnouncementCategoryController::class)->except(['show', 'destroy', 'update']);
+            Route::post('announcement-category/{announcement_category}/update', [AnnouncementCategoryController::class, 'update'])->name('announcement-category.update');
+            Route::post('announcement-category/{announcement_category}/delete', [AnnouncementCategoryController::class, 'destroy'])->name('announcement-category.destroy');
+
         });
 
         Route::middleware(['feature:layanan'])->group(function () {
@@ -195,10 +203,6 @@ Route::middleware(['auth'])->group(function () {
         // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
 
-            Route::resource('announcement', AnnouncementController::class)->except(['show', 'destroy', 'update']);
-            Route::post('announcement/{announcement}/update', [AnnouncementController::class, 'update'])->name('announcement.update');
-            Route::post('announcement/{announcement}/delete', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
-
             Route::resource('bem', BemController::class)->except(['destroy', 'update']);
             Route::post('bem/{bem}/update', [BemController::class, 'update'])->name('bem.update');
             Route::post('bem/{bem}/delete', [BemController::class, 'destroy'])->name('bem.delete');
@@ -214,11 +218,6 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('achievement-type', AchievementTypeController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievement-type/{achievement_type}/update', [AchievementTypeController::class, 'update'])->name('achievement-type.update');
             Route::post('achievement-type/{achievement_type}/delete', [AchievementTypeController::class, 'destroy'])->name('achievement-type.destroy');
-
-            Route::resource('announcement-category', AnnouncementCategoryController::class)->except(['show', 'destroy', 'update']);
-            Route::post('announcement-category/{announcement_category}/update', [AnnouncementCategoryController::class, 'update'])->name('announcement-category.update');
-            Route::post('announcement-category/{announcement_category}/delete', [AnnouncementCategoryController::class, 'destroy'])->name('announcement-category.destroy');
-
 
             Route::get('/counseling', [CounselingController::class, 'indexAdmin'])->name('counseling.index');
             Route::post('/counseling/{id}', [CounselingController::class, 'update'])->name('counseling.update');
@@ -277,6 +276,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
             Route::get('/aspiration/{id}', [AspirationController::class, 'show'])->name('aspiration.show');
             Route::post('/aspiration/{id}/delete', [AspirationController::class, 'destroy'])->name('aspiration.destroy');
+            Route::post('/aspiration/update-status', [AspirationController::class, 'updateAspirationStatus'])->name('aspiration.updateStatus');
 
             // === ASPIRATION CATEGORY ===
             Route::resource('aspiration-category', AspirationCategoryController::class)->except(['show', 'destroy', 'update']);

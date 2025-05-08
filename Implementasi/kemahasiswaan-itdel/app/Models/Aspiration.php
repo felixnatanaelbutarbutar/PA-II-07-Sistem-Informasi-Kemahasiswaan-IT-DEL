@@ -2,23 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Aspiration extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'requestBy',
+        'mpm_id',
         'story',
         'category_id',
         'image',
     ];
 
-    public function user()
+    public function mpm()
     {
-        return $this->belongsTo(User::class, 'requestBy');
+        return $this->belongsTo(Mpm::class, 'mpm_id');
     }
 
     public function category()

@@ -32,14 +32,15 @@ class RoleHelper
                 'mpm' => true,
                 'bem' => true,
                 'downloads' => true,
-                'download-categories' => true, // Tambahkan izin untuk download-categories
+                'download-categories' => true,
                 'organizationadmin' => true,
                 'carousel' => true,
                 'kegiatan' => true,
                 'chatbot' => true,
             ],
             'adminbem' => [
-                'pengumuman' => true,
+                'announcementcategory' => true, // Ditambahkan untuk submenu Kategori Pengumuman
+                'announcement' => true, // Diubah dari 'pengumuman' menjadi 'announcement'
                 'newscategory' => true,
                 'news' => true,
                 'achievements' => true,
@@ -54,11 +55,12 @@ class RoleHelper
                 'carousel' => false,
                 'kegiatan' => true,
                 'chatbot' => true,
-                'downloads' => false, // Admin BEM tidak memiliki akses ke unduhan
-                'download-categories' => false, // Admin BEM tidak memiliki akses ke kategori unduhan
+                'downloads' => false,
+                'download-categories' => false,
             ],
             'adminmpm' => [
-                'pengumuman' => true,
+                'announcementcategory' => true, // Ditambahkan untuk submenu Kategori Pengumuman
+                'announcement' => true, // Diubah dari 'pengumuman' menjadi 'announcement'
                 'newscategory' => true,
                 'news' => true,
                 'achievements' => false,
@@ -73,8 +75,8 @@ class RoleHelper
                 'carousel' => false,
                 'kegiatan' => true,
                 'chatbot' => true,
-                'downloads' => false, // Admin MPM tidak memiliki akses ke unduhan
-                'download-categories' => false, // Admin MPM tidak memiliki akses ke kategori unduhan
+                'downloads' => false,
+                'download-categories' => false,
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -92,8 +94,8 @@ class RoleHelper
                 'carousel' => false,
                 'kegiatan' => true,
                 'chatbot' => false,
-                'downloads' => false, // Mahasiswa hanya bisa lihat unduhan, tidak edit
-                'download-categories' => false, // Mahasiswa tidak memiliki akses ke kategori unduhan
+                'downloads' => false,
+                'download-categories' => false,
             ],
         ];
 

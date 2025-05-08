@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Aspiration;
 use App\Models\AspirationCategory;
+use App\Models\Mpm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -15,9 +16,11 @@ class AspirationController extends Controller
     public function index()
     {
         $categories = AspirationCategory::all();
+        $mpm = Mpm::first(); // Ambil data MPM pertama (asumsikan hanya ada satu)
 
         return Inertia::render('Aspiration', [
             'categories' => $categories,
+            'mpm' => $mpm,
         ]);
     }
 
@@ -27,9 +30,11 @@ class AspirationController extends Controller
         $role = strtolower($user->role);
         $categories = AspirationCategory::all();
 
-        $aspirations = Aspiration::with(['user', 'category'])
+        $aspirations = Aspiration::with(['category'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
+
+        $mpm = Mpm::first(); // Ambil data MPM pertama (asumsikan hanya ada satu)
 
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
@@ -43,15 +48,23 @@ class AspirationController extends Controller
             'menu' => $menuItems,
             'categories' => $categories,
             'aspirations' => $aspirations,
+            'mpm' => $mpm,
         ]);
     }
 
     public function store(Request $request)
     {
+        // Ambil data MPM terbaru
+        $mpm = Mpm::first();
+
+        if (!$mpm || $mpm->aspiration_status === 'CLOSED') {
+            return redirect()->route('mpm.show')->with('error', 'Pendataan aspirasi sedang ditutup.');
+        }
+
         $validated = $request->validate([
             'story' => 'required|string|max:1000',
             'category_id' => 'required|exists:aspiration_categories,id',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
         ]);
 
         $imagePath = null;
@@ -60,18 +73,18 @@ class AspirationController extends Controller
         }
 
         Aspiration::create([
-            'requestBy' => null, // Set null karena pengguna tidak perlu login
+            'mpm_id' => $mpm->id,
             'story' => $validated['story'],
             'category_id' => $validated['category_id'],
             'image' => $imagePath,
         ]);
 
-        return redirect()->route('aspiration.index')->with('success', 'Aspirasi berhasil dikirim.');
+        return redirect()->route('aspiration.index')->with('success', 'Aspirasi berhasil dikirim!');
     }
 
     public function show($id)
     {
-        $aspiration = Aspiration::with(['user', 'category'])->findOrFail($id);
+        $aspiration = Aspiration::with(['category'])->findOrFail($id);
 
         $user = Auth::user();
         $role = strtolower($user->role);
@@ -96,5 +109,25 @@ class AspirationController extends Controller
         $aspiration->delete();
 
         return redirect()->route('admin.aspiration.index')->with('success', 'Aspirasi berhasil dihapus.');
+    }
+
+    public function updateAspirationStatus(Request $request)
+    {
+        $mpm = Mpm::first();
+        if (!$mpm) {
+            return redirect()->route('admin.aspiration.index')->with('error', 'Data MPM tidak ditemukan.');
+        }
+
+        $status = $request->input('status');
+        if (!in_array($status, ['OPEN', 'CLOSED'])) {
+            return redirect()->route('admin.aspiration.index')->with('error', 'Status tidak valid.');
+        }
+
+        $mpm->aspiration_status = $status;
+        $mpm->updated_by = Auth::id();
+        $mpm->save();
+
+        $message = $status === 'OPEN' ? 'Pendataan aspirasi berhasil diaktifkan.' : 'Pendataan aspirasi berhasil ditutup.';
+        return redirect()->route('admin.aspiration.index')->with('success', $message);
     }
 }

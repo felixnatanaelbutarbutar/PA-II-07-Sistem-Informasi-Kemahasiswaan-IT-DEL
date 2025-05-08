@@ -1,7 +1,7 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
 export default function MPM({ mpm }) {
@@ -21,7 +21,7 @@ export default function MPM({ mpm }) {
     // Fungsi untuk mendapatkan style responsif
     const getResponsiveStyles = () => {
         const width = window.innerWidth;
-        const isMobile = width <= 768; // Tentukan apakah layar adalah mobile
+        const isMobile = width <= 768;
 
         return {
             body: {
@@ -32,22 +32,22 @@ export default function MPM({ mpm }) {
                 minHeight: '100vh',
             },
             container: {
-                maxWidth: '900px',
+                maxWidth: isMobile ? '100%' : '1500px', // Diperlebar dari 900px menjadi 1500px
                 margin: '0 auto',
                 padding: isMobile ? '10px' : '20px',
             },
             section: {
                 background: '#fff',
-                padding: isMobile ? '15px' : '20px',
+                padding: isMobile ? '15px' : '30px', // Padding lebih besar untuk kesan lebih luas
                 marginBottom: '20px',
-                textAlign: 'left', // Memastikan teks rata kiri
+                textAlign: 'left',
                 border: '1px solid #d1e7ff',
                 borderRadius: '8px',
                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
             },
             headerSection: {
                 background: '#fff',
-                padding: isMobile ? '15px' : '20px',
+                padding: isMobile ? '15px' : '30px',
                 marginBottom: '20px',
                 textAlign: 'left',
                 border: '1px solid #d1e7ff',
@@ -56,11 +56,11 @@ export default function MPM({ mpm }) {
             },
             logoContainer: {
                 flexShrink: 0,
-                marginRight: isMobile ? '10px' : '15px',
+                marginRight: isMobile ? '10px' : '20px', // Margin lebih besar untuk jarak
                 marginBottom: '0',
                 position: 'relative',
-                width: isMobile ? '60px' : '80px',
-                height: isMobile ? '60px' : '80px',
+                width: isMobile ? '60px' : '100px', // Logo lebih besar di desktop
+                height: isMobile ? '60px' : '100px',
                 overflow: 'visible',
                 border: 'none',
                 outline: 'none',
@@ -76,10 +76,10 @@ export default function MPM({ mpm }) {
             },
             contentContainer: {
                 flex: 1,
-                maxWidth: '600px',
+                maxWidth: isMobile ? '100%' : '900px', // Diperlebar dari 600px menjadi 900px
             },
             sectionTitle: {
-                fontSize: isMobile ? '18px' : '20px',
+                fontSize: isMobile ? '18px' : '24px', // Ukuran font lebih besar
                 fontWeight: '700',
                 color: '#000',
                 marginBottom: '15px',
@@ -91,10 +91,10 @@ export default function MPM({ mpm }) {
                 color: '#000',
                 lineHeight: '1.6',
                 marginBottom: '5px',
-                textAlign: 'center', // Memusatkan teks di atas gambar
+                textAlign: 'center',
             },
             subTitle: {
-                fontSize: isMobile ? '16px' : '18px',
+                fontSize: isMobile ? '16px' : '20px', // Ukuran font lebih besar
                 fontWeight: '700',
                 color: '#000',
                 marginBottom: '5px',
@@ -111,27 +111,28 @@ export default function MPM({ mpm }) {
                 display: 'flex',
                 flexWrap: 'wrap',
                 gap: '10px',
-                textAlign: 'left', // Memastikan daftar misi rata kiri
+                textAlign: 'left',
             },
             listItem: {
                 fontSize: isMobile ? '14px' : '16px',
                 color: '#000',
                 lineHeight: '1.5',
                 marginBottom: '5px',
+                width: isMobile ? '100%' : 'calc(50% - 10px)', // Membagi daftar menjadi 2 kolom di desktop
             },
             buttonContainer: {
                 display: 'flex',
                 justifyContent: 'center',
-                gap: '20px',
+                gap: '30px', // Jarak antar tombol lebih lebar
                 marginTop: '20px',
                 flexWrap: 'wrap',
             },
             button: {
                 display: 'flex',
                 alignItems: 'center',
-                padding: '10px 20px',
+                padding: isMobile ? '10px 20px' : '12px 30px', // Tombol lebih besar di desktop
                 borderRadius: '5px',
-                fontSize: '16px',
+                fontSize: isMobile ? '16px' : '18px', // Ukuran font lebih besar
                 fontWeight: '500',
                 color: '#fff',
                 textDecoration: 'none',
@@ -142,11 +143,13 @@ export default function MPM({ mpm }) {
                 background: '#28a745',
             },
             aspirationButton: {
-                background: '#007bff',
+                background: mpm?.aspiration_status === 'OPEN' ? '#007bff' : '#cccccc',
+                cursor: mpm?.aspiration_status === 'OPEN' ? 'pointer' : 'not-allowed',
+                pointerEvents: mpm?.aspiration_status === 'OPEN' ? 'auto' : 'none',
             },
             buttonIcon: {
-                width: '20px',
-                height: '20px',
+                width: isMobile ? '20px' : '24px', // Ikon lebih besar di desktop
+                height: isMobile ? '20px' : '24px',
                 marginRight: '8px',
             },
             emptyState: {
@@ -191,7 +194,7 @@ export default function MPM({ mpm }) {
             },
             participationSection: {
                 background: '#dc2626',
-                padding: isMobile ? '15px' : '20px',
+                padding: isMobile ? '15px' : '30px',
                 marginBottom: '20px',
                 textAlign: 'center',
                 border: '1px solid #d1e7ff',
@@ -199,8 +202,8 @@ export default function MPM({ mpm }) {
                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
             },
             photo: {
-                width: isMobile ? '80px' : '100px',
-                height: isMobile ? '80px' : '100px',
+                width: isMobile ? '80px' : '120px', // Foto lebih besar di desktop
+                height: isMobile ? '80px' : '120px',
                 borderRadius: '50%',
                 objectFit: 'cover',
                 marginBottom: '0',
@@ -217,6 +220,7 @@ export default function MPM({ mpm }) {
                 flexWrap: 'wrap',
                 gap: '20px',
                 marginBottom: '15px',
+                justifyContent: 'center', // Memusatkan foto ketua dan sekretaris
             },
         };
     };
@@ -280,7 +284,7 @@ export default function MPM({ mpm }) {
                                                         src={`/storage/${mpm.logo}`}
                                                         alt="Logo MPM"
                                                         style={styles.logo}
-                                                        onError={(e) => (e.target.style.display = 'none')} // Sembunyikan jika gambar gagal dimuat
+                                                        onError={(e) => (e.target.style.display = 'none')}
                                                     />
                                                 </div>
                                             )}
@@ -288,7 +292,6 @@ export default function MPM({ mpm }) {
                                         </div>
                                         <div style={styles.contentContainer}>
                                             <p style={styles.textContent}>{mpm.introduction || 'Tidak ada'}</p>
-                                            {/* Ketua dan Sekretaris dalam satu baris */}
                                             <div style={styles.leaderContainer}>
                                                 <div style={styles.photoContainer}>
                                                     <p style={styles.textContent}>
@@ -302,7 +305,7 @@ export default function MPM({ mpm }) {
                                                             src={`/storage/${mpm.structure.chairman.photo}`}
                                                             alt="Foto Ketua"
                                                             style={styles.photo}
-                                                            onError={(e) => (e.target.style.display = 'none')} // Sembunyikan jika gambar gagal dimuat
+                                                            onError={(e) => (e.target.style.display = 'none')}
                                                         />
                                                     )}
                                                 </div>
@@ -318,7 +321,7 @@ export default function MPM({ mpm }) {
                                                             src={`/storage/${mpm.structure.secretary.photo}`}
                                                             alt="Foto Sekretaris"
                                                             style={styles.photo}
-                                                            onError={(e) => (e.target.style.display = 'none')} // Sembunyikan jika gambar gagal dimuat
+                                                            onError={(e) => (e.target.style.display = 'none')}
                                                         />
                                                     )}
                                                 </div>
@@ -360,9 +363,7 @@ export default function MPM({ mpm }) {
                                                     <h3 style={styles.subTitle}>
                                                         {commission.name || 'Komisi Tanpa Nama'}
                                                     </h3>
-                                                    {/* Ketua dan Anggota dalam satu baris */}
                                                     <div style={styles.leaderContainer}>
-                                                        {/* Ketua */}
                                                         <div style={styles.photoContainer}>
                                                             <p style={styles.textContent}>
                                                                 <strong>Ketua:</strong>
@@ -377,11 +378,10 @@ export default function MPM({ mpm }) {
                                                                     style={styles.photo}
                                                                     onError={(e) =>
                                                                         (e.target.style.display = 'none')
-                                                                    } // Sembunyikan jika gambar gagal dimuat
+                                                                    }
                                                                 />
                                                             )}
                                                         </div>
-                                                        {/* Anggota */}
                                                         {commission.members && commission.members.length > 0 && (
                                                             <>
                                                                 {commission.members.map((member, memberIndex) => (
@@ -402,7 +402,7 @@ export default function MPM({ mpm }) {
                                                                                 style={styles.photo}
                                                                                 onError={(e) =>
                                                                                     (e.target.style.display = 'none')
-                                                                                } // Sembunyikan jika gambar gagal dimuat
+                                                                                }
                                                                             />
                                                                         )}
                                                                     </div>
@@ -458,25 +458,41 @@ export default function MPM({ mpm }) {
                                                 {mpm.recruitment_status === 'OPEN' ? 'Dibuka' : 'Ditutup'}
                                             </p>
                                         )}
+                                        {mpm.aspiration_status && (
+                                            <p style={styles.statusText}>
+                                                Status Pendataan Aspirasi:{' '}
+                                                {mpm.aspiration_status === 'OPEN' ? 'Dibuka' : 'Ditutup'}
+                                            </p>
+                                        )}
                                         <div style={styles.buttonContainer}>
-                                            <a href="#" style={{ ...styles.button, ...styles.recruitmentButton }}>
-                                                <svg
-                                                    style={styles.buttonIcon}
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                                    />
-                                                </svg>
-                                                Open Recruitment
-                                            </a>
-                                            <a href="#" style={{ ...styles.button, ...styles.aspirationButton }}>
+                                            {mpm.recruitment_status === 'OPEN' && (
+                                                <a href="#" style={{ ...styles.button, ...styles.recruitmentButton }}>
+                                                    <svg
+                                                        style={styles.buttonIcon}
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                                        />
+                                                    </svg>
+                                                    Open Recruitment
+                                                </a>
+                                            )}
+                                            <Link
+                                                href={mpm.aspiration_status === 'OPEN' ? route('aspiration.index') : '#'}
+                                                style={{ ...styles.button, ...styles.aspirationButton }}
+                                                onClick={(e) => {
+                                                    if (mpm.aspiration_status !== 'OPEN') {
+                                                        e.preventDefault();
+                                                    }
+                                                }}
+                                            >
                                                 <svg
                                                     style={styles.buttonIcon}
                                                     xmlns="http://www.w3.org/2000/svg"
@@ -492,7 +508,7 @@ export default function MPM({ mpm }) {
                                                     />
                                                 </svg>
                                                 Pendataan Aspirasi
-                                            </a>
+                                            </Link>
                                         </div>
                                     </div>
                                 </>

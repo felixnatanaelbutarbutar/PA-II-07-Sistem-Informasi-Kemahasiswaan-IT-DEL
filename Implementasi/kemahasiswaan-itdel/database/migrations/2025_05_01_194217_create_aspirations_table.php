@@ -10,13 +10,13 @@ return new class extends Migration
     {
         Schema::create('aspirations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('requestBy')->nullable();
+            $table->unsignedBigInteger('mpm_id'); // Kolom baru untuk foreign key ke mpms
             $table->text('story');
             $table->unsignedBigInteger('category_id')->nullable();
             $table->string('image')->nullable();
             $table->timestamps();
 
-            $table->foreign('requestBy')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('mpm_id')->references('id')->on('mpms')->onDelete('cascade');
             $table->foreign('category_id')->references('id')->on('aspiration_categories')->onDelete('set null');
         });
     }

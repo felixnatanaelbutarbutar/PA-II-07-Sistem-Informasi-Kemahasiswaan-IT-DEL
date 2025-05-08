@@ -16,8 +16,8 @@ class AnnouncementController extends Controller
 {
     public function guestIndex()
     {
-        $announcements = Announcement::with('category')->get();
-        Log::info('Data pengumuman yang diambil:', ['jumlah' => $announcements->count()]);
+        $announcements = Announcement::with(['category', 'createdBy', 'updatedBy'])->get();
+        Log::info('Data pengumuman yang diambil untuk guest:', ['jumlah' => $announcements->count()]);
         return Inertia::render('Announcement', [
             'announcement' => $announcements,
         ]);
@@ -30,12 +30,12 @@ class AnnouncementController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        $announcements = Announcement::with('category')->get();
+        $announcements = Announcement::with(['category', 'createdBy', 'updatedBy'])->get();
+
+        Log::info('Announcements fetched:', ['announcements' => $announcements->toArray()]);
 
         return Inertia::render('Admin/Announcement/index', [
-            'auth' => [
-                'user' => $user
-            ],
+            'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
@@ -57,6 +57,23 @@ class AnnouncementController extends Controller
         return 'anc' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
     }
 
+    public function create()
+    {
+        $user = Auth::user();
+        $role = strtolower($user->role);
+        $menuItems = RoleHelper::getNavigationMenu($role);
+        $permissions = RoleHelper::getRolePermissions($role);
+        $categories = AnnouncementCategory::select('category_id', 'category_name')->get();
+
+        return Inertia::render('Admin/Announcement/add', [
+            'auth' => ['user' => $user],
+            'userRole' => $role,
+            'permissions' => $permissions,
+            'menu' => $menuItems,
+            'categories' => $categories,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -67,41 +84,48 @@ class AnnouncementController extends Controller
         ]);
 
         $user = Auth::user();
+
+        try {
+            $announcementId = $this->generateAnnouncementId();
+            $filePath = $request->file('file') ? $request->file('file')->store('announcement_file', 'public') : null;
+
+            Announcement::create([
+                'announcement_id' => $announcementId,
+                'title' => $request->title,
+                'content' => $request->content,
+                'category_id' => $request->category_id,
+                'file' => $filePath,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error creating announcement: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to create announcement: ' . $e->getMessage()])->withInput();
+        }
+
+        return redirect()->route('admin.announcement.index')->with('success', 'Pengumuman berhasil ditambahkan.');
+    }
+
+    public function edit(Announcement $announcement)
+    {
+        $user = Auth::user();
         $role = strtolower($user->role);
-
-        $announcementId = $this->generateAnnouncementId();
-        $filePath = $request->file('file') ? $request->file('file')->store('announcement_file', 'public') : null;
-
-        Announcement::create([
-            'announcement_id' => $announcementId,
-            'title' => $request->title,
-            'content' => $request->content,
-            'category_id' => $request->category_id,
-            'file' => $filePath,
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-        ]);
-
-        $announcements = Announcement::with('category')->get();
-        $categories = AnnouncementCategory::all();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
+        $categories = AnnouncementCategory::select('category_id', 'category_name')->get();
 
-        return redirect()->route('admin.announcement.index')->with([
-            'success' => 'Pengumuman berhasil ditambahkan.',
+        return Inertia::render('Admin/Announcement/edit', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
-            'announcement' => $announcements,
-            'categories' => $categories,
             'menu' => $menuItems,
+            'announcement' => $announcement->load(['category', 'createdBy', 'updatedBy']),
+            'categories' => $categories,
         ]);
     }
 
     public function update(Request $request, Announcement $announcement)
     {
-        Log::info('Update request received', ['announcement_id' => $announcement->announcement_id, 'data' => $request->all()]);
-
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -109,79 +133,55 @@ class AnnouncementController extends Controller
             'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:2048',
         ]);
 
-        $filePath = $announcement->file;
+        try {
+            $filePath = $announcement->file;
 
-        if ($request->hasFile('file')) {
-            if ($announcement->file) {
-                Storage::disk('public')->delete($announcement->file);
+            if ($request->hasFile('file')) {
+                if ($announcement->file) {
+                    Storage::disk('public')->delete($announcement->file);
+                }
+                $file = $request->file('file');
+                $fileName = Str::slug($request->title) . '-' . time() . '.' . $file->getClientOriginalExtension();
+                $filePath = $file->storeAs('announcement_file', $fileName, 'public');
             }
-            $file = $request->file('file');
-            $fileName = Str::slug($request->title) . '-' . time() . '.' . $file->getClientOriginalExtension();
-            $filePath = $file->storeAs('announcement_file', $fileName, 'public');
+
+            $announcement->update([
+                'title' => $request->title,
+                'content' => $request->content,
+                'category_id' => $request->category_id,
+                'file' => $filePath,
+                'updated_by' => Auth::id(),
+            ]);
+
+            Log::info('Announcement updated:', ['announcement_id' => $announcement->announcement_id]);
+        } catch (\Exception $e) {
+            Log::error('Error updating announcement: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to update announcement: ' . $e->getMessage()])->withInput();
         }
-
-        $announcement->update([
-            'title' => $request->title,
-            'content' => $request->content,
-            'category_id' => $request->category_id,
-            'file' => $filePath,
-            'updated_by' => Auth::id(),
-        ]);
-
-        Log::info('Announcement updated', ['announcement_id' => $announcement->announcement_id]);
 
         return redirect()->route('admin.announcement.index')->with('success', 'Pengumuman berhasil diperbarui.');
     }
 
     public function destroy(Announcement $announcement)
     {
-        if ($announcement->file) {
-            Storage::disk('public')->delete($announcement->file);
+        try {
+            if ($announcement->file) {
+                Storage::disk('public')->delete($announcement->file);
+            }
+            $announcement->delete();
+
+            Log::info('Announcement deleted:', ['announcement_id' => $announcement->announcement_id]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting announcement: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to delete announcement: ' . $e->getMessage()]);
         }
-        $announcement->delete();
 
-        return redirect()->back()->with('success', 'Pengumuman berhasil dihapus.');
-    }
-
-    public function create()
-    {
-        $user = Auth::user();
-        $role = strtolower($user->role);
-        $categories = AnnouncementCategory::select('category_id', 'category_name')->get();
-        $menuItems = RoleHelper::getNavigationMenu($role);
-        $permissions = RoleHelper::getRolePermissions($role);
-
-        return Inertia::render('Admin/Announcement/add', [
-            'auth' => ['user' => $user],
-            'userRole' => $role,
-            'permissions' => $permissions,
-            'categories' => $categories,
-            'menu' => $menuItems,
-        ]);
-    }
-
-    public function edit(Announcement $announcement)
-    {
-        $user = Auth::user();
-        $role = strtolower($user->role);
-
-        $categories = AnnouncementCategory::all();
-        $menuItems = RoleHelper::getNavigationMenu($role);
-        $permissions = RoleHelper::getRolePermissions($role);
-
-        return Inertia::render('Admin/Announcement/edit', [
-            'auth' => ['user' => $user],
-            'userRole' => $role,
-            'permissions' => $permissions,
-            'announcement' => $announcement->load('category'),
-            'categories' => $categories,
-            'menu' => $menuItems,
-        ]);
+        return redirect()->route('admin.announcement.index')->with('success', 'Pengumuman berhasil dihapus.');
     }
 
     public function show($announcement_id)
     {
-        $announcement = Announcement::with('category')
+        $announcement = Announcement::with(['category', 'createdBy', 'updatedBy'])
             ->where('announcement_id', $announcement_id)
             ->firstOrFail();
 
