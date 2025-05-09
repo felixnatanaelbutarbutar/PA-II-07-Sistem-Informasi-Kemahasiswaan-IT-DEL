@@ -1,27 +1,42 @@
 import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export default function Index({ auth, permissions, userRole, menu, achievements = [] }) {
     const { flash } = usePage().props ?? {};
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest, 'asc' for oldest
-    const [showNotification, setShowNotification] = useState(false);
-    const [notificationMessage, setNotificationMessage] = useState('');
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [isGridView, setIsGridView] = useState(true);
-    const [isDeleting, setIsDeleting] = useState(null); // Track which achievement is being deleted
+    const [isDeleting, setIsDeleting] = useState(null);
 
-    // Handle flash messages for notifications
+    // Handle flash messages and notification state
     useEffect(() => {
-        if (flash && flash.success) {
-            setNotificationMessage(flash.success);
-            setShowNotification(true);
+        if (flash) {
+            if (flash.success) {
+                setNotification({
+                    show: true,
+                    type: 'success',
+                    message: flash.success,
+                });
+            } else if (flash.error) {
+                setNotification({
+                    show: true,
+                    type: 'error',
+                    message: flash.error,
+                });
+            }
+        }
+
+        if (notification.show) {
             const timer = setTimeout(() => {
-                setShowNotification(false);
+                setNotification({ ...notification, show: false });
             }, 5000);
             return () => clearTimeout(timer);
         }
-    }, [flash]);
+    }, [flash, notification]);
 
     // Filter and sort achievements
     const filteredAchievements = achievements
@@ -36,14 +51,40 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
             return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
         });
 
-    // Handle delete action with loading state
-    const handleDelete = (id) => {
-        if (confirm('Apakah Anda yakin ingin menghapus prestasi ini?')) {
+    // Handle delete action with SweetAlert2 confirmation
+    const handleDelete = async (id) => {
+        const result = await Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: 'Prestasi ini akan dihapus secara permanen!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Hapus',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#ef4444', // Warna merah untuk tombol hapus
+            cancelButtonColor: '#6b7280', // Warna abu-abu untuk tombol batal
+            reverseButtons: true,
+        });
+
+        if (result.isConfirmed) {
             setIsDeleting(id);
-            router.delete(route('admin.achievements.destroy', id), {
-                onFinish: () => setIsDeleting(null),
-                preserveScroll: true,
-            });
+            try {
+                await axios.delete(route('admin.achievements.destroy', id));
+                setNotification({
+                    show: true,
+                    type: 'success',
+                    message: 'Prestasi berhasil dihapus!',
+                });
+                router.reload({ preserveScroll: true });
+            } catch (error) {
+                console.error('Error deleting achievement:', error);
+                setNotification({
+                    show: true,
+                    type: 'error',
+                    message: 'Gagal menghapus prestasi: ' + (error.response?.data?.message || 'Terjadi kesalahan.'),
+                });
+            } finally {
+                setIsDeleting(null);
+            }
         }
     };
 
@@ -76,31 +117,58 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
             <Head title="Kelola Prestasi" />
 
             {/* Notification */}
-            {showNotification && (
-                <div className="fixed top-4 right-4 z-50 max-w-md bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-emerald-500 px-6 py-4 rounded-lg shadow-xl transition-all duration-300 transform animate-slide-in-right">
+            {notification.show && (
+                <div
+                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
+                        notification.type === 'success'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
+                            : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
+                    }`}
+                >
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
                             <svg
-                                className="h-5 w-5 text-emerald-500"
+                                className={`h-5 w-5 ${
+                                    notification.type === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                }`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
                             >
-                                <path
-                                    fillRule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clipRule="evenodd"
-                                />
+                                {notification.type === 'success' ? (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clipRule="evenodd"
+                                    />
+                                ) : (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
+                                        clipRule="evenodd"
+                                    />
+                                )}
                             </svg>
                         </div>
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-emerald-800">{notificationMessage}</p>
+                            <p
+                                className={`text-sm font-medium ${
+                                    notification.type === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                                }`}
+                            >
+                                {notification.message}
+                            </p>
                         </div>
                         <div className="ml-auto pl-3">
                             <button
-                                onClick={() => setShowNotification(false)}
-                                className="inline-flex rounded-md p-1.5 text-emerald-500 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                onClick={() => setNotification({ ...notification, show: false })}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notification.type === 'success'
+                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                                } focus:outline-none focus:ring-2`}
                             >
+                                <span className="sr-only">Dismiss</span>
                                 <svg
                                     className="h-5 w-5"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -186,10 +254,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
                                     onClick={() => setIsGridView(true)}
-                                    className={`p-2 rounded-md ${isGridView
+                                    className={`p-2 rounded-md ${
+                                        isGridView
                                             ? 'bg-white shadow-sm text-blue-600'
                                             : 'text-gray-500 hover:text-gray-700'
-                                        } transition-all duration-200`}
+                                    } transition-all duration-200`}
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -208,10 +277,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                 </button>
                                 <button
                                     onClick={() => setIsGridView(false)}
-                                    className={`p-2 rounded-md ${!isGridView
+                                    className={`p-2 rounded-md ${
+                                        !isGridView
                                             ? 'bg-white shadow-sm text-blue-600'
                                             : 'text-gray-500 hover:text-gray-700'
-                                        } transition-all duration-200`}
+                                    } transition-all duration-200`}
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -377,8 +447,9 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                         {filteredAchievements.map((achievement, index) => (
                             <div
                                 key={achievement.achievement_id}
-                                className={`flex flex-col sm:flex-row items-start p-5 hover:bg-gray-50 transition-colors duration-200 ${index !== filteredAchievements.length - 1 ? 'border-b border-gray-100' : ''
-                                    }`}
+                                className={`flex flex-col sm:flex-row items-start p-5 hover:bg-gray-50 transition-colors duration-200 ${
+                                    index !== filteredAchievements.length - 1 ? 'border-b border-gray-100' : ''
+                                }`}
                             >
                                 <div className="flex-grow">
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
@@ -400,7 +471,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                         Jenis Prestasi:
                                                     </span>
                                                     <span className="text-gray-600">
-                                                        {achievement.achievementType?.type_name || 'N/A'}
+                                                        {achievement.achievement_type?.type_name || 'N/A'}
                                                     </span>
                                                 </p>
                                                 <p className="flex items-center">

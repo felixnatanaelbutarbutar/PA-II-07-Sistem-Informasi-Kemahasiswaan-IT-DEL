@@ -4,23 +4,17 @@ import { useState, useEffect } from 'react';
 
 export default function Index({ auth, userRole, permissions, mpm, navigation }) {
     const { flash } = usePage().props ?? {};
-    const [showNotification, setShowNotification] = useState(false);
-    const [notificationMessage, setNotificationMessage] = useState('');
-    const [notificationType, setNotificationType] = useState('success');
+    const [showNotification, setShowNotification] = useState(!!flash?.success || !!flash?.error);
+    const [notificationMessage, setNotificationMessage] = useState(flash?.success || flash?.error || '');
+    const [notificationType, setNotificationType] = useState(flash?.success ? 'success' : 'error');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [mpmIdToDelete, setMpmIdToDelete] = useState(null);
 
     useEffect(() => {
         if (flash) {
-            if (flash.success) {
-                setNotificationMessage(flash.success);
-                setNotificationType('success');
-                setShowNotification(true);
-            } else if (flash.error) {
-                setNotificationMessage(flash.error);
-                setNotificationType('error');
-                setShowNotification(true);
-            }
+            setShowNotification(!!flash.success || !!flash.error);
+            setNotificationMessage(flash.success || flash.error || '');
+            setNotificationType(flash.success ? 'success' : 'error');
 
             if (flash.success || flash.error) {
                 const timer = setTimeout(() => {
@@ -38,10 +32,22 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
 
     const confirmDelete = () => {
         if (mpmIdToDelete) {
-            router.delete(route('admin.mpm.destroy', mpmIdToDelete), {
-                onFinish: () => {
+            router.post(route('admin.mpm.delete', mpmIdToDelete), {}, {
+                onSuccess: () => {
                     setShowDeleteModal(false);
                     setMpmIdToDelete(null);
+                    setNotificationMessage('Data MPM berhasil dihapus.');
+                    setNotificationType('success');
+                    setShowNotification(true);
+                    setTimeout(() => setShowNotification(false), 5000);
+                },
+                onError: (errors) => {
+                    setShowDeleteModal(false);
+                    setMpmIdToDelete(null);
+                    setNotificationMessage('Gagal menghapus data MPM.');
+                    setNotificationType('error');
+                    setShowNotification(true);
+                    setTimeout(() => setShowNotification(false), 5000);
                 },
             });
         }
@@ -256,7 +262,7 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                                                     src={`/storage/${mpm.structure.chairman.photo}`}
                                                     alt="Foto Ketua"
                                                     className="w-16 h-16 object-cover rounded-full mr-4"
-                                                    onError={(e) => (e.target.style.display = 'none')} // Sembunyikan jika gambar gagal dimuat
+                                                    onError={(e) => (e.target.style.display = 'none')}
                                                 />
                                             )}
                                             <p className="text-gray-600">
@@ -272,7 +278,7 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                                                     src={`/storage/${mpm.structure.secretary.photo}`}
                                                     alt="Foto Sekretaris"
                                                     className="w-16 h-16 object-cover rounded-full mr-4"
-                                                    onError={(e) => (e.target.style.display = 'none')} // Sembunyikan jika gambar gagal dimuat
+                                                    onError={(e) => (e.target.style.display = 'none')}
                                                 />
                                             )}
                                             <p className="text-gray-600">
@@ -300,7 +306,7 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                                                                 className="w-16 h-16 object-cover rounded-full mr-4"
                                                                 onError={(e) =>
                                                                     (e.target.style.display = 'none')
-                                                                } // Sembunyikan jika gambar gagal dimuat
+                                                                }
                                                             />
                                                         )}
                                                         <p className="text-gray-600">
@@ -326,7 +332,7 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                                                                                 className="w-12 h-12 object-cover rounded-full mr-2"
                                                                                 onError={(e) =>
                                                                                     (e.target.style.display = 'none')
-                                                                                } // Sembunyikan jika gambar gagal dimuat
+                                                                                }
                                                                             />
                                                                         )}
                                                                         {member.name || 'Anggota Tanpa Nama'}
@@ -383,18 +389,22 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                             <p className="text-gray-600">{mpm.recruitment_status || 'Tidak ada'}</p>
 
                             <div className="mt-6 flex space-x-4">
-                                <Link
-                                    href={route('admin.mpm.edit', mpm.id)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                                >
-                                    Edit
-                                </Link>
-                                <button
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                                    onClick={() => handleDeleteClick(mpm.id)}
-                                >
-                                    Hapus
-                                </button>
+                                {mpm && mpm.id && (
+                                    <Link
+                                        href={route('admin.mpm.edit', mpm.id)}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                    >
+                                        Edit
+                                    </Link>
+                                )}
+                                {mpm && mpm.id && (
+                                    <button
+                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                                        onClick={() => handleDeleteClick(mpm.id)}
+                                    >
+                                        Hapus
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ) : (

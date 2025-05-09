@@ -459,10 +459,10 @@ export default function Download({ downloads, categories }) {
             {/* Main Container */}
             <div className="main-container">
                 {/* Header */}
-                <div className="header-section">
-                    <h1>Daftar Unduhan</h1>
-                    <p>Akses berbagai dokumen, formulir, dan panduan yang tersedia untuk mendukung kegiatan akademik Anda.</p>
-                </div>
+                    {/* <div className="header-section">
+                        <h1>Daftar Unduhan</h1>
+                        <p>Akses berbagai dokumen, formulir, dan panduan yang tersedia untuk mendukung kegiatan akademik Anda.</p>
+                    </div> */}
 
                 {/* Controls Section */}
                 <div className="controls-section">

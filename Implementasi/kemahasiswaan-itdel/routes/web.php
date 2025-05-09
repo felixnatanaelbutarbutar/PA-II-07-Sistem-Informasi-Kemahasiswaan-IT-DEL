@@ -202,7 +202,6 @@ Route::middleware(['auth'])->group(function () {
 
         // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
-
             Route::resource('bem', BemController::class)->except(['destroy', 'update']);
             Route::post('bem/{bem}/update', [BemController::class, 'update'])->name('bem.update');
             Route::post('bem/{bem}/delete', [BemController::class, 'destroy'])->name('bem.delete');
@@ -211,9 +210,9 @@ Route::middleware(['auth'])->group(function () {
         // Achievement, News Category, Counseling, and Aspiration Routes (Kemahasiswaan Only)
         Route::middleware(['role:kemahasiswaan'])->group(function () {
             Route::resource('achievements', AchievementController::class)->except(['show', 'destroy', 'update']);
-            Route::post('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
-            Route::post('achievements/{achievement}/delete', [AchievementController::class, 'destroy'])->name('achievements.destroy');
-
+            Route::put('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
+            Route::delete('achievements/{achievement}', [AchievementController::class, 'destroy'])->name('achievements.destroy');
+            
             // Rute untuk Achievement Type (Kemahasiswaan Only)
             Route::resource('achievement-type', AchievementTypeController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievement-type/{achievement_type}/update', [AchievementTypeController::class, 'update'])->name('achievement-type.update');
@@ -271,6 +270,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('mpm', MpmController::class)->except(['destroy', 'update']);
             Route::post('mpm/{mpm}/update', [MpmController::class, 'update'])->name('mpm.update');
             Route::post('mpm/{mpm}/delete', [MpmController::class, 'destroy'])->name('mpm.delete');
+            // Route::delete('mpm/{mpm}', [MpmController::class, 'destroy'])->name('mpm.delete');
 
             // Routes untuk sisi admin (kemahasiswaan)
             Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');

@@ -723,9 +723,9 @@ const NavbarGuestLayoutPage = () => {
             </nav>
 
                 {/* Header Image Section */}
-            <div className="relative w-full h-[286px] overflow-hidden">
+            <div className="relative w-full h-[350px] overflow-hidden">
                             <img
-                                src="/assets/images/del.jpg"
+                                src="/assets/images/audit.svg"
                                 alt="Header Background"
                                 className="w-full h-full object-cover object-center"
                             />
