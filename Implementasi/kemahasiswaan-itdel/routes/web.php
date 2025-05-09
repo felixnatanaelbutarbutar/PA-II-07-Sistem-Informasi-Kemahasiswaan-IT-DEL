@@ -130,7 +130,7 @@ Route::middleware(['auth'])->group(function () {
 
             Route::get('/activities/count', [DashboardController::class, 'getActiveActivitiesCount'])->name('activities.count');
             Route::get('/announcements/count', [DashboardController::class, 'getAnnouncementsCount'])->name('announcements.count');
-            
+
             Route::resource('activities', ActivityController::class)->except(['show']);
             Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.destroy');
             // Tambahkan rute untuk ekspor PDF
@@ -165,7 +165,6 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('announcement-category', AnnouncementCategoryController::class)->except(['show', 'destroy', 'update']);
             Route::post('announcement-category/{announcement_category}/update', [AnnouncementCategoryController::class, 'update'])->name('announcement-category.update');
             Route::post('announcement-category/{announcement_category}/delete', [AnnouncementCategoryController::class, 'destroy'])->name('announcement-category.destroy');
-
         });
 
         Route::middleware(['feature:layanan'])->group(function () {
@@ -203,8 +202,8 @@ Route::middleware(['auth'])->group(function () {
         // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
             Route::resource('bem', BemController::class)->except(['destroy', 'update']);
-            Route::post('bem/{bem}/update', [BemController::class, 'update'])->name('bem.update');
-            Route::post('bem/{bem}/delete', [BemController::class, 'destroy'])->name('bem.delete');
+            Route::put('bem/{bem}/update', [BemController::class, 'update'])->name('bem.update'); // Mengubah POST menjadi PUT untuk konsistensi
+            Route::delete('bem/{bem}', [BemController::class, 'destroy'])->name('bem.destroy'); // Mengubah POST menjadi DELETE dan menambahkan prefiks admin.
         });
 
         // Achievement, News Category, Counseling, and Aspiration Routes (Kemahasiswaan Only)
@@ -212,7 +211,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('achievements', AchievementController::class)->except(['show', 'destroy', 'update']);
             Route::put('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
             Route::delete('achievements/{achievement}', [AchievementController::class, 'destroy'])->name('achievements.destroy');
-            
+
             // Rute untuk Achievement Type (Kemahasiswaan Only)
             Route::resource('achievement-type', AchievementTypeController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievement-type/{achievement_type}/update', [AchievementTypeController::class, 'update'])->name('achievement-type.update');
@@ -262,7 +261,6 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/form/{form}/show', [FormController::class, 'show'])->name('form.show');
             Route::get('form/{form}/settings', [FormController::class, 'settings'])->name('form.settings');
             Route::post('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
-
         });
 
         // MPM Routes (AdminMPM) - Ditambahkan

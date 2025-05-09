@@ -986,7 +986,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
             </style>
 
             <div className="main-container">
-                <div className="page-header">
+                {/* <div className="page-header">
                     <img
                         src="https://img.icons8.com/fluency/96/000000/collaboration.png"
                         alt="Header Illustration"
@@ -996,7 +996,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                     <p>
                         Dapatkan dukungan yang Anda butuhkan untuk kesejahteraan mental dan akademik. Pesan sesi konseling dengan mudah dan mulailah langkah menuju kehidupan yang lebih seimbang.
                     </p>
-                </div>
+                </div> */}
 
                 <div className="tab-navigation">
                     <button
