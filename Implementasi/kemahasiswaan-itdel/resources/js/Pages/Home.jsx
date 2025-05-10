@@ -1,5 +1,5 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import Navbar from '@/Layouts/Navbar';
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import FooterLayout from '@/Layouts/FooterLayout';
@@ -165,15 +165,15 @@ export default function Home() {
         },
         latestNews: {
             padding: '48px 0',
-            background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
+            // background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
         },
         latestAnnouncements: {
             padding: '48px 0',
-            background: 'linear-gradient(180deg, #e2e8f0 0%, #f8fafc 100%)',
+            // background: 'linear-gradient(180deg, #e2e8f0 0%, #f8fafc 100%)',
         },
         achievementsSection: {
             padding: '48px 0',
-            background: 'linear-gradient(180deg, #e2e8f0 0%, #f8fafc 100%)',
+            // background: 'linear-gradient(180deg, #e2e8f0 0%, #f8fafc 100%)',
         },
         sectionHeader: {
             maxWidth: '1280px',
@@ -446,7 +446,7 @@ export default function Home() {
     return (
         <GuestLayout>
             <Head title="Beranda" />
-            <NavbarGuestLayout />
+            <Navbar showBreadcrumbAndHeader={false}/>
 
             {/* Hero Carousel */}
             <div className="swiper-container" ref={swiperElRef}>

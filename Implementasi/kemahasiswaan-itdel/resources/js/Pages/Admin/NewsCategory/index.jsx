@@ -155,7 +155,10 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
-                        <p className="text-gray-600 text-center mb-6">Apakah Anda yakin ingin menghapus kategori ini? Tindakan ini tidak dapat dibatalkan.</p>
+                        <p className="text-gray-600 text-center mb-6">
+                            Apakah Anda yakin ingin menghapus kategori berita ini? Penghapusan ini bersifat permanen dan tidak dapat dibatalkan.{' '}
+                            <strong>Seluruh berita yang terkait dengan kategori ini juga akan dihapus</strong>
+                        </p>
                         <div className="flex justify-center space-x-4">
                             <button
                                 onClick={cancelDelete}
@@ -277,6 +280,25 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                     </div>
                 )}
             </div>
+
+            {/* Animation Styles */}
+            <style>
+                {`
+                    @keyframes slide-in-right {
+                        0% {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        100% {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    .animate-slide-in-right {
+                        animation: slide-in-right 0.5s ease-out forwards;
+                    }
+                `}
+            </style>
         </AdminLayout>
     );
 }

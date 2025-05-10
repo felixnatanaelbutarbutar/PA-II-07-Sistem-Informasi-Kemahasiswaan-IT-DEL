@@ -32,13 +32,13 @@ export default function MPM({ mpm }) {
                 minHeight: '100vh',
             },
             container: {
-                maxWidth: isMobile ? '100%' : '1500px', // Diperlebar dari 900px menjadi 1500px
+                maxWidth: isMobile ? '100%' : '1500px',
                 margin: '0 auto',
                 padding: isMobile ? '10px' : '20px',
             },
             section: {
                 background: '#fff',
-                padding: isMobile ? '15px' : '30px', // Padding lebih besar untuk kesan lebih luas
+                padding: isMobile ? '15px' : '30px',
                 marginBottom: '20px',
                 textAlign: 'left',
                 border: '1px solid #d1e7ff',
@@ -56,10 +56,10 @@ export default function MPM({ mpm }) {
             },
             logoContainer: {
                 flexShrink: 0,
-                marginRight: isMobile ? '10px' : '20px', // Margin lebih besar untuk jarak
+                marginRight: isMobile ? '10px' : '20px',
                 marginBottom: '0',
                 position: 'relative',
-                width: isMobile ? '60px' : '100px', // Logo lebih besar di desktop
+                width: isMobile ? '60px' : '100px',
                 height: isMobile ? '60px' : '100px',
                 overflow: 'visible',
                 border: 'none',
@@ -76,10 +76,10 @@ export default function MPM({ mpm }) {
             },
             contentContainer: {
                 flex: 1,
-                maxWidth: isMobile ? '100%' : '900px', // Diperlebar dari 600px menjadi 900px
+                maxWidth: isMobile ? '100%' : '900px',
             },
             sectionTitle: {
-                fontSize: isMobile ? '18px' : '24px', // Ukuran font lebih besar
+                fontSize: isMobile ? '18px' : '24px',
                 fontWeight: '700',
                 color: '#000',
                 marginBottom: '15px',
@@ -94,7 +94,7 @@ export default function MPM({ mpm }) {
                 textAlign: 'center',
             },
             subTitle: {
-                fontSize: isMobile ? '16px' : '20px', // Ukuran font lebih besar
+                fontSize: isMobile ? '16px' : '20px',
                 fontWeight: '700',
                 color: '#000',
                 marginBottom: '5px',
@@ -118,21 +118,21 @@ export default function MPM({ mpm }) {
                 color: '#000',
                 lineHeight: '1.5',
                 marginBottom: '5px',
-                width: isMobile ? '100%' : 'calc(50% - 10px)', // Membagi daftar menjadi 2 kolom di desktop
+                width: isMobile ? '100%' : 'calc(50% - 10px)',
             },
             buttonContainer: {
                 display: 'flex',
                 justifyContent: 'center',
-                gap: '30px', // Jarak antar tombol lebih lebar
+                gap: '30px',
                 marginTop: '20px',
                 flexWrap: 'wrap',
             },
             button: {
                 display: 'flex',
                 alignItems: 'center',
-                padding: isMobile ? '10px 20px' : '12px 30px', // Tombol lebih besar di desktop
+                padding: isMobile ? '10px 20px' : '12px 30px',
                 borderRadius: '5px',
-                fontSize: isMobile ? '16px' : '18px', // Ukuran font lebih besar
+                fontSize: isMobile ? '16px' : '18px',
                 fontWeight: '500',
                 color: '#fff',
                 textDecoration: 'none',
@@ -148,7 +148,7 @@ export default function MPM({ mpm }) {
                 pointerEvents: mpm?.aspiration_status === 'OPEN' ? 'auto' : 'none',
             },
             buttonIcon: {
-                width: isMobile ? '20px' : '24px', // Ikon lebih besar di desktop
+                width: isMobile ? '20px' : '24px',
                 height: isMobile ? '20px' : '24px',
                 marginRight: '8px',
             },
@@ -202,7 +202,7 @@ export default function MPM({ mpm }) {
                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
             },
             photo: {
-                width: isMobile ? '80px' : '120px', // Foto lebih besar di desktop
+                width: isMobile ? '80px' : '120px',
                 height: isMobile ? '80px' : '120px',
                 borderRadius: '50%',
                 objectFit: 'cover',
@@ -220,7 +220,7 @@ export default function MPM({ mpm }) {
                 flexWrap: 'wrap',
                 gap: '20px',
                 marginBottom: '15px',
-                justifyContent: 'center', // Memusatkan foto ketua dan sekretaris
+                justifyContent: 'center',
             },
         };
     };
@@ -355,7 +355,7 @@ export default function MPM({ mpm }) {
                                     </div>
 
                                     {/* Struktur Komisi Section */}
-                                    <div style={styles.section}>
+                                    <div style={styles.section} id="struktur-komisi">
                                         <h2 style={styles.sectionTitle}>Struktur Komisi MPM</h2>
                                         {mpm.structure?.commissions && mpm.structure.commissions.length > 0 ? (
                                             mpm.structure.commissions.map((commission, index) => (
@@ -376,19 +376,14 @@ export default function MPM({ mpm }) {
                                                                     src={`/storage/${commission.chairman.photo}`}
                                                                     alt={`Foto Ketua ${commission.name || 'Komisi'}`}
                                                                     style={styles.photo}
-                                                                    onError={(e) =>
-                                                                        (e.target.style.display = 'none')
-                                                                    }
+                                                                    onError={(e) => (e.target.style.display = 'none')}
                                                                 />
                                                             )}
                                                         </div>
                                                         {commission.members && commission.members.length > 0 && (
                                                             <>
                                                                 {commission.members.map((member, memberIndex) => (
-                                                                    <div
-                                                                        key={memberIndex}
-                                                                        style={styles.photoContainer}
-                                                                    >
+                                                                    <div key={memberIndex} style={styles.photoContainer}>
                                                                         <p style={styles.textContent}>
                                                                             <strong>Anggota:</strong>
                                                                         </p>
@@ -400,9 +395,7 @@ export default function MPM({ mpm }) {
                                                                                 src={`/storage/${member.photo}`}
                                                                                 alt={`Foto ${member.name || 'Anggota'}`}
                                                                                 style={styles.photo}
-                                                                                onError={(e) =>
-                                                                                    (e.target.style.display = 'none')
-                                                                                }
+                                                                                onError={(e) => (e.target.style.display = 'none')}
                                                                             />
                                                                         )}
                                                                     </div>
@@ -410,28 +403,20 @@ export default function MPM({ mpm }) {
                                                             </>
                                                         )}
                                                     </div>
-                                                    {commission.work_programs &&
-                                                        commission.work_programs.length > 0 && (
-                                                            <>
-                                                                <h4 style={styles.memberTitle}>Program Kerja:</h4>
-                                                                <div style={styles.listContainer}>
-                                                                    <ul style={{ paddingLeft: '20px' }}>
-                                                                        {commission.work_programs.map(
-                                                                            (program, programIndex) => (
-                                                                                <li
-                                                                                    key={programIndex}
-                                                                                    style={styles.listItem}
-                                                                                >
-                                                                                    -{' '}
-                                                                                    {program ||
-                                                                                        'Program Tanpa Deskripsi'}
-                                                                                </li>
-                                                                            )
-                                                                        )}
-                                                                    </ul>
-                                                                </div>
-                                                            </>
-                                                        )}
+                                                    {commission.work_programs && commission.work_programs.length > 0 && (
+                                                        <>
+                                                            <h4 style={styles.memberTitle}>Program Kerja:</h4>
+                                                            <div style={styles.listContainer}>
+                                                                <ul style={{ paddingLeft: '20px' }}>
+                                                                    {commission.work_programs.map((program, programIndex) => (
+                                                                        <li key={programIndex} style={styles.listItem}>
+                                                                            - {program || 'Program Tanpa Deskripsi'}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             ))
                                         ) : (
@@ -442,7 +427,7 @@ export default function MPM({ mpm }) {
                                     </div>
 
                                     {/* Partisipasi Anda Section */}
-                                    <div style={styles.participationSection}>
+                                    <div style={styles.participationSection} id="partisipasi-anda">
                                         <h2
                                             style={{
                                                 ...styles.sectionTitle,
@@ -454,8 +439,7 @@ export default function MPM({ mpm }) {
                                         </h2>
                                         {mpm.recruitment_status && (
                                             <p style={styles.statusText}>
-                                                Status Rekrutmen:{' '}
-                                                {mpm.recruitment_status === 'OPEN' ? 'Dibuka' : 'Ditutup'}
+                                                Status Rekrutmen: {mpm.recruitment_status === 'OPEN' ? 'Dibuka' : 'Ditutup'}
                                             </p>
                                         )}
                                         {mpm.aspiration_status && (

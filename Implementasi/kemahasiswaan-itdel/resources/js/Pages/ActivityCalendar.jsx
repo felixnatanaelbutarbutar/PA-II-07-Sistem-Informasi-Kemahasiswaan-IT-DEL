@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';
 import ChatbotWidget from '@/Layouts/Chatbot';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
@@ -330,19 +330,17 @@ export default function ActivityCalendar({ activities }) {
     return (
         <GuestLayout>
             <Head title="Kalender Kegiatan" />
-            <NavbarGuestLayout />
+            <NavbarGuestLayoutPage />
 
             <div style={styles.container}>
                 <div style={styles.backgroundEffect}></div>
                 <div style={styles.contentWrapper}>
                     <div style={styles.sectionHeader}>
-                        <h2 style={styles.sectionTitle}>
+                        {/* <h2 style={styles.sectionTitle}>
                             Kalender Kegiatan
                             <div style={styles.sectionTitleUnderline}></div>
-                        </h2>
-                        <p style={styles.sectionSubtitle}>
-                            Lihat jadwal kegiatan yang telah direncanakan dalam berbagai acara
-                        </p>
+                        </h2> */}
+
                         <div style={styles.colorGuideWrapper}>
                             <h3 style={styles.colorGuideTitle}>Panduan Warna Kegiatan</h3>
                             <div style={styles.colorGuideContainer}>
@@ -390,7 +388,7 @@ export default function ActivityCalendar({ activities }) {
                                 </div>
                             </div>
                         </div>
-                        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                        <div style={{ textAlign: 'center', marginTop: '50px' }}>
                             <button
                                 onClick={() => setIsModalOpen(true)}
                                 style={styles.buttonExport}
@@ -409,6 +407,9 @@ export default function ActivityCalendar({ activities }) {
                                 Ekspor ke PDF
                             </button>
                         </div>
+                        <p style={styles.sectionSubtitle}>
+                            Lihat jadwal kegiatan yang telah direncanakan dalam berbagai acara
+                        </p>
                     </div>
 
                     {isModalOpen && (

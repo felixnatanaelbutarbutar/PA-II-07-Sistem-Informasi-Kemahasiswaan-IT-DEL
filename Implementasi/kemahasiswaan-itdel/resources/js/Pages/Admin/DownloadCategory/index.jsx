@@ -160,7 +160,10 @@ export default function Index({ auth, userRole, permissions, navigation, categor
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
-                        <p className="text-gray-600 text-center mb-6">Apakah Anda yakin ingin menghapus kategori ini? Tindakan ini tidak dapat dibatalkan.</p>
+                        <p className="text-gray-600 text-center mb-6">
+                            Apakah Anda yakin ingin menghapus kategori unduhan ini? Penghapusan ini bersifat permanen dan tidak dapat dibatalkan.{' '}
+                            <strong>Seluruh unduhan yang terkait dengan kategori ini juga akan dihapus</strong>
+                        </p>
                         <div className="flex justify-center space-x-4">
                             <button
                                 onClick={cancelDelete}

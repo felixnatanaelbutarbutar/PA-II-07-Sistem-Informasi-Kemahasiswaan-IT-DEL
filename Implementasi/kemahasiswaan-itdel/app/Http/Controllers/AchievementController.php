@@ -90,7 +90,7 @@ class AchievementController extends Controller
             return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil ditambahkan.');
         } catch (\Exception $e) {
             Log::error('Error creating achievement: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to create achievement: ' . $e->getMessage()])->withInput();
+            return redirect()->route('admin.achievements.index')->with('error', 'Gagal menambahkan prestasi: ' . $e->getMessage());
         }
     }
 
@@ -142,7 +142,7 @@ class AchievementController extends Controller
             return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil diperbarui!');
         } catch (\Exception $e) {
             Log::error('Error updating achievement: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to update achievement: ' . $e->getMessage()])->withInput();
+            return redirect()->route('admin.achievements.index')->with('error', 'Gagal memperbarui prestasi: ' . $e->getMessage());
         }
     }
 
@@ -151,10 +151,11 @@ class AchievementController extends Controller
         try {
             $achievement = Achievement::where('achievement_id', $achievement_id)->firstOrFail();
             $achievement->delete();
-            return response()->json(['message' => 'Prestasi berhasil dihapus!'], 200);
+
+            return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil dihapus!');
         } catch (\Exception $e) {
             Log::error('Error deleting achievement: ' . $e->getMessage());
-            return response()->json(['message' => 'Gagal menghapus prestasi: ' . $e->getMessage()], 500);
+            return redirect()->route('admin.achievements.index')->with('error', 'Gagal menghapus prestasi: ' . $e->getMessage());
         }
     }
 
@@ -208,6 +209,21 @@ class AchievementController extends Controller
 
         return Inertia::render('Achievement', [
             'achievements' => $achievements,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
+        ]);
+    }
+
+    public function show($achievement_id)
+    {
+        $achievement = Achievement::with('achievementType')
+            ->where('achievement_id', $achievement_id)
+            ->firstOrFail();
+
+        return Inertia::render('AchievementDetail', [
+            'achievement' => $achievement,
             'flash' => [
                 'success' => session('success'),
                 'error' => session('error'),

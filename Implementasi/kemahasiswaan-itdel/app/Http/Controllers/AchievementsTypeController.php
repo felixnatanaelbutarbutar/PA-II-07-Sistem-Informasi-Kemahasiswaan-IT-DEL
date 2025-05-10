@@ -23,12 +23,14 @@ class AchievementsTypeController extends Controller
 
         $types = AchievementType::with(['creator', 'updater'])->get();
 
+        Log::info('Fetching achievement types:', $types->toArray());
+
         return Inertia::render('Admin/AchievementType/index', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
-            'types' => $types,
+            'achievementTypes' => $types, // Sesuaikan dengan nama props di frontend
         ]);
     }
 
@@ -79,13 +81,12 @@ class AchievementsTypeController extends Controller
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
+
+            return redirect()->route('admin.achievement-type.index')->with('success', 'Tipe prestasi berhasil ditambahkan.');
         } catch (\Exception $e) {
             Log::error('Error creating achievement type: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Gagal menambahkan tipe prestasi: ' . $e->getMessage()])->withInput();
+            return redirect()->route('admin.achievement-type.index')->with('error', 'Gagal menambahkan tipe prestasi: ' . $e->getMessage());
         }
-
-        return redirect()->route('admin.achievement-type.index')
-            ->with('success', 'Tipe prestasi berhasil ditambahkan.');
     }
 
     /**
@@ -105,7 +106,7 @@ class AchievementsTypeController extends Controller
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
-            'type' => $type,
+            'achievementType' => $type, // Sesuaikan dengan nama props di frontend
         ]);
     }
 
@@ -134,13 +135,12 @@ class AchievementsTypeController extends Controller
                 'description' => $request->description,
                 'updated_by' => Auth::id(),
             ]);
+
+            return redirect()->route('admin.achievement-type.index')->with('success', 'Tipe prestasi berhasil diperbarui!');
         } catch (\Exception $e) {
             Log::error('Error updating achievement type: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Gagal memperbarui tipe prestasi: ' . $e->getMessage()])->withInput();
+            return back()->with('error', 'Gagal memperbarui tipe prestasi: ' . $e->getMessage())->withInput();
         }
-
-        return redirect()->route('admin.achievement-type.index')
-            ->with('success', 'Tipe prestasi berhasil diperbarui!');
     }
 
     /**
@@ -151,13 +151,12 @@ class AchievementsTypeController extends Controller
         try {
             $type = AchievementType::findOrFail($type_id);
             $type->delete();
+
+            return redirect()->route('admin.achievement-type.index')->with('success', 'Tipe prestasi berhasil dihapus!');
         } catch (\Exception $e) {
             Log::error('Error deleting achievement type: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Gagal menghapus tipe prestasi: ' . $e->getMessage()]);
+            return redirect()->route('admin.achievement-type.index')->with('error', 'Gagal menghapus tipe prestasi: ' . $e->getMessage());
         }
-
-        return redirect()->route('admin.achievement-type.index')
-            ->with('success', 'Tipe prestasi berhasil dihapus!');
     }
 
     /**

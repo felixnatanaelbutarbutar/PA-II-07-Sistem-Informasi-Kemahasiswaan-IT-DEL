@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import axios from 'axios';
-import Swal from 'sweetalert2';
 
 export default function Index({ auth, permissions, userRole, menu, achievements = [] }) {
     const { flash } = usePage().props ?? {};
@@ -10,7 +8,9 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
     const [sortOrder, setSortOrder] = useState('desc');
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [isGridView, setIsGridView] = useState(true);
-    const [isDeleting, setIsDeleting] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [achievementIdToDelete, setAchievementIdToDelete] = useState(null);
 
     // Handle flash messages and notification state
     useEffect(() => {
@@ -51,41 +51,52 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
             return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
         });
 
-    // Handle delete action with SweetAlert2 confirmation
-    const handleDelete = async (id) => {
-        const result = await Swal.fire({
-            title: 'Apakah Anda yakin?',
-            text: 'Prestasi ini akan dihapus secara permanen!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Hapus',
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#ef4444', // Warna merah untuk tombol hapus
-            cancelButtonColor: '#6b7280', // Warna abu-abu untuk tombol batal
-            reverseButtons: true,
-        });
+    // Handle delete action with modal confirmation
+    const handleDeleteClick = (achievementId) => {
+        setAchievementIdToDelete(achievementId);
+        setShowDeleteModal(true);
+    };
 
-        if (result.isConfirmed) {
-            setIsDeleting(id);
-            try {
-                await axios.delete(route('admin.achievements.destroy', id));
-                setNotification({
-                    show: true,
-                    type: 'success',
-                    message: 'Prestasi berhasil dihapus!',
-                });
-                router.reload({ preserveScroll: true });
-            } catch (error) {
-                console.error('Error deleting achievement:', error);
-                setNotification({
-                    show: true,
-                    type: 'error',
-                    message: 'Gagal menghapus prestasi: ' + (error.response?.data?.message || 'Terjadi kesalahan.'),
-                });
-            } finally {
-                setIsDeleting(null);
-            }
+    const confirmDelete = () => {
+        if (achievementIdToDelete) {
+            setIsDeleting(true);
+            router.post(
+                route('admin.achievements.destroy', achievementIdToDelete),
+                {},
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onError: (errors) => {
+                        setNotification({
+                            show: true,
+                            type: 'error',
+                            message: 'Gagal menghapus prestasi: ' + (errors.error || 'Terjadi kesalahan.'),
+                        });
+                        setIsDeleting(false);
+                        setShowDeleteModal(false);
+                        setAchievementIdToDelete(null);
+                    },
+                    onSuccess: () => {
+                        setNotification({
+                            show: true,
+                            type: 'success',
+                            message: 'Prestasi berhasil dihapus!',
+                        });
+                        setIsDeleting(false);
+                        setShowDeleteModal(false);
+                        setAchievementIdToDelete(null);
+                    },
+                    onFinish: () => {
+                        setIsDeleting(false);
+                    },
+                }
+            );
         }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setAchievementIdToDelete(null);
     };
 
     // Helper function to render medal icon
@@ -181,6 +192,66 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                         clipRule="evenodd"
                                     />
                                 </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Konfirmasi Hapus */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-red-100 rounded-full p-3">
+                                <svg
+                                    className="w-8 h-8 text-red-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
+                        <p className="text-gray-600 text-center mb-6">
+                            Apakah Anda yakin ingin menghapus prestasi ini? Tindakan ini tidak dapat dibatalkan.
+                        </p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={cancelDelete}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                disabled={isDeleting}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"
+                                disabled={isDeleting}
+                            >
+                                <svg
+                                    className="w-4 h-4 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                </svg>
+                                {isDeleting ? 'Menghapus...' : 'Hapus'}
                             </button>
                         </div>
                     </div>
@@ -399,41 +470,24 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                             Edit
                                         </Link>
                                         <button
-                                            onClick={() => handleDelete(achievement.achievement_id)}
-                                            disabled={isDeleting === achievement.achievement_id}
+                                            onClick={() => handleDeleteClick(achievement.achievement_id)}
+                                            disabled={isDeleting}
                                             className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 group-hover:scale-105 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {isDeleting === achievement.achievement_id ? (
-                                                <svg
-                                                    className="w-4 h-4 mr-2 animate-spin"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M4 12a8 8 0 0116 0 8 8 0 01-16 0z"
-                                                    />
-                                                </svg>
-                                            ) : (
-                                                <svg
-                                                    className="w-4 h-4 mr-2"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                    />
-                                                </svg>
-                                            )}
+                                            <svg
+                                                className="w-4 h-4 mr-2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                />
+                                            </svg>
                                             Hapus
                                         </button>
                                     </div>
@@ -533,41 +587,24 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                 Edit
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(achievement.achievement_id)}
-                                                disabled={isDeleting === achievement.achievement_id}
+                                                onClick={() => handleDeleteClick(achievement.achievement_id)}
+                                                disabled={isDeleting}
                                                 className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                {isDeleting === achievement.achievement_id ? (
-                                                    <svg
-                                                        className="w-4 h-4 mr-2 animate-spin"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M4 12a8 8 0 0116 0 8 8 0 01-16 0z"
-                                                        />
-                                                    </svg>
-                                                ) : (
-                                                    <svg
-                                                        className="w-4 h-4 mr-2"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                        />
-                                                    </svg>
-                                                )}
+                                                <svg
+                                                    className="w-4 h-4 mr-2"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    />
+                                                </svg>
                                                 Hapus
                                             </button>
                                         </div>
@@ -635,7 +672,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                     className="w-5 h-5 mr-2"
                                     fill="none"
                                     stroke="currentColor"
-                                    viewBox="0 24 24"
+                                    viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg"
                                 >
                                     <path
@@ -651,6 +688,25 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                     </div>
                 )}
             </div>
+
+            {/* Animation Styles */}
+            <style>
+                {`
+                    @keyframes slide-in-right {
+                        0% {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        100% {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    .animate-slide-in-right {
+                        animation: slide-in-right 0.5s ease-out forwards;
+                    }
+                `}
+            </style>
         </AdminLayout>
     );
 }

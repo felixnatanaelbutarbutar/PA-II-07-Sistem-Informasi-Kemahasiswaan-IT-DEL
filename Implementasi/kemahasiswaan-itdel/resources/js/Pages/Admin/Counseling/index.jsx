@@ -10,6 +10,8 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
     const [showRejectionModal, setShowRejectionModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedCounselingId, setSelectedCounselingId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState(''); // State untuk pencarian
+    const [sortOrder, setSortOrder] = useState('desc'); // State untuk filter terlama/terbaru
 
     console.log("User Role di AdminLayout:", userRole);
     console.log('Counselings Data:', counselings);
@@ -17,11 +19,11 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
 
     // Format nomor WhatsApp
     const formatWhatsAppNumber = (number) => {
-        let formattedNumber = number.replace(/\D/g, ''); // Hapus semua karakter non-digit
+        let formattedNumber = number.replace(/\D/g, '');
         if (formattedNumber.startsWith('0')) {
-            formattedNumber = '62' + formattedNumber.slice(1); // Ganti 0 dengan +62
+            formattedNumber = '62' + formattedNumber.slice(1);
         } else if (!formattedNumber.startsWith('62')) {
-            formattedNumber = '62' + formattedNumber; // Tambahkan +62 jika tidak ada kode negara
+            formattedNumber = '62' + formattedNumber;
         }
         return formattedNumber;
     };
@@ -29,10 +31,7 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
     // Handle status change dan kirim pesan WhatsApp jika disetujui atau ditolak
     const handleStatusChange = (counselingId, newStatus, rejectionReason = null) => {
         setStatusUpdating((prev) => ({ ...prev, [counselingId]: true }));
-
-        // Temukan data counseling berdasarkan ID
         const counseling = counselings.data.find((c) => c.id === counselingId);
-
         const dataToSend = { status: newStatus };
         if (newStatus === 'ditolak' && rejectionReason) {
             dataToSend.rejection_reason = rejectionReason;
@@ -43,30 +42,22 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
             dataToSend,
             {
                 onSuccess: () => {
-                    // Refresh halaman untuk memperbarui status dan menampilkan flash message
                     router.visit(route('admin.counseling.index'), {
                         preserveState: true,
                         preserveScroll: true,
                     });
-
-                    // Jika status baru adalah "disetujui", kirim pesan WhatsApp
                     if (newStatus === 'disetujui' && counseling) {
-                        const formattedDate = new Date(counseling.booking_date).toLocaleDateString(
-                            'id-ID',
-                            {
-                                day: '2-digit',
-                                month: 'long',
-                                year: 'numeric',
-                            }
-                        );
+                        const formattedDate = new Date(counseling.booking_date).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                        });
                         const message = `Halo, ${counseling.user.nim} | ${counseling.user.name}\nPengajuan jadwal konseling kamu sudah disetujui, yaitu pada tanggal ${formattedDate} jam ${counseling.booking_time}.\n\nHarap hadir di ruangan konseling 10 mnt sebelum jam tersebut\nSalam`;
                         const encodedMessage = encodeURIComponent(message);
                         const phoneNumber = formatWhatsAppNumber(counseling.noWhatsApp);
                         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
                         window.open(whatsappUrl, '_blank');
                     }
-
-                    // Jika status baru adalah "ditolak", kirim pesan WhatsApp dengan alasan penolakan
                     if (newStatus === 'ditolak' && counseling && rejectionReason) {
                         const message = `Halo, ${counseling.user.nim} | ${counseling.user.name}\nPermintaan konseling Anda ditolak dengan alasan: ${rejectionReason}\nSalam`;
                         const encodedMessage = encodeURIComponent(message);
@@ -111,15 +102,32 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
         if (flash?.success) {
             setNotificationMessage({ type: 'success', message: flash.success });
             setShowNotification(true);
-
             const timer = setTimeout(() => {
                 setShowNotification(false);
                 setNotificationMessage(null);
             }, 5000);
-
             return () => clearTimeout(timer);
         }
     }, [flash]);
+
+    // Fungsi untuk menyaring dan menyortir data
+    const filteredCounselings = counselings.data
+        .filter((counseling) =>
+            [
+                counseling.user.nim || '',
+                counseling.user.name || '',
+                counseling.user.asrama || '',
+                counseling.issue || '',
+                counseling.noWhatsApp || '',
+            ].some((field) =>
+                field.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+        )
+        .sort((a, b) => {
+            const dateA = new Date(a.created_at);
+            const dateB = new Date(b.created_at);
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
 
     return (
         <AdminLayout
@@ -128,7 +136,7 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
             permissions={permissions}
             navigation={menu}
         >
-            <Head title="Manajemen Permintaan Konseling" />
+            <Head title="Manajemen Permintaan Konseling - Kemahasiswaan IT Del" />
 
             {/* Notification */}
             {showNotification && notificationMessage && (
@@ -246,7 +254,8 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
                 </div>
             )}
 
-            <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header Section */}
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
@@ -255,91 +264,137 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
                             </h1>
                             <p className="text-gray-500 mt-1">Kelola permintaan konseling dari mahasiswa</p>
                         </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                            {/* Search Bar */}
+                            <div className="relative flex-grow md:flex-grow-0 md:w-64">
+                                <input
+                                    type="text"
+                                    placeholder="Cari permintaan konseling..."
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10 transition-all duration-300"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                <svg
+                                    className="w-5 h-5 absolute left-3 top-3 text-gray-400"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
+                                </svg>
+                            </div>
+
+                            {/* Sort Dropdown */}
+                            <div className="relative w-full sm:w-40">
+                                <select
+                                    value={sortOrder}
+                                    onChange={(e) => setSortOrder(e.target.value)}
+                                    className="appearance-none w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-300"
+                                >
+                                    <option value="desc">Terbaru</option>
+                                    <option value="asc">Terlama</option>
+                                </select>
+                                <svg
+                                    className="w-5 h-5 absolute right-3 top-3 text-gray-400 pointer-events-none"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {counselings.data.length > 0 ? (
+                {filteredCounselings.length > 0 ? (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         NIM
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Nama
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Asrama
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Masalah
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Nomor WhatsApp
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Tanggal Booking
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Jam Booking
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Tanggal Pengajuan
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Status
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Alasan Penolakan
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
+                                    <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider">
                                         Aksi
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {counselings.data.map((counseling) => (
+                                {filteredCounselings.map((counseling) => (
                                     <tr key={counseling.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-xs break-words">
+                                        <td className="px-3 py-4 text-sm font-medium text-gray-900 max-w-[100px] break-words">
                                             {counseling.user.nim || '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[120px] break-words">
                                             {counseling.user.name}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[100px] break-words">
                                             {counseling.user.asrama || '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[150px] break-words">
                                             {counseling.issue}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[120px] break-words">
                                             {counseling.noWhatsApp}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
-                                            {new Date(counseling.booking_date).toLocaleDateString(
-                                                'id-ID',
-                                                {
-                                                    day: '2-digit',
-                                                    month: 'long',
-                                                    year: 'numeric',
-                                                }
-                                            )}
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[120px] break-words">
+                                            {new Date(counseling.booking_date).toLocaleDateString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'long',
+                                                year: 'numeric',
+                                            })}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[80px] break-words">
                                             {counseling.booking_time}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
-                                            {new Date(counseling.created_at).toLocaleDateString(
-                                                'id-ID',
-                                                {
-                                                    day: '2-digit',
-                                                    month: 'long',
-                                                    year: 'numeric',
-                                                }
-                                            )}
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[120px] break-words">
+                                            {new Date(counseling.created_at).toLocaleDateString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'long',
+                                                year: 'numeric',
+                                            })}
                                         </td>
-                                        <td className="px-6 py-4 text-sm font-medium">
+                                        <td className="px-3 py-4 text-sm font-medium max-w-[120px] break-words">
                                             <span
                                                 className={`${
                                                     counseling.status === 'menunggu'
@@ -356,17 +411,17 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
                                                     : 'Ditolak'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs break-words">
+                                        <td className="px-3 py-4 text-sm text-gray-600 max-w-[150px] break-words">
                                             {counseling.rejection_reason || '-'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             {counseling.status !== 'disetujui' && (
                                                 <button
                                                     onClick={() =>
                                                         handleStatusChange(counseling.id, 'disetujui')
                                                     }
                                                     disabled={statusUpdating[counseling.id]}
-                                                    className={`text-green-600 hover:text-green-700 mr-4 transition ${
+                                                    className={`text-green-600 hover:text-green-700 mr-2 transition ${
                                                         statusUpdating[counseling.id] ? 'opacity-50 cursor-not-allowed' : ''
                                                     }`}
                                                 >
@@ -426,11 +481,35 @@ export default function CounselingIndex({ auth, counselings, userRole, permissio
                             </svg>
                         </div>
                         <h3 className="text-xl font-medium text-gray-700 mb-2">
-                            Belum ada permintaan konseling
+                            {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada permintaan konseling'}
                         </h3>
                         <p className="text-gray-500 text-center max-w-md mb-6">
-                            Tidak ada permintaan konseling yang tersedia saat ini.
+                            {searchQuery
+                                ? 'Tidak ada permintaan konseling yang cocok dengan pencarian Anda.'
+                                : 'Tidak ada permintaan konseling yang tersedia saat ini.'}
                         </p>
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center shadow-md hover:shadow-lg"
+                            >
+                                <svg
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                                Reset Pencarian
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

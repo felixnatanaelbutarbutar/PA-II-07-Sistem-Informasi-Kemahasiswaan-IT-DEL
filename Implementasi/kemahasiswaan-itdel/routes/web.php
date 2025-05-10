@@ -209,9 +209,9 @@ Route::middleware(['auth'])->group(function () {
         // Achievement, News Category, Counseling, and Aspiration Routes (Kemahasiswaan Only)
         Route::middleware(['role:kemahasiswaan'])->group(function () {
             Route::resource('achievements', AchievementController::class)->except(['show', 'destroy', 'update']);
-            Route::put('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
-            Route::delete('achievements/{achievement}', [AchievementController::class, 'destroy'])->name('achievements.destroy');
-
+            Route::post('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
+            Route::post('achievements/{achievement}/delete', [AchievementController::class, 'destroy'])->name('achievements.destroy');
+            
             // Rute untuk Achievement Type (Kemahasiswaan Only)
             Route::resource('achievement-type', AchievementTypeController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievement-type/{achievement_type}/update', [AchievementTypeController::class, 'update'])->name('achievement-type.update');

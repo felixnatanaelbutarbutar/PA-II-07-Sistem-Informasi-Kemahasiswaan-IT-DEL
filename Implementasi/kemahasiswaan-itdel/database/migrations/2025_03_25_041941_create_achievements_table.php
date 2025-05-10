@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->timestamps();
 
             // Foreign keys
-            $table->foreign('achievement_type_id')->references('type_id')->on('achievement_types')->onDelete('RESTRICT');
+            $table->foreign('achievement_type_id')->references('type_id')->on('achievement_types')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('cascade');
         });

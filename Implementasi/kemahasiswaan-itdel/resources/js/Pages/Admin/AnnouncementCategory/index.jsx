@@ -176,7 +176,8 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                             Konfirmasi Penghapusan
                         </h3>
                         <p className="text-gray-600 text-center mb-6">
-                            Apakah Anda yakin ingin menghapus kategori ini? Tindakan ini tidak dapat dibatalkan.
+                            Apakah Anda yakin ingin menghapus kategori pengumuman ini? Penghapusan ini bersifat permanen dan tidak dapat dibatalkan.{' '}
+                            <strong>Seluruh pengumuman yang terkait dengan kategori ini juga akan dihapus</strong>
                         </p>
                         <div className="flex justify-center space-x-4">
                             <button
@@ -319,7 +320,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                         <h3 className="text-xl font-medium text-gray-700 mb-2">
                             Tidak ada kategori yang tersedia
                         </h3>
-                        <p className="text-gray-500 text-center ⎯ax-w-md mb-6">
+                        <p className="text-gray-500 text-center max-w-md mb-6">
                             Silahkan tambahkan kategori baru untuk mulai mengelompokkan pengumuman.
                         </p>
                         <Link
@@ -345,6 +346,25 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                     </div>
                 )}
             </div>
+
+            {/* Animation Styles */}
+            <style>
+                {`
+                    @keyframes slide-in-right {
+                        0% {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        100% {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    .animate-slide-in-right {
+                        animation: slide-in-right 0.5s ease-out forwards;
+                    }
+                `}
+            </style>
         </AdminLayout>
     );
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import '../../css/home.css';
 
-const NavbarGuestLayoutPage = () => {
+const Navbar = ({ showBreadcrumbAndHeader = true }) => {
     const [layananDropdownOpen, setLayananDropdownOpen] = useState(false);
     const [organisasiDropdownOpen, setOrganisasiDropdownOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,25 +15,16 @@ const NavbarGuestLayoutPage = () => {
     // Close dropdowns when clicking outside
     useEffect(() => {
         function handleClickOutside(event) {
-            if (
-                layananDropdownRef.current &&
-                !layananDropdownRef.current.contains(event.target)
-            ) {
+            if (layananDropdownRef.current && !layananDropdownRef.current.contains(event.target)) {
                 setLayananDropdownOpen(false);
             }
-
-            if (
-                organisasiDropdownRef.current &&
-                !organisasiDropdownRef.current.contains(event.target)
-            ) {
+            if (organisasiDropdownRef.current && !organisasiDropdownRef.current.contains(event.target)) {
                 setOrganisasiDropdownOpen(false);
             }
         }
 
         document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [layananDropdownRef, organisasiDropdownRef]);
 
     // Add scroll event listener for navbar
@@ -54,10 +45,10 @@ const NavbarGuestLayoutPage = () => {
     // Add smooth scroll behavior
     useEffect(() => {
         document.documentElement.style.scrollBehavior = 'smooth';
-        return () => {
-            document.documentElement.style.scrollBehavior = 'auto';
-        };
+        return () => (document.documentElement.style.scrollBehavior = 'auto');
     }, []);
+
+    const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
     const getPageTitle = () => {
         switch (url) {
@@ -67,8 +58,8 @@ const NavbarGuestLayoutPage = () => {
                 return 'Berita';
             case '/announcement':
                 return 'Pengumuman';
-            // case '/struktur':
-            //     return 'Struktur Organisasi';
+            case '/achievements':
+                return 'Prestasi';
             case '/activities':
                 return 'Kegiatan';
             case '/counseling':
@@ -77,7 +68,7 @@ const NavbarGuestLayoutPage = () => {
                 if (url.startsWith('/counseling')) return 'Konseling';
                 if (url.startsWith('/beasiswa')) return 'Beasiswa';
                 if (url.startsWith('/downloads')) return 'Unduhan';
-                if (url.startsWith('/asrama')) return 'Asrama';
+                // if (url.startsWith('/asrama')) return 'Asrama';
                 if (url.startsWith('/bem')) return 'BEM';
                 if (url.startsWith('/mpm')) return 'MPM';
                 return 'Beranda';
@@ -85,29 +76,25 @@ const NavbarGuestLayoutPage = () => {
     };
 
     const getBreadcrumb = () => {
-        const title = getPageTitle();
-        const breadcrumbItems = [];
+        if (!showBreadcrumbAndHeader) return null;
 
-        // Selalu tambahkan "Beranda" sebagai item pertama yang dapat diklik
-        breadcrumbItems.push(
+        const title = getPageTitle();
+        const breadcrumbItems = [
             <Link key="beranda" href="/" className="text-white hover:text-blue-200 transition-colors">
                 Beranda
-            </Link>
-        );
+            </Link>,
+        ];
 
         if (url === '/') return breadcrumbItems;
 
-        // Untuk halaman langsung di bawah root
-        if (['/newsguest', '/announcement', '/struktur', '/kegiatan'].includes(url)) {
+        if (['/newsguest', '/announcement', '/achievements', '/activities'].includes(url)) {
             breadcrumbItems.push(
                 <span key="separator-1" className="mx-2">/</span>,
                 <Link key={title} href={url} className="text-white hover:text-blue-200 transition-colors">
                     {title}
                 </Link>
             );
-        }
-        // Untuk Layanan Kemahasiswaan
-        else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') ||
+        } else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') ||
             url.startsWith('/downloads') || url.startsWith('/asrama')) {
             breadcrumbItems.push(
                 <span key="separator-1" className="mx-2">/</span>,
@@ -117,9 +104,7 @@ const NavbarGuestLayoutPage = () => {
                     {title}
                 </Link>
             );
-        }
-        // Untuk Organisasi
-        else if (url.startsWith('/bem') || url.startsWith('/mpm')) {
+        } else if (url.startsWith('/bem') || url.startsWith('/mpm')) {
             breadcrumbItems.push(
                 <span key="separator-1" className="mx-2">/</span>,
                 <span key="organisasi" className="text-white">Organisasi</span>,
@@ -128,9 +113,7 @@ const NavbarGuestLayoutPage = () => {
                     {title}
                 </Link>
             );
-        }
-        // Default case
-        else {
+        } else {
             breadcrumbItems.push(
                 <span key="separator-1" className="mx-2">/</span>,
                 <Link key={title} href={url} className="text-white hover:text-blue-200 transition-colors">
@@ -140,55 +123,6 @@ const NavbarGuestLayoutPage = () => {
         }
 
         return breadcrumbItems;
-    };
-
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (
-                layananDropdownRef.current &&
-                !layananDropdownRef.current.contains(event.target)
-            ) {
-                setLayananDropdownOpen(false);
-            }
-
-            if (
-                organisasiDropdownRef.current &&
-                !organisasiDropdownRef.current.contains(event.target)
-            ) {
-                setOrganisasiDropdownOpen(false);
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [layananDropdownRef, organisasiDropdownRef]);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            const navbar = document.querySelector('.navbar');
-            if (window.scrollY > 0) {
-                navbar.classList.add('navbar-scrolled');
-            } else {
-                navbar.classList.remove('navbar-scrolled');
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    useEffect(() => {
-        document.documentElement.style.scrollBehavior = 'smooth';
-        return () => {
-            document.documentElement.style.scrollBehavior = 'auto';
-        };
-    }, []);
-
-    // Single declaration of toggleMobileMenu
-    const toggleMobileMenu = () => {
-        setMobileMenuOpen(prevState => !prevState);
     };
 
     return (
@@ -219,36 +153,31 @@ const NavbarGuestLayoutPage = () => {
                             <div className="flex items-center space-x-2 md:space-x-4 flex-wrap">
                                 <Link
                                     href="/"
-                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/') ? 'nav-item-active' : 'transition-colors hover:text-white'
-                                        }`}
+                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
                                 >
                                     Beranda
                                 </Link>
                                 <Link
                                     href="/newsguest"
-                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/newsguest') ? 'nav-item-active' : 'transition-colors hover:text-white'
-                                        }`}
+                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/newsguest') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
                                 >
                                     Berita
                                 </Link>
                                 <Link
                                     href="/announcement"
-                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/announcementguest') ? 'nav-item-active' : 'transition-colors hover:text-white'
-                                        }`}
+                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/announcementguest') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
                                 >
                                     Pengumuman
                                 </Link>
                                 <Link
-                                href="/achievements"
-                                className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/achievements') ? 'nav-item-active' : 'transition-colors hover:text-white'
-                                    }`}
-                            >
-                                Prestasi
-                            </Link>
+                                    href="/achievements"
+                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/achievements') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
+                                >
+                                    Prestasi
+                                </Link>
                                 <Link
                                     href="/activities"
-                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/kegiatan') ? 'nav-item-active' : 'transition-colors hover:text-white'
-                                        }`}
+                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/kegiatan') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
                                 >
                                     Kegiatan
                                 </Link>
@@ -308,7 +237,7 @@ const NavbarGuestLayoutPage = () => {
                                                     katakata
                                                 </div>
                                             </Link>
-                                            <Link
+                                            {/* <Link
                                                 href="#"
                                                 className="dropdown-item block border-l-4 border-transparent px-4 py-3 text-sm text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700"
                                                 onClick={() => setLayananDropdownOpen(false)}
@@ -317,7 +246,7 @@ const NavbarGuestLayoutPage = () => {
                                                 <div className="text-xs text-gray-500">
                                                     Informasi dan pendaftaran asrama
                                                 </div>
-                                            </Link>
+                                            </Link> */}
                                         </div>
                                     )}
                                 </div>
@@ -460,33 +389,33 @@ const NavbarGuestLayoutPage = () => {
                         <div className="lg:hidden mobile-menu bg-white shadow-lg">
                             <div className="px-2 pt-2 pb-3 space-y-1">
                                 <Link
-                                    href="#"
+                                    href="/"
                                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     Beranda
                                 </Link>
                                 <Link
-                                    href="#"
+                                    href="/newsguest"
                                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     Berita
                                 </Link>
                                 <Link
-                                    href="#announcements"
+                                    href="/announcement"
                                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     Pengumuman
                                 </Link>
-                                {/* <Link
-                                    href="#structure"
+                                <Link
+                                    href="/achievements"
                                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
-                                    Struktur Organisasi
-                                </Link> */}
+                                    Prestasi
+                                </Link>
                                 <Link
                                     href="/activities"
                                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
@@ -549,7 +478,7 @@ const NavbarGuestLayoutPage = () => {
                                             >
                                                 Unduhan
                                             </Link>
-                                            <Link
+                                            {/* <Link
                                                 href="#"
                                                 className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                                 onClick={() => {
@@ -558,7 +487,7 @@ const NavbarGuestLayoutPage = () => {
                                                 }}
                                             >
                                                 Asrama
-                                            </Link>
+                                            </Link> */}
                                         </div>
                                     )}
                                 </div>
@@ -653,7 +582,7 @@ const NavbarGuestLayoutPage = () => {
                                             <div className="border-t pt-2">
                                                 <div className="text-sm font-semibold text-gray-700">MPM</div>
                                                 <Link
-                                                    href="#"
+                                                    href="/mpm"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                                     onClick={() => {
                                                         setOrganisasiDropdownOpen(false);
@@ -663,54 +592,24 @@ const NavbarGuestLayoutPage = () => {
                                                     Tentang MPM
                                                 </Link>
                                                 <Link
-                                                    href="#"
+                                                    href="/mpm#struktur-komisi"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                                     onClick={() => {
                                                         setOrganisasiDropdownOpen(false);
                                                         setMobileMenuOpen(false);
                                                     }}
                                                 >
-                                                    Anggota MPM
+                                                    Struktur Komisi
                                                 </Link>
                                                 <Link
-                                                    href="#"
+                                                    href="/mpm#partisipasi-anda"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                                     onClick={() => {
                                                         setOrganisasiDropdownOpen(false);
                                                         setMobileMenuOpen(false);
                                                     }}
                                                 >
-                                                    Komisi
-                                                </Link>
-                                                <Link
-                                                    href="#"
-                                                    className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
-                                                >
-                                                    Produk Legislasi
-                                                </Link>
-                                                <Link
-                                                    href="#"
-                                                    className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
-                                                >
-                                                    Rapat & Sidang
-                                                </Link>
-                                                <Link
-                                                    href="#"
-                                                    className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
-                                                >
-                                                    Advokasi Mahasiswa
+                                                    Partisipasi Anda
                                                 </Link>
                                             </div>
                                         </div>
@@ -722,26 +621,28 @@ const NavbarGuestLayoutPage = () => {
                 </div>
             </nav>
 
-            {/* Header Image Section */}
-            <div className="relative w-full h-[350px] overflow-hidden">
-                <img
-                    src="/assets/images/audit.svg"
-                    alt="Header Background"
-                    className="w-full h-full object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <div className="text-center text-white px-4">
-                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg">
-                            {getPageTitle()}
-                        </h1>
-                        <p className="mt-2 text-lg md:text-xl drop-shadow-md flex flex-wrap justify-center gap-1">
-                            {getBreadcrumb()}
-                        </p>
+            {/* Header Image Section (Conditional Rendering) */}
+            {showBreadcrumbAndHeader && (
+                <div className="relative w-full h-[350px] overflow-hidden">
+                    <img
+                        src="/assets/images/audit.svg"
+                        alt="Header Background"
+                        className="w-full h-full object-cover object-center"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="text-center text-white px-4">
+                            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold drop-shadow-lg">
+                                {getPageTitle()}
+                            </h1>
+                            <p className="mt-2 text-lg md:text-xl drop-shadow-md flex flex-wrap justify-center gap-1">
+                                {getBreadcrumb()}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </header>
     );
 };
 
-export default NavbarGuestLayoutPage;
+export default Navbar;
