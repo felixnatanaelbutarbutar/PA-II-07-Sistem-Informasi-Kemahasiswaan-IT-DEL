@@ -21,7 +21,8 @@ import {
     Download,
     MessageSquare,
     Image,
-    Clipboard, // Tambahkan ikon Clipboard untuk form
+    Clipboard,
+    Megaphone // Tambahkan ikon Clipboard untuk form
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -50,7 +51,8 @@ export default function AdminLayout({
         carousel: Image,
         chatbot: MessageSquare,
         calendar: Bell,
-        form: Clipboard, // Tambahkan mapping untuk ikon form
+        form: Clipboard,
+        directors: Megaphone,
     };
 
     // Theme definitions with their icons
@@ -105,14 +107,14 @@ export default function AdminLayout({
 
     const isRouteValid = (routeName) => {
         if (!routeName) {
-            console.warn('Route name is undefined or null');
+            // console.warn('Route name is undefined or null');
             return false;
         }
         try {
             const routeUrl = route(routeName);
             return !!routeUrl;
         } catch (e) {
-            console.error(`Error checking route for ${routeName}:`, e);
+            // console.error(`Error checking route for ${routeName}:`, e);
             return false;
         }
     };
@@ -127,12 +129,12 @@ export default function AdminLayout({
             const baseUrl = url.split('?')[0]; // Path relatif dari current URL
             // Ekstrak path dari routeUrl (hapus protokol dan domain)
             const baseRouteUrl = routeUrl.replace(/^https?:\/\/[^\/]+/, '');
-            console.log(`Checking route: ${routeName}, Base URL: ${baseUrl}, Base Route URL: ${baseRouteUrl}`);
+            // console.log(`Checking route: ${routeName}, Base URL: ${baseUrl}, Base Route URL: ${baseRouteUrl}`);
             const isActive = baseUrl === baseRouteUrl || baseUrl.startsWith(baseRouteUrl + '/');
-            console.log(`Is Active for ${routeName}: ${isActive}`);
+            // console.log(`Is Active for ${routeName}: ${isActive}`);
             return isActive;
         } catch (e) {
-            console.error(`Route checking error for ${routeName}:`, e);
+                // console.error(`Route checking error for ${routeName}:`, e);
             return false;
         }
     };
@@ -289,11 +291,11 @@ export default function AdminLayout({
                             }
 
                             if (!item.route) {
-                                console.warn(`Menu item "${item.name}" has no route defined.`);
+                                {/* console.warn(`Menu item "${item.name}" has no route defined.`); */}
                                 return null;
                             }
                             if (!isRouteValid(item.route)) {
-                                console.warn(`Skipping menu item "${item.name}" due to invalid route: ${item.route}`);
+                                {/* console.warn(`Skipping menu item "${item.name}" due to invalid route: ${item.route}`); */}
                                 return null;
                             }
                             const isActiveRoute = isActive(item.route);

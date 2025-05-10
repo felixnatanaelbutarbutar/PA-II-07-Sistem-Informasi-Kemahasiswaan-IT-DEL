@@ -1,5 +1,5 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import ChatbotWidget from '@/Layouts/Chatbot';
 import { Head } from '@inertiajs/react';
@@ -278,7 +278,7 @@ export default function Achievement({ achievements }) {
     return (
         <GuestLayout>
             <Head title="Prestasi" />
-            <NavbarGuestLayout />
+            <Navbar />
 
             {/* Achievements Section */}
             <div style={styles.container}>

@@ -12,6 +12,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ApiProxyController;
 use App\Http\Controllers\CarouselController;
+use App\Http\Controllers\DirectorController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AspirationController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\ChatbotRuleController;
 use App\Http\Controllers\KegiatanBEMController;
 use App\Http\Controllers\ScholarshipController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\FormSettingsController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\AchievementTypeController;
 use App\Http\Controllers\DownloadCategoryController;
@@ -28,7 +30,6 @@ use App\Http\Controllers\OrganizationAdminController;
 use App\Http\Controllers\AspirationCategoryController;
 use App\Http\Controllers\ScholarshipCategoryController;
 use App\Http\Controllers\AnnouncementCategoryController;
-use App\Http\Controllers\FormSettingsController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 // Public Routes (Accessible to Guests)
@@ -211,7 +212,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('achievements', AchievementController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
             Route::post('achievements/{achievement}/delete', [AchievementController::class, 'destroy'])->name('achievements.destroy');
-            
+
             // Rute untuk Achievement Type (Kemahasiswaan Only)
             Route::resource('achievement-type', AchievementTypeController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievement-type/{achievement_type}/update', [AchievementTypeController::class, 'update'])->name('achievement-type.update');
@@ -261,7 +262,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/form/{form}/show', [FormController::class, 'show'])->name('form.show');
             Route::get('form/{form}/settings', [FormController::class, 'settings'])->name('form.settings');
             Route::post('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
+
+            Route::resource('directors', DirectorController::class)->except(['show', 'destroy', 'update']);
+            Route::post('directors/{director}/update', [DirectorController::class, 'update'])->name('directors.update');
+            Route::post('directors/{director}/delete', [DirectorController::class, 'destroy'])->name('directors.destroy');
+            Route::post('directors/{director_id}/toggle-active', [DirectorController::class, 'toggleActive'])->name('directors.toggleActive');
         });
+
 
         // MPM Routes (AdminMPM) - Ditambahkan
         Route::middleware(['role:kemahasiswaan,adminmpm'])->group(function () {

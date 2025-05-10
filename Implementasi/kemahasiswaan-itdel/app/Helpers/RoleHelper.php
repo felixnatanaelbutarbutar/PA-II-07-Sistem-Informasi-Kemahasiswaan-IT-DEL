@@ -37,6 +37,8 @@ class RoleHelper
                 'carousel' => true,
                 'kegiatan' => true,
                 'chatbot' => true,
+                'directors' => true,
+
             ],
             'adminbem' => [
                 'announcementcategory' => true, // Ditambahkan untuk submenu Kategori Pengumuman
@@ -57,6 +59,7 @@ class RoleHelper
                 'chatbot' => true,
                 'downloads' => false,
                 'download-categories' => false,
+                'directors' => false,
             ],
             'adminmpm' => [
                 'announcementcategory' => true, // Ditambahkan untuk submenu Kategori Pengumuman
@@ -77,6 +80,8 @@ class RoleHelper
                 'chatbot' => true,
                 'downloads' => false,
                 'download-categories' => false,
+                'directors' => false,
+
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -96,6 +101,8 @@ class RoleHelper
                 'chatbot' => false,
                 'downloads' => false,
                 'download-categories' => false,
+                'directors' => false,
+
             ],
         ];
 
@@ -422,6 +429,16 @@ class RoleHelper
                 'name' => 'Kelola Aturan Chatbot',
                 'route' => 'admin.chatbot-rules.index',
                 'icon' => 'chatbot',
+                'visible' => true,
+            ];
+        }
+
+        // Menu untuk Kelola Directors
+        if ($permissions['directors'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Kelola Sambutan Direktur',
+                'route' => 'admin.directors.index',
+                'icon' => 'directors',
                 'visible' => true,
             ];
         }

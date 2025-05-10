@@ -1,5 +1,6 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import FooterLayout from '@/Layouts/FooterLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
@@ -46,8 +47,8 @@ export default function Announcement() {
     const filteredAnnouncements = announcements.filter(item => {
         if (!item) return false;
         const titleMatch = item.title?.toLowerCase().includes(searchTerm.toLowerCase());
-        const categoryMatch = selectedCategory === 'Semua' || 
-                             item.category?.category_name === selectedCategory;
+        const categoryMatch = selectedCategory === 'Semua' ||
+            item.category?.category_name === selectedCategory;
         return titleMatch && categoryMatch;
     });
 
@@ -169,10 +170,10 @@ export default function Announcement() {
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat('id-ID', { 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric' 
+        return new Intl.DateTimeFormat('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
         }).format(date);
     };
 
@@ -180,7 +181,7 @@ export default function Announcement() {
         <GuestLayout>
             <NavbarGuestLayoutPage />
             <Head title="Pengumuman" />
-            
+
             <div className="min-h-screen bg-white py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Page Header */}
@@ -188,7 +189,7 @@ export default function Announcement() {
                         <h1 className="text-4xl font-bold text-gray-900 mb-2">Pengumuman</h1>
                         <p className="text-lg text-gray-600">Informasi terbaru untuk Anda</p>
                     </div> */}
-                    
+
                     {/* Search, Filter and View Toggle Section */}
                     <div className="bg-white p-6 rounded-xl shadow-md mb-8 transition-all">
                         <div className="flex flex-col md:flex-row gap-4">
@@ -206,7 +207,7 @@ export default function Announcement() {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            
+
                             <div className="relative md:w-64">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -231,17 +232,16 @@ export default function Announcement() {
                                     </svg>
                                 </div>
                             </div>
-                            
+
                             {/* View Toggle Buttons */}
                             <div className="flex items-center justify-center md:justify-end">
                                 <div className="inline-flex bg-gray-100 rounded-lg p-1">
                                     <button
                                         onClick={() => setViewMode('grid')}
-                                        className={`flex items-center justify-center p-2 rounded-md transition-all ${
-                                            viewMode === 'grid' 
-                                                ? 'bg-blue-500 text-white' 
+                                        className={`flex items-center justify-center p-2 rounded-md transition-all ${viewMode === 'grid'
+                                                ? 'bg-blue-500 text-white'
                                                 : 'text-gray-600 hover:bg-gray-200'
-                                        }`}
+                                            }`}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -249,11 +249,10 @@ export default function Announcement() {
                                     </button>
                                     <button
                                         onClick={() => setViewMode('list')}
-                                        className={`flex items-center justify-center p-2 rounded-md transition-all ${
-                                            viewMode === 'list' 
-                                                ? 'bg-blue-500 text-white' 
+                                        className={`flex items-center justify-center p-2 rounded-md transition-all ${viewMode === 'list'
+                                                ? 'bg-blue-500 text-white'
                                                 : 'text-gray-600 hover:bg-gray-200'
-                                        }`}
+                                            }`}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -298,7 +297,7 @@ export default function Announcement() {
                                         {filteredAnnouncements.map((item) => {
                                             const itemId = getItemId(item);
                                             if (!itemId) return null;
-                                            
+
                                             return (
                                                 <Link
                                                     key={itemId}
@@ -309,26 +308,26 @@ export default function Announcement() {
                                                         <div className="h-48 overflow-hidden">
                                                             {renderFilePreview(item)}
                                                         </div>
-                                                        
+
                                                         <div className="p-6">
                                                             <div className="flex items-center space-x-2 mb-4">
                                                                 <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-500 text-white">
                                                                     {item.category?.category_name || "Uncategorized"}
                                                                 </span>
-                                                                
+
                                                                 <span className="text-xs text-gray-500">
                                                                     {formatDate(item.created_at)}
                                                                 </span>
                                                             </div>
-                                                            
+
                                                             <h2 className="text-xl font-bold mb-3 text-gray-800 group-hover:text-blue-600 transition-colors">
                                                                 {getTitleWithTag(item.title, item.created_by?.role)}
                                                             </h2>
-                                                            
+
                                                             <p className="text-gray-600 mb-4 line-clamp-3">
                                                                 {(item.content || '').replace(/<[^>]+>/g, '').substring(0, 150) + '...'}
                                                             </p>
-                                                            
+
                                                             <div className="flex justify-between items-center">
                                                                 <span className="inline-flex items-center text-blue-600 font-medium group-hover:text-blue-800 transition-colors">
                                                                     Baca Selengkapnya
@@ -349,7 +348,7 @@ export default function Announcement() {
                                         {filteredAnnouncements.map((item) => {
                                             const itemId = getItemId(item);
                                             if (!itemId) return null;
-                                            
+
                                             return (
                                                 <Link
                                                     key={itemId}
@@ -361,26 +360,26 @@ export default function Announcement() {
                                                             <div className="md:w-1/4 lg:w-1/5 h-48 md:h-auto">
                                                                 {renderFilePreview(item)}
                                                             </div>
-                                                            
+
                                                             <div className="p-6 flex-1">
                                                                 <div className="flex items-center flex-wrap gap-2 mb-3">
                                                                     <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-500 text-white">
                                                                         {item.category?.category_name || "Uncategorized"}
                                                                     </span>
-                                                                    
+
                                                                     <span className="text-xs text-gray-500">
                                                                         {formatDate(item.created_at)}
                                                                     </span>
                                                                 </div>
-                                                                
+
                                                                 <h2 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-blue-600 transition-colors">
                                                                     {getTitleWithTag(item.title, item.created_by?.role)}
                                                                 </h2>
-                                                                
+
                                                                 <p className="text-gray-600 mb-4">
                                                                     {(item.content || '').replace(/<[^>]+>/g, '').substring(0, 180) + '...'}
                                                                 </p>
-                                                                
+
                                                                 <div className="flex justify-end">
                                                                     <span className="inline-flex items-center text-blue-600 font-medium group-hover:text-blue-800 transition-colors">
                                                                         Baca Selengkapnya
@@ -408,8 +407,8 @@ export default function Announcement() {
                                         Tidak ada pengumuman
                                     </h3>
                                     <p className="text-gray-600 max-w-md mx-auto">
-                                        {searchTerm 
-                                            ? "Tidak ada hasil yang cocok dengan pencarian Anda. Coba ubah kata kunci atau pilih kategori lain." 
+                                        {searchTerm
+                                            ? "Tidak ada hasil yang cocok dengan pencarian Anda. Coba ubah kata kunci atau pilih kategori lain."
                                             : "Belum ada pengumuman yang ditambahkan. Silakan periksa kembali nanti."
                                         }
                                     </p>
@@ -419,6 +418,8 @@ export default function Announcement() {
                     )}
                 </div>
             </div>
+            <FooterLayout />
+
         </GuestLayout>
     );
 }
