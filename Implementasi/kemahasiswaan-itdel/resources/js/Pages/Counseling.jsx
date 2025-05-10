@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -223,7 +223,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
 
     return (
         <GuestLayout>
-            <NavbarGuestLayoutPage />
+            <Navbar />
             <Head title="Formulir Konseling" />
 
             <style>

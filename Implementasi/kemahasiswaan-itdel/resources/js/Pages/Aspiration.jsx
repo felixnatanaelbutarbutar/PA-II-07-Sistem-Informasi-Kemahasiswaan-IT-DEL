@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 
 export default function Aspiration({ categories, mpm }) {
@@ -103,7 +103,7 @@ export default function Aspiration({ categories, mpm }) {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayout />
+            <Navbar />
             <Head title="Formulir Aspirasi" />
 
             {/* Notification */}

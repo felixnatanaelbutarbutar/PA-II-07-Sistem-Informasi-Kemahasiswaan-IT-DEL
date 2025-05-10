@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import '../../css/home.css';
 
 const Navbar = ({ showBreadcrumbAndHeader = true }) => {
@@ -12,7 +12,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
 
     const isActive = (path) => url === path;
 
-    // Close dropdowns when clicking outside
     useEffect(() => {
         function handleClickOutside(event) {
             if (layananDropdownRef.current && !layananDropdownRef.current.contains(event.target)) {
@@ -27,7 +26,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [layananDropdownRef, organisasiDropdownRef]);
 
-    // Add scroll event listener for navbar
     useEffect(() => {
         const handleScroll = () => {
             const navbar = document.querySelector('.navbar');
@@ -42,13 +40,27 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Add smooth scroll behavior
     useEffect(() => {
         document.documentElement.style.scrollBehavior = 'smooth';
         return () => (document.documentElement.style.scrollBehavior = 'auto');
     }, []);
 
     const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+
+    const handleNavigation = (path, sectionId) => {
+        router.visit(path, {
+            onSuccess: () => {
+                setTimeout(() => {
+                    const element = document.getElementById(sectionId);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 100); // Delay kecil untuk memastikan DOM sudah diperbarui
+            },
+        });
+        setOrganisasiDropdownOpen(false);
+        setMobileMenuOpen(false);
+    };
 
     const getPageTitle = () => {
         switch (url) {
@@ -64,13 +76,15 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                 return 'Kegiatan';
             case '/counseling':
                 return 'Konseling';
+            case '/aspiration':
+                return 'Aspirasi';
             default:
                 if (url.startsWith('/counseling')) return 'Konseling';
                 if (url.startsWith('/beasiswa')) return 'Beasiswa';
                 if (url.startsWith('/downloads')) return 'Unduhan';
-                // if (url.startsWith('/asrama')) return 'Asrama';
                 if (url.startsWith('/bem')) return 'BEM';
                 if (url.startsWith('/mpm')) return 'MPM';
+                if (url.startsWith('/aspiration')) return 'Aspirasi';
                 return 'Beranda';
         }
     };
@@ -95,7 +109,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                 </Link>
             );
         } else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') ||
-            url.startsWith('/downloads') || url.startsWith('/asrama')) {
+            url.startsWith('/downloads')) {
             breadcrumbItems.push(
                 <span key="separator-1" className="mx-2">/</span>,
                 <span key="layanan" className="text-white">Layanan Kemahasiswaan</span>,
@@ -130,7 +144,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
             <nav className="navbar sticky top-0 z-50 shadow-xl">
                 <div className="container mx-auto w-full">
                     <div className="relative flex h-full items-center justify-between">
-                        {/* Logo - Left aligned */}
                         <div className="logo-container flex items-center pl-0">
                             <img
                                 src="/assets/images/logo/logo-removebg.png"
@@ -148,7 +161,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                             </div>
                         </div>
 
-                        {/* Menu items - Right aligned (Desktop) */}
                         <div className="hidden lg:flex lg:items-center">
                             <div className="flex items-center space-x-2 md:space-x-4 flex-wrap">
                                 <Link
@@ -165,7 +177,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                 </Link>
                                 <Link
                                     href="/announcement"
-                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/announcementguest') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
+                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/announcement') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
                                 >
                                     Pengumuman
                                 </Link>
@@ -177,12 +189,11 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                 </Link>
                                 <Link
                                     href="/activities"
-                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/kegiatan') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
+                                    className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/activities') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
                                 >
                                     Kegiatan
                                 </Link>
 
-                                {/* Layanan Kemahasiswaan Dropdown */}
                                 <div className="relative" ref={layananDropdownRef}>
                                     <button
                                         onClick={() => setLayananDropdownOpen(!layananDropdownOpen)}
@@ -237,21 +248,10 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                                     katakata
                                                 </div>
                                             </Link>
-                                            {/* <Link
-                                                href="#"
-                                                className="dropdown-item block border-l-4 border-transparent px-4 py-3 text-sm text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700"
-                                                onClick={() => setLayananDropdownOpen(false)}
-                                            >
-                                                <div className="font-medium">Asrama</div>
-                                                <div className="text-xs text-gray-500">
-                                                    Informasi dan pendaftaran asrama
-                                                </div>
-                                            </Link> */}
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Organisasi Mega Dropdown */}
                                 <div className="relative" ref={organisasiDropdownRef}>
                                     <button
                                         onClick={() => setOrganisasiDropdownOpen(!organisasiDropdownOpen)}
@@ -277,34 +277,49 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     {organisasiDropdownOpen && (
                                         <div className="mega-dropdown absolute right-0 mt-1 overflow-hidden rounded-lg bg-white/95 p-6 shadow-lg ring-1 ring-black ring-opacity-5 backdrop-blur-sm">
                                             <div className="flex gap-8">
-                                                {/* BEM Section */}
                                                 <div className="w-1/2">
                                                     <div className="mega-menu-title">
                                                         BEM (Badan Eksekutif Mahasiswa)
                                                     </div>
                                                     <div className="mt-2">
-                                                        <Link href="#" className="mega-menu-item">
+                                                        <Link
+                                                            href="/bem#profil-bem"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => handleNavigation('/bem#profil-bem', 'profil-bem')}
+                                                        >
                                                             Profil BEM
                                                         </Link>
-                                                        <Link href="#" className="mega-menu-item">
+                                                        <Link
+                                                            href="/bem#visi-misi"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => handleNavigation('/bem#visi-misi', 'visi-misi')}
+                                                        >
+                                                            Visi & Misi
+                                                        </Link>
+                                                        <Link
+                                                            href="/bem#struktur-organisasi"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => handleNavigation('/bem#struktur-organisasi', 'struktur-organisasi')}
+                                                        >
                                                             Struktur Organisasi
                                                         </Link>
-                                                        <Link href="#" className="mega-menu-item">
+                                                        <Link
+                                                            href="/bem#program-kerja"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => handleNavigation('/bem#program-kerja', 'program-kerja')}
+                                                        >
                                                             Program Kerja
                                                         </Link>
-                                                        <Link href="#" className="mega-menu-item">
-                                                            Kalender Kegiatan
-                                                        </Link>
-                                                        <Link href="#" className="mega-menu-item">
-                                                            Prestasi
-                                                        </Link>
-                                                        <Link href="#" className="mega-menu-item">
-                                                            Galeri
+                                                        <Link
+                                                            href="/bem#partisipasi-anda"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => handleNavigation('/bem#partisipasi-anda', 'partisipasi-anda')}
+                                                        >
+                                                            Partisipasi Anda
                                                         </Link>
                                                     </div>
                                                 </div>
 
-                                                {/* MPM Section */}
                                                 <div className="w-1/2">
                                                     <div className="mega-menu-title">
                                                         MPM (Majelis Perwakilan Mahasiswa)
@@ -312,19 +327,25 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                                     <div className="mt-2">
                                                         <Link
                                                             href="/mpm"
-                                                            className="mega-menu-item"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => {
+                                                                setOrganisasiDropdownOpen(false);
+                                                                setMobileMenuOpen(false);
+                                                            }}
                                                         >
                                                             Tentang MPM
                                                         </Link>
                                                         <Link
                                                             href="/mpm#struktur-komisi"
-                                                            className="mega-menu-item"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => handleNavigation('/mpm#struktur-komisi', 'struktur-komisi')}
                                                         >
                                                             Struktur Komisi
                                                         </Link>
                                                         <Link
                                                             href="/mpm#partisipasi-anda"
-                                                            className="mega-menu-item"
+                                                            className="mega-menu-item block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                            onClick={() => handleNavigation('/mpm#partisipasi-anda', 'partisipasi-anda')}
                                                         >
                                                             Partisipasi Anda
                                                         </Link>
@@ -337,7 +358,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                             </div>
                         </div>
 
-                        {/* Mobile menu button */}
                         <div className="flex items-center lg:hidden">
                             <button
                                 type="button"
@@ -384,7 +404,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                         </div>
                     </div>
 
-                    {/* Mobile Menu */}
                     {mobileMenuOpen && (
                         <div className="lg:hidden mobile-menu bg-white shadow-lg">
                             <div className="px-2 pt-2 pb-3 space-y-1">
@@ -424,7 +443,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     Kegiatan
                                 </Link>
 
-                                {/* Layanan Kemahasiswaan Mobile Dropdown */}
                                 <div className="relative">
                                     <button
                                         onClick={() => setLayananDropdownOpen(!layananDropdownOpen)}
@@ -478,21 +496,10 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                             >
                                                 Unduhan
                                             </Link>
-                                            {/* <Link
-                                                href="#"
-                                                className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                onClick={() => {
-                                                    setLayananDropdownOpen(false);
-                                                    setMobileMenuOpen(false);
-                                                }}
-                                            >
-                                                Asrama
-                                            </Link> */}
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Organisasi Mobile Dropdown */}
                                 <div className="relative">
                                     <button
                                         onClick={() => setOrganisasiDropdownOpen(!organisasiDropdownOpen)}
@@ -519,66 +526,42 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                             <div className="border-t pt-2">
                                                 <div className="text-sm font-semibold text-gray-700">BEM</div>
                                                 <Link
-                                                    href="#"
+                                                    href="/bem#profil-bem"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
+                                                    onClick={() => handleNavigation('/bem#profil-bem', 'profil-bem')}
                                                 >
                                                     Profil BEM
                                                 </Link>
                                                 <Link
-                                                    href="#"
+                                                    href="/bem#visi-misi"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
+                                                    onClick={() => handleNavigation('/bem#visi-misi', 'visi-misi')}
+                                                >
+                                                    Visi & Misi
+                                                </Link>
+                                                <Link
+                                                    href="/bem#struktur-organisasi"
+                                                    className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                                    onClick={() => handleNavigation('/bem#struktur-organisasi', 'struktur-organisasi')}
                                                 >
                                                     Struktur Organisasi
                                                 </Link>
                                                 <Link
-                                                    href="#"
+                                                    href="/bem#program-kerja"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
+                                                    onClick={() => handleNavigation('/bem#program-kerja', 'program-kerja')}
                                                 >
                                                     Program Kerja
                                                 </Link>
                                                 <Link
-                                                    href="/activities"
+                                                    href="/bem#partisipasi-anda"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
+                                                    onClick={() => handleNavigation('/bem#partisipasi-anda', 'partisipasi-anda')}
                                                 >
-                                                    Kalender Kegiatan
-                                                </Link>
-                                                <Link
-                                                    href="#"
-                                                    className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
-                                                >
-                                                    Prestasi
-                                                </Link>
-                                                <Link
-                                                    href="#"
-                                                    className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
-                                                >
-                                                    Galeri
+                                                    Partisipasi Anda
                                                 </Link>
                                             </div>
+
                                             <div className="border-t pt-2">
                                                 <div className="text-sm font-semibold text-gray-700">MPM</div>
                                                 <Link
@@ -594,20 +577,14 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                                 <Link
                                                     href="/mpm#struktur-komisi"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
+                                                    onClick={() => handleNavigation('/mpm#struktur-komisi', 'struktur-komisi')}
                                                 >
                                                     Struktur Komisi
                                                 </Link>
                                                 <Link
                                                     href="/mpm#partisipasi-anda"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
-                                                        setOrganisasiDropdownOpen(false);
-                                                        setMobileMenuOpen(false);
-                                                    }}
+                                                    onClick={() => handleNavigation('/mpm#partisipasi-anda', 'partisipasi-anda')}
                                                 >
                                                     Partisipasi Anda
                                                 </Link>
@@ -621,7 +598,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                 </div>
             </nav>
 
-            {/* Header Image Section (Conditional Rendering) */}
             {showBreadcrumbAndHeader && (
                 <div className="relative w-full h-[350px] overflow-hidden">
                     <img

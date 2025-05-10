@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import ChatbotWidget from '@/Layouts/Chatbot';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
@@ -330,7 +330,7 @@ export default function ActivityCalendar({ activities }) {
     return (
         <GuestLayout>
             <Head title="Kalender Kegiatan" />
-            <NavbarGuestLayoutPage />
+            <Navbar />
 
             <div style={styles.container}>
                 <div style={styles.backgroundEffect}></div>
