@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AspirationCategory;
+use App\Models\User;
 use App\Models\Activity;
 use App\Models\Announcement;
-use App\Models\User;
+use App\Models\AspirationCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -17,21 +20,45 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // Fetch total number of students (assuming User model with a 'role' of 'student')
-        $totalMahasiswa = User::where('role', 'student')->count();
+        $user = Auth::user();
+        $role = strtolower($user->role);
+        $menuItems = RoleHelper::getNavigationMenu($role);
+        $permissions = RoleHelper::getRolePermissions($role);
+        $totalMahasiswa = User::where('role', 'mahasiswa')->count();
 
-        // Fetch data for the dashboard view
+        // Ambil data pengguna dari session (data dari API CIS)
+        $apiUser = session('api_user', [
+            'user_id' => $user->id,
+            'user_name' => $user->username,
+            'email' => $user->email,
+            'role' => $role,
+            'status' => 1,
+            'jabatan' => []
+        ]);
+
         return Inertia::render('Admin/Dashboard', [
+            'auth' => [
+                'user' => $user, // Kirim data dari API CIS
+            ],
+            'userRole' => $role,
+            'permissions' => $permissions,
+            'menu' => $menuItems,
             'totalMahasiswa' => $totalMahasiswa,
         ]);
     }
 
     /**
-     * Fetch the count of active activities.
+     * Fetch the count of active activities based on end_date.
      */
     public function getActiveActivitiesCount()
     {
-        $activeCount = Activity::where('status', 'active')->count();
+        $today = Carbon::today(); // Tanggal saat ini: 3 Mei 2025
+        $activeCount = Activity::where(function ($query) use ($today) {
+            $query->where('end_date', '>=', $today) // Kegiatan yang end_date-nya setelah atau sama dengan hari ini
+                  ->orWhereNull('end_date'); // Kegiatan yang end_date-nya null dianggap masih berlangsung
+        })
+        ->count();
+
         return response()->json(['active_count' => $activeCount]);
     }
 

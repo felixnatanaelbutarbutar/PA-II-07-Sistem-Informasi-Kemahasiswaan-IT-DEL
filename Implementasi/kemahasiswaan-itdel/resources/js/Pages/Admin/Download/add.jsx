@@ -1,564 +1,132 @@
+import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-export default function Add({ auth, userRole, permissions, navigation, mpmExists }) {
-    const { flash } = usePage().props ?? {};
-    const [data, setData] = useState({
-        introduction: '',
-        vision: '',
-        mission: [''],
-        structure: {
-            chairman: { name: '', photo: null },
-            secretary: { name: '', photo: null },
-            commissions: [],
-        },
-        recruitment_status: 'OPEN',
-        logo: null,
+export default function DownloadAdd({ auth, userRole, permissions, navigation, categories }) {
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        category_id: '',
+        file: null,
     });
-    const [missionFields, setMissionFields] = useState(['']);
-    const [errors, setErrors] = useState({});
-    const [showNotification, setShowNotification] = useState(false);
-    const [notificationMessage, setNotificationMessage] = useState('');
-    const [notificationType, setNotificationType] = useState('success');
 
-    // State untuk mengelola komisi
-    const [commissions, setCommissions] = useState([]);
-
-    // Efek untuk menangani notifikasi dari flash message
-    useEffect(() => {
-        if (flash) {
-            if (flash.success) {
-                setNotificationMessage(flash.success);
-                setNotificationType('success');
-                setShowNotification(true);
-            } else if (flash.error) {
-                setNotificationMessage(flash.error);
-                setNotificationType('error');
-                setShowNotification(true);
-            }
-
-            if (flash.success || flash.error) {
-                const timer = setTimeout(() => {
-                    setShowNotification(false);
-                }, 5000);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [flash]);
-
-    const handleMissionChange = (index, value) => {
-        const updatedMissions = [...missionFields];
-        updatedMissions[index] = value;
-        setMissionFields(updatedMissions);
-        setData({ ...data, mission: updatedMissions });
-    };
-
-    const addMissionField = () => {
-        setMissionFields([...missionFields, '']);
-    };
-
-    const removeMissionField = (index) => {
-        const updatedMissions = missionFields.filter((_, i) => i !== index);
-        setMissionFields(updatedMissions);
-        setData({ ...data, mission: updatedMissions });
-    };
-
-    const addCommission = () => {
-        const newCommission = {
-            name: '',
-            chairman: { name: '', photo: null },
-            members: [],
-            work_programs: [''],
-        };
-        setCommissions([...commissions, newCommission]);
-        setData({ ...data, structure: { ...data.structure, commissions: [...commissions, newCommission] } });
-    };
-
-    const handleCommissionChange = (index, field, value) => {
-        const updatedCommissions = [...commissions];
-        updatedCommissions[index][field] = value;
-        setCommissions(updatedCommissions);
-        setData({ ...data, structure: { ...data.structure, commissions: updatedCommissions } });
-    };
-
-    const handleChairmanChange = (index, field, value) => {
-        const updatedCommissions = [...commissions];
-        updatedCommissions[index].chairman[field] = value;
-        setCommissions(updatedCommissions);
-        setData({ ...data, structure: { ...data.structure, commissions: updatedCommissions } });
-    };
-
-    const addMember = (commissionIndex) => {
-        const updatedCommissions = [...commissions];
-        updatedCommissions[commissionIndex].members.push({ name: '', photo: null });
-        setCommissions(updatedCommissions);
-        setData({ ...data, structure: { ...data.structure, commissions: updatedCommissions } });
-    };
-
-    const handleMemberChange = (commissionIndex, memberIndex, field, value) => {
-        const updatedCommissions = [...commissions];
-        updatedCommissions[commissionIndex].members[memberIndex][field] = value;
-        setCommissions(updatedCommissions);
-        setData({ ...data, structure: { ...data.structure, commissions: updatedCommissions } });
-    };
-
-    const addWorkProgram = (commissionIndex) => {
-        const updatedCommissions = [...commissions];
-        updatedCommissions[commissionIndex].work_programs.push('');
-        setCommissions(updatedCommissions);
-        setData({ ...data, structure: { ...data.structure, commissions: updatedCommissions } });
-    };
-
-    const handleWorkProgramChange = (commissionIndex, programIndex, value) => {
-        const updatedCommissions = [...commissions];
-        updatedCommissions[commissionIndex].work_programs[programIndex] = value;
-        setCommissions(updatedCommissions);
-        setData({ ...data, structure: { ...data.structure, commissions: updatedCommissions } });
-    };
-
-    const removeWorkProgram = (commissionIndex, programIndex) => {
-        const updatedCommissions = [...commissions];
-        updatedCommissions[commissionIndex].work_programs = updatedCommissions[
-            commissionIndex
-        ].work_programs.filter((_, i) => i !== programIndex);
-        setCommissions(updatedCommissions);
-        setData({ ...data, structure: { ...data.structure, commissions: updatedCommissions } });
+    const handleChange = (e) => {
+        const { name, value, files } = e.target;
+        setFormData({
+            ...formData,
+            [name]: files ? files[0] : value,
+        });
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
-        const formData = new FormData();
-        formData.append('introduction', data.introduction);
-        formData.append('vision', data.vision);
-        formData.append('mission', JSON.stringify(data.mission));
-        formData.append('structure', JSON.stringify(data.structure));
-        formData.append('recruitment_status', data.recruitment_status);
-
-        if (data.logo) {
-            formData.append('logo', data.logo);
+        const data = new FormData();
+        data.append('title', formData.title);
+        data.append('description', formData.description);
+        data.append('category_id', formData.category_id);
+        if (formData.file) {
+            data.append('file', formData.file);
         }
 
-        if (data.structure.chairman.photo) {
-            formData.append('chairman_photo', data.structure.chairman.photo);
-        }
-
-        if (data.structure.secretary.photo) {
-            formData.append('secretary_photo', data.structure.secretary.photo);
-        }
-
-        data.structure.commissions.forEach((commission, commissionIndex) => {
-            if (commission.chairman.photo) {
-                formData.append(`commissions[${commissionIndex}][chairman_photo]`, commission.chairman.photo);
-            }
-            commission.members.forEach((member, memberIndex) => {
-                if (member.photo) {
-                    formData.append(
-                        `commissions[${commissionIndex}][members][${memberIndex}][photo]`,
-                        member.photo
-                    );
-                }
-            });
-        });
-
-        router.post(route('admin.mpm.store'), formData, {
-            onError: (errors) => {
-                setErrors(errors);
-            },
-        });
+        router.post(route('admin.downloads.store'), data);
     };
 
     return (
-        <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={navigation}>
-            <Head title="Tambah Data MPM" />
+        <AdminLayout
+            user={auth.user}
+            userRole={userRole}
+            permissions={permissions}
+            navigation={navigation}
+        >
+            <Head title="Tambah File Unduhan" />
 
-            {/* Notification */}
-            {showNotification && (
-                <div
-                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${notificationType === 'success'
-                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
-                            : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
-                        }`}
-                >
-                    <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                            <svg
-                                className={`h-5 w-5 ${notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'
-                                    }`}
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                            >
-                                {notificationType === 'success' ? (
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                        clipRule="evenodd"
-                                    />
-                                ) : (
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
-                                        clipRule="evenodd"
-                                    />
-                                )}
-                            </svg>
-                        </div>
-                        <div className="ml-3">
-                            <p
-                                className={`text-sm font-medium ${notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
-                                    }`}
-                            >
-                                {notificationMessage}
-                            </p>
-                        </div>
-                        <div className="ml-auto pl-3">
-                            <div className="-mx-1.5 -my-1.5">
-                                <button
-                                    onClick={() => setShowNotification(false)}
-                                    className={`inline-flex rounded-md p-1.5 ${notificationType === 'success'
-                                            ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
-                                            : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
-                                        } focus:outline-none focus:ring-2`}
-                                >
-                                    <span className="sr-only">Dismiss</span>
-                                    <svg
-                                        className="h-5 w-5"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
+                <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 border border-gray-200/50">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+                        Tambah File Unduhan
+                    </h1>
 
-            <div className="py-10">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
-                        <h1 className="text-3xl font-bold text-gray-800 mb-6">Tambah Data MPM</h1>
-                        {mpmExists && (
-                            <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                                <h3 className="font-bold">Peringatan:</h3>
-                                <p>Data MPM sudah ada. Menambahkan data baru akan menggantikan data sebelumnya.</p>
-                            </div>
-                        )}
-                        {Object.keys(errors).length > 0 && (
-                            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                                <h3 className="font-bold">Terjadi Kesalahan:</h3>
-                                <ul className="list-disc pl-5">
-                                    {Object.entries(errors).map(([key, value]) => (
-                                        <li key={key}>
-                                            {key}: {value}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Perkenalan MPM</label>
-                                <textarea
-                                    value={data.introduction}
-                                    onChange={(e) => setData({ ...data, introduction: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    rows="4"
-                                    required
-                                />
-                                {errors.introduction && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.introduction}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Logo MPM</label>
-                                <input
-                                    type="file"
-                                    onChange={(e) => setData({ ...data, logo: e.target.files[0] })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    accept="image/*"
-                                />
-                                {errors.logo && <p className="text-red-500 text-sm mt-1">{errors.logo}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Ketua</label>
+                                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                                    Judul
+                                </label>
                                 <input
                                     type="text"
-                                    value={data.structure.chairman.name}
-                                    onChange={(e) =>
-                                        setData({
-                                            ...data,
-                                            structure: {
-                                                ...data.structure,
-                                                chairman: { ...data.structure.chairman, name: e.target.value },
-                                            },
-                                        })
-                                    }
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    name="title"
+                                    id="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     required
                                 />
-                                <input
-                                    type="file"
-                                    onChange={(e) =>
-                                        setData({
-                                            ...data,
-                                            structure: {
-                                                ...data.structure,
-                                                chairman: { ...data.structure.chairman, photo: e.target.files[0] },
-                                            },
-                                        })
-                                    }
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    accept="image/*"
-                                />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Sekretaris</label>
-                                <input
-                                    type="text"
-                                    value={data.structure.secretary.name}
-                                    onChange={(e) =>
-                                        setData({
-                                            ...data,
-                                            structure: {
-                                                ...data.structure,
-                                                secretary: { ...data.structure.secretary, name: e.target.value },
-                                            },
-                                        })
-                                    }
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    required
-                                />
-                                <input
-                                    type="file"
-                                    onChange={(e) =>
-                                        setData({
-                                            ...data,
-                                            structure: {
-                                                ...data.structure,
-                                                secretary: { ...data.structure.secretary, photo: e.target.files[0] },
-                                            },
-                                        })
-                                    }
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    accept="image/*"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Komisi</label>
-                                {commissions.map((commission, commissionIndex) => (
-                                    <div key={commissionIndex} className="border p-4 rounded-lg mt-2">
-                                        <input
-                                            type="text"
-                                            value={commission.name}
-                                            onChange={(e) =>
-                                                handleCommissionChange(commissionIndex, 'name', e.target.value)
-                                            }
-                                            placeholder="Nama Komisi"
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                            required
-                                        />
-                                        <div className="mt-2">
-                                            <label className="block text-sm font-medium text-gray-700">
-                                                Ketua Komisi
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={commission.chairman.name}
-                                                onChange={(e) =>
-                                                    handleChairmanChange(commissionIndex, 'name', e.target.value)
-                                                }
-                                                placeholder="Nama Ketua Komisi"
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                required
-                                            />
-                                            <input
-                                                type="file"
-                                                onChange={(e) =>
-                                                    handleChairmanChange(commissionIndex, 'photo', e.target.files[0])
-                                                }
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                accept="image/*"
-                                            />
-                                        </div>
-                                        <div className="mt-2">
-                                            <label className="block text-sm font-medium text-gray-700">
-                                                Anggota
-                                            </label>
-                                            {commission.members.map((member, memberIndex) => (
-                                                <div key={memberIndex} className="flex space-x-4 mt-2">
-                                                    <input
-                                                        type="text"
-                                                        value={member.name}
-                                                        onChange={(e) =>
-                                                            handleMemberChange(
-                                                                commissionIndex,
-                                                                memberIndex,
-                                                                'name',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder={`Anggota ${memberIndex + 1}`}
-                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                        required
-                                                    />
-                                                    <input
-                                                        type="file"
-                                                        onChange={(e) =>
-                                                            handleMemberChange(
-                                                                commissionIndex,
-                                                                memberIndex,
-                                                                'photo',
-                                                                e.target.files[0]
-                                                            )
-                                                        }
-                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                        accept="image/*"
-                                                    />
-                                                </div>
-                                            ))}
-                                            <button
-                                                type="button"
-                                                onClick={() => addMember(commissionIndex)}
-                                                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                            >
-                                                Tambah Anggota
-                                            </button>
-                                        </div>
-                                        <div className="mt-2">
-                                            <label className="block text-sm font-medium text-gray-700">
-                                                Program Kerja
-                                            </label>
-                                            {commission.work_programs.map((program, programIndex) => (
-                                                <div key={programIndex} className="flex space-x-4 mt-2">
-                                                    <input
-                                                        type="text"
-                                                        value={program}
-                                                        onChange={(e) =>
-                                                            handleWorkProgramChange(
-                                                                commissionIndex,
-                                                                programIndex,
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder={`Program Kerja ${programIndex + 1}`}
-                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                        required
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeWorkProgram(commissionIndex, programIndex)}
-                                                        className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                                    >
-                                                        Hapus
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            <button
-                                                type="button"
-                                                onClick={() => addWorkProgram(commissionIndex)}
-                                                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                            >
-                                                Tambah Program Kerja
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={addCommission}
-                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                >
-                                    Tambah Komisi
-                                </button>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Visi</label>
-                                <textarea
-                                    value={data.vision}
-                                    onChange={(e) => setData({ ...data, vision: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    rows="4"
-                                    required
-                                />
-                                {errors.vision && <p className="text-red-500 text-sm mt-1">{errors.vision}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Misi</label>
-                                {missionFields.map((mission, index) => (
-                                    <div key={index} className="flex space-x-4 mt-2">
-                                        <input
-                                            type="text"
-                                            value={mission}
-                                            onChange={(e) => handleMissionChange(index, e.target.value)}
-                                            placeholder={`Misi ${index + 1}`}
-                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeMissionField(index)}
-                                            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                        >
-                                            Hapus
-                                        </button>
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={addMissionField}
-                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                >
-                                    Tambah Misi
-                                </button>
-                                {errors.mission && <p className="text-red-500 text-sm mt-1">{errors.mission}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Status Rekrutmen
+                                <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
+                                    Kategori
                                 </label>
                                 <select
-                                    value={data.recruitment_status}
-                                    onChange={(e) => setData({ ...data, recruitment_status: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    name="category_id"
+                                    id="category_id"
+                                    value={formData.category_id}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     required
                                 >
-                                    <option value="OPEN">OPEN</option>
-                                    <option value="CLOSED">CLOSED</option>
+                                    <option value="">Pilih Kategori</option>
+                                    {categories.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
                                 </select>
-                                {errors.recruitment_status && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.recruitment_status}</p>
-                                )}
                             </div>
 
-                            <div className="flex space-x-4">
+                            <div>
+                                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                                    Deskripsi
+                                </label>
+                                <textarea
+                                    name="description"
+                                    id="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    rows="4"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="file" className="block text-sm font-medium text-gray-700">
+                                    File (PDF, DOC, DOCX, XLS, XLSX)
+                                </label>
+                                <input
+                                    type="file"
+                                    name="file"
+                                    id="file"
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                                    required
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => router.get(route('admin.downloads.index'))}
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    Batal
+                                </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                 >
                                     Simpan
                                 </button>
-                                <a
-                                    href={route('admin.mpm.index')}
-                                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-                                >
-                                    Kembali
-                                </a>
                             </div>
                         </form>
                     </div>

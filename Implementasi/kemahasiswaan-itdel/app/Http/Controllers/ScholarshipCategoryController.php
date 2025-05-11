@@ -11,14 +11,61 @@ use Illuminate\Support\Facades\Log;
 
 class ScholarshipCategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $role = strtolower($user->role);
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        $categories = ScholarshipCategory::with(['creator', 'updater'])->get();
+        // Get query parameters for filtering and searching
+        $status = $request->query('status'); // 'active', 'inactive', or null
+        $sortBy = $request->query('sort_by', 'updated_at'); // Default to updated_at
+        $sortDirection = $request->query('sort_direction', 'desc'); // Default to desc
+        $search = $request->query('search');
+
+        $query = ScholarshipCategory::with(['creator', 'updater']);
+
+        // Apply status filter
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        // Apply case-insensitive search on category_name and description
+        if ($search) {
+            // Split search term into individual words
+            $searchTerms = array_filter(explode(' ', trim($search)));
+
+            $query->where(function ($q) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    $lowerTerm = strtolower($term);
+                    $q->orWhereRaw('LOWER(category_name) LIKE ?', ['%' . $lowerTerm . '%'])
+                      ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $lowerTerm . '%']);
+                }
+            });
+        }
+
+        // Apply sorting (status first, then updated_at)
+        if ($sortBy === 'updated_at') {
+            $query->orderBy('is_active', 'desc') // Prioritize active status
+                  ->orderBy('updated_at', $sortDirection);
+        }
+
+        $categories = $query->get()->map(function ($category) {
+            return [
+                'category_id' => $category->category_id,
+                'category_name' => $category->category_name,
+                'description' => $category->description,
+                'is_active' => $category->is_active,
+                'status' => $category->is_active ? 'Aktif' : 'Non-Aktif',
+                'created_by' => $category->creator ? $category->creator->name : null,
+                'updated_by' => $category->updater ? $category->updater->name : null,
+                'created_at' => $category->created_at->toDateTimeString(),
+                'updated_at' => $category->updated_at->toDateTimeString(),
+            ];
+        });
 
         return Inertia::render('Admin/ScholarshipCategory/index', [
             'auth' => ['user' => $user],
@@ -26,6 +73,12 @@ class ScholarshipCategoryController extends Controller
             'permissions' => $permissions,
             'menu' => $menuItems,
             'categories' => $categories,
+            'filters' => [
+                'status' => $status,
+                'sort_by' => $sortBy,
+                'sort_direction' => $sortDirection,
+                'search' => $search,
+            ],
         ]);
     }
 
@@ -49,6 +102,7 @@ class ScholarshipCategoryController extends Controller
         $request->validate([
             'category_name' => 'required|string|max:255|unique:scholarship_categories,category_name',
             'description' => 'nullable|string',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $categoryId = $this->generateCategoryId();
@@ -58,6 +112,7 @@ class ScholarshipCategoryController extends Controller
                 'category_id' => $categoryId,
                 'category_name' => $request->category_name,
                 'description' => $request->description,
+                'is_active' => $request->is_active ?? true,
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
             ]);
@@ -66,6 +121,7 @@ class ScholarshipCategoryController extends Controller
                 'category_id' => $categoryId,
                 'category_name' => $request->category_name,
                 'description' => $request->description,
+                'is_active' => $request->is_active ?? true,
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
             ]);
@@ -92,7 +148,13 @@ class ScholarshipCategoryController extends Controller
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
-            'category' => $category,
+            'category' => [
+                'category_id' => $category->category_id,
+                'category_name' => $category->category_name,
+                'description' => $category->description,
+                'is_active' => $category->is_active,
+                'status' => $category->is_active ? 'Aktif' : 'Non-Aktif',
+            ],
         ]);
     }
 
@@ -101,6 +163,7 @@ class ScholarshipCategoryController extends Controller
         $request->validate([
             'category_name' => 'required|string|max:255|unique:scholarship_categories,category_name,' . $category_id . ',category_id',
             'description' => 'nullable|string',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         try {
@@ -110,12 +173,14 @@ class ScholarshipCategoryController extends Controller
                 'category_id' => $category_id,
                 'category_name' => $request->category_name,
                 'description' => $request->description,
+                'is_active' => $request->is_active ?? $category->is_active,
                 'updated_by' => Auth::id(),
             ]);
 
             $category->update([
                 'category_name' => $request->category_name,
                 'description' => $request->description,
+                'is_active' => $request->has('is_active') ? $request->is_active : $category->is_active,
                 'updated_by' => Auth::id(),
             ]);
         } catch (\Exception $e) {
@@ -141,9 +206,77 @@ class ScholarshipCategoryController extends Controller
             ->with('success', 'Kategori berhasil dihapus!');
     }
 
-    /**
-     * Generate a unique ID for category_id
-     */
+    public function toggleActive(Request $request, $category_id)
+    {
+        try {
+            $category = ScholarshipCategory::findOrFail($category_id);
+            $oldStatus = $category->is_active;
+            $newStatus = !$category->is_active;
+
+            \Log::debug('Toggling scholarship category status', [
+                'category_id' => $category_id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'updated_by' => Auth::id(),
+            ]);
+
+            $category->update([
+                'is_active' => $newStatus,
+                'updated_by' => Auth::id(),
+            ]);
+
+            \Log::debug('Category updated', [
+                'category_id' => $category_id,
+                'is_active' => $category->fresh()->is_active,
+            ]);
+
+            $message = $newStatus ? 'Kategori berhasil diaktifkan.' : 'Kategori berhasil dinonaktifkan.';
+
+            if ($request->header('X-Inertia')) {
+                $user = Auth::user();
+                $role = strtolower($user->role);
+                $menuItems = RoleHelper::getNavigationMenu($role);
+                $permissions = RoleHelper::getRolePermissions($role);
+
+                $categories = ScholarshipCategory::with(['creator', 'updater'])->get()->map(function ($category) {
+                    return [
+                        'category_id' => $category->category_id,
+                        'category_name' => $category->category_name,
+                        'description' => $category->description,
+                        'is_active' => $category->is_active,
+                        'status' => $category->is_active ? 'Aktif' : 'Non-Aktif',
+                        'created_by' => $category->creator ? $category->creator->name : null,
+                        'updated_by' => $category->updater ? $category->updater->name : null,
+                        'created_at' => $category->created_at->toDateTimeString(),
+                        'updated_at' => $category->updated_at->toDateTimeString(),
+                    ];
+                });
+
+                return Inertia::render('Admin/ScholarshipCategory/index', [
+                    'auth' => ['user' => $user],
+                    'userRole' => $role,
+                    'permissions' => $permissions,
+                    'menu' => $menuItems,
+                    'categories' => $categories,
+                    'flash' => ['success' => $message],
+                ]);
+            }
+
+            return redirect()->route('admin.scholarship-category.index')->with('success', $message);
+        } catch (\Exception $e) {
+            \Log::error('Error toggling scholarship category status: ' . $e->getMessage(), [
+                'category_id' => $category_id,
+                'user_id' => Auth::id(),
+            ]);
+            if ($request->header('X-Inertia')) {
+                return Inertia::render('Admin/ScholarshipCategory/index', [
+                    'flash' => ['error' => 'Failed to toggle category status: ' . $e->getMessage()],
+                ])->withStatus(422);
+            }
+            return back()->withErrors(['error' => 'Failed to toggle category status: ' . $e->getMessage()]);
+        }
+    }
+
     private function generateCategoryId()
     {
         $lastCategory = ScholarshipCategory::latest('category_id')->first();

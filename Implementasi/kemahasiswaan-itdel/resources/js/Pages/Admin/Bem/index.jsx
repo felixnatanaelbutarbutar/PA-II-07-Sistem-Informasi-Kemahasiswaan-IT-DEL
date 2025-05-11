@@ -1,6 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Index({ auth, userRole, permissions, bem, navigation }) {
     const { flash } = usePage().props ?? {};
@@ -9,6 +10,7 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
     const [notificationType, setNotificationType] = useState('success');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [bemIdToDelete, setBemIdToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (flash) {
@@ -36,17 +38,27 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
         setShowDeleteModal(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (bemIdToDelete) {
-            router.delete(
-                route('admin.bem.destroy', bemIdToDelete),
-                {
-                    onFinish: () => {
-                        setShowDeleteModal(false);
-                        setBemIdToDelete(null);
-                    },
-                }
-            );
+            setIsDeleting(true);
+            try {
+                await axios.delete(route('admin.bem.destroy', bemIdToDelete));
+                setNotificationMessage('Data BEM berhasil dihapus!');
+                setNotificationType('success');
+                setShowNotification(true);
+                router.reload({ preserveScroll: true });
+            } catch (error) {
+                console.error('Error deleting BEM:', error);
+                setNotificationMessage(
+                    'Gagal menghapus data BEM: ' + (error.response?.data?.message || 'Terjadi kesalahan.')
+                );
+                setNotificationType('error');
+                setShowNotification(true);
+            } finally {
+                setIsDeleting(false);
+                setShowDeleteModal(false);
+                setBemIdToDelete(null);
+            }
         }
     };
 
@@ -144,16 +156,35 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                             <button
                                 onClick={cancelDelete}
                                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                disabled={isDeleting}
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={confirmDelete}
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"
+                                disabled={isDeleting}
                             >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                {isDeleting ? (
+                                    <svg
+                                        className="w-4 h-4 mr-2 animate-spin"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 12a8 8 0 0116 0 8 8 0 01-16 0z"
+                                        />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                )}
                                 Hapus
                             </button>
                         </div>
@@ -170,7 +201,6 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Kelola Data BEM</h1>
                                 <p className="text-gray-500 mt-1">Kelola data organisasi BEM</p>
                             </div>
-                            {/* Hanya tampilkan tombol "Tambah Data BEM" jika belum ada data */}
                             {!bem && (
                                 <div className="flex items-center gap-4 w-full md:w-auto">
                                     <Link
@@ -190,7 +220,6 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                     {/* BEM Data */}
                     {bem ? (
                         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
-                            {/* Logo BEM */}
                             {bem.logo && (
                                 <div className="mb-6 text-center">
                                     <h2 className="text-xl font-semibold text-gray-700 mb-2">Logo BEM</h2>
@@ -202,7 +231,6 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                                 </div>
                             )}
 
-                            {/* Perkenalan BEM */}
                             <div className="mb-6">
                                 <h2 className="text-xl font-semibold text-gray-700 mb-2">Perkenalan BEM</h2>
                                 <p className="text-gray-600">{bem.introduction}</p>
@@ -224,7 +252,6 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
 
                             <h2 className="text-2xl font-semibold text-gray-800 mb-4 mt-6">Struktur Organisasi</h2>
 
-                            {/* Jabatan Utama BEM */}
                             <div className="mb-8">
                                 <h3 className="text-xl font-semibold text-gray-700 mb-4">Jabatan Utama (BPH)</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -250,7 +277,6 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                                 </div>
                             </div>
 
-                            {/* Departemen */}
                             <div className="mb-8">
                                 <h3 className="text-xl font-semibold text-gray-700 mb-4">Departemen</h3>
                                 {bem.structure?.departments?.map((dept, deptIndex) => (
@@ -306,13 +332,14 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                                 <button
                                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                                     onClick={() => handleDeleteClick(bem.id)}
+                                    disabled={isDeleting}
                                 >
                                     Hapus
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
+                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-200">
                             <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                                 <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />

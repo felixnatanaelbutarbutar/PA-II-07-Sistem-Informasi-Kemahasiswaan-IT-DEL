@@ -29,8 +29,16 @@ const quillModules = {
     },
 };
 
-export default function Add({ auth, userRole, permissions, menu, categories, flash }) {
-    const [imagePreview, setImagePreview] = useState(null);
+const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'align', 'list', 'bullet', 'indent',
+    'blockquote', 'code-block',
+    'color', 'background',
+    'link', 'image', 'video',
+];
+
+export default function Add({ auth, permissions, userRole, menu, categories }) {
     const [data, setData] = useState({
         name: '',
         description: '',
@@ -38,146 +46,67 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
         start_date: '',
         end_date: '',
         category_id: '',
+        is_active: true,
         created_by: auth.user.id,
         updated_by: null,
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [errors, setErrors] = useState({});
+    const [posterPreview, setPosterPreview] = useState(null);
 
     useEffect(() => {
-        // Handle flash messages from server
-        if (flash) {
-            if (flash.success) {
-                setNotification({
-                    show: true,
-                    type: 'success',
-                    message: flash.success,
-                });
-            } else if (flash.error) {
-                setNotification({
-                    show: true,
-                    type: 'error',
-                    message: flash.error,
-                });
-            }
-        }
-
-        // Auto-hide notification after 5 seconds
         if (notification.show) {
             const timer = setTimeout(() => {
                 setNotification({ ...notification, show: false });
             }, 5000);
             return () => clearTimeout(timer);
         }
-    }, [flash, notification]);
+    }, [notification]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        setErrors({}); // Clear previous errors
-
-        // Client-side validation for required fields
-        const newErrors = {};
-        if (!data.name.trim()) newErrors.name = 'Nama beasiswa wajib diisi.';
-        if (!data.description.trim()) newErrors.description = 'Deskripsi beasiswa wajib diisi.';
-        if (!data.start_date) newErrors.start_date = 'Tanggal buka wajib diisi.';
-        if (!data.end_date) newErrors.end_date = 'Tanggal tutup wajib diisi.';
-        if (new Date(data.end_date) < new Date(data.start_date)) {
-            newErrors.end_date = 'Tanggal tutup harus setelah atau sama dengan tanggal buka.';
-        }
-        if (!data.category_id) newErrors.category_id = 'Kategori wajib dipilih.';
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            setIsSubmitting(false);
-            return; // Stop submission if there are client-side errors
-        }
-
-        const formData = new FormData();
-        formData.append('name', data.name);
-        formData.append('description', data.description);
-        if (data.poster) {
-            formData.append('poster', data.poster);
-        }
-        formData.append('start_date', data.start_date);
-        formData.append('end_date', data.end_date);
-        formData.append('category_id', data.category_id);
-        formData.append('created_by', data.created_by);
-
-        try {
-            await axios.post(route('admin.scholarship.store'), formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            setNotification({
-                show: true,
-                type: 'success',
-                message: 'Beasiswa berhasil ditambahkan!',
-            });
-
-            // Reset the form
-            setData({
-                name: '',
-                description: '',
-                poster: null,
-                start_date: '',
-                end_date: '',
-                category_id: '',
-                created_by: auth.user.id,
-                updated_by: null,
-            });
-            setImagePreview(null);
-
-            // Redirect after 1.5 seconds
-            setTimeout(() => {
-                router.visit(route('admin.scholarship.index'));
-            }, 1500);
-        } catch (error) {
-            console.error('Error submitting form:', error);
-
-            if (error.response && error.response.status === 422) {
-                setErrors(error.response.data.errors);
-            } else {
-                setNotification({
-                    show: true,
-                    type: 'error',
-                    message: 'Gagal menambahkan beasiswa: ' + (error.response?.data?.message || 'Terjadi kesalahan.'),
-                });
-            }
-            setIsSubmitting(false);
+    const handleInputChange = (key, value) => {
+        setData((prev) => ({ ...prev, [key]: value }));
+        // Clear error for the field when user starts typing
+        if (errors[key]) {
+            setErrors((prev) => ({ ...prev, [key]: undefined }));
         }
     };
 
-    const handleImageChange = (e) => {
+    const handlePosterChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Check file size (2MB = 2 * 1024 * 1024 bytes)
             const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            const allowedTypes = ['image/jpeg', 'image/png'];
             if (file.size > maxSizeInBytes) {
                 setErrors((prev) => ({
                     ...prev,
                     poster: 'Ukuran file terlalu besar. Maksimal 2MB.',
                 }));
-                setData((prevData) => ({ ...prevData, poster: null }));
-                setImagePreview(null);
+                setData((prev) => ({ ...prev, poster: null }));
+                setPosterPreview(null);
                 return;
             }
-
-            // If file size is okay, clear any previous poster error
+            if (!allowedTypes.includes(file.type)) {
+                setErrors((prev) => ({
+                    ...prev,
+                    poster: 'File harus berupa JPG atau PNG.',
+                }));
+                setData((prev) => ({ ...prev, poster: null }));
+                setPosterPreview(null);
+                return;
+            }
             setErrors((prev) => ({ ...prev, poster: undefined }));
-            setData((prevData) => ({ ...prevData, poster: file }));
+            setData((prev) => ({ ...prev, poster: file }));
             const reader = new FileReader();
-            reader.onloadend = () => setImagePreview(reader.result);
+            reader.onloadend = () => setPosterPreview(reader.result);
             reader.readAsDataURL(file);
         } else {
             setErrors((prev) => ({ ...prev, poster: undefined }));
-            setData((prevData) => ({ ...prevData, poster: null }));
-            setImagePreview(null);
+            setData((prev) => ({ ...prev, poster: null }));
+            setPosterPreview(null);
         }
     };
 
-    // Custom handler for image uploads in ReactQuill
     const handleQuillImageUpload = async (quill) => {
         const input = document.createElement('input');
         input.setAttribute('type', 'file');
@@ -192,7 +121,7 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                     setNotification({
                         show: true,
                         type: 'error',
-                        message: 'Ukuran gambar di deskripsi terlalu besar. Maksimal 2MB.',
+                        message: 'Ukuran gambar di konten terlalu besar. Maksimal 2MB.',
                     });
                     return;
                 }
@@ -201,45 +130,122 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                 formData.append('image', file);
 
                 try {
-                    const response = await axios.post(route('admin.scholarship.upload-image'), formData, {
+                    const response = await axios.post(route('admin.upload.image'), formData, {
                         headers: { 'Content-Type': 'multipart/form-data' },
                     });
 
                     const imageUrl = response.data.url;
-                    const range = quill.getSelection(true); // Ensure a selection range exists
+                    const range = quill.getSelection(true);
                     quill.insertEmbed(range.index, 'image', imageUrl);
-                    // Optionally set default alignment to left
                     quill.format('align', 'left');
                 } catch (error) {
-                    console.error('Error uploading image to description:', error);
                     setNotification({
                         show: true,
                         type: 'error',
-                        message: 'Gagal mengunggah gambar ke deskripsi.',
+                        message: 'Gagal mengunggah gambar ke konten.',
                     });
                 }
             }
         };
     };
 
-    // Add custom handlers to ReactQuill
-    const quillFormats = [
-        'header',
-        'bold', 'italic', 'underline', 'strike',
-        'align', 'list', 'bullet', 'indent',
-        'blockquote', 'code-block',
-        'color', 'background',
-        'link', 'image', 'video',
-    ];
-
     const setupQuill = (quill) => {
         const toolbar = quill.getModule('toolbar');
         toolbar.addHandler('image', () => handleQuillImageUpload(quill));
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setErrors({});
+
+        // Client-side validation
+        const newErrors = {};
+        if (!data.name.trim()) newErrors.name = 'Nama beasiswa wajib diisi.';
+        if (!data.description.replace(/<(.|\n)*?>/g, '').trim())
+            newErrors.description = 'Deskripsi wajib diisi.';
+        if (data.poster) {
+            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            const allowedTypes = ['image/jpeg', 'image/png'];
+            if (data.poster.size > maxSizeInBytes) {
+                newErrors.poster = 'Ukuran file terlalu besar. Maksimal 2MB.';
+            } else if (!allowedTypes.includes(data.poster.type)) {
+                newErrors.poster = 'File harus berupa JPG atau PNG.';
+            }
+        }
+        if (!data.start_date) newErrors.start_date = 'Tanggal mulai wajib diisi.';
+        if (!data.end_date) newErrors.end_date = 'Tanggal selesai wajib diisi.';
+        if (data.end_date && data.start_date && new Date(data.end_date) < new Date(data.start_date)) {
+            newErrors.end_date = 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.';
+        }
+        if (!data.category_id) newErrors.category_id = 'Kategori wajib dipilih.';
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setIsSubmitting(false);
+            setNotification({
+                show: true,
+                type: 'error',
+                message: 'Harap lengkapi semua kolom yang diperlukan dengan benar.',
+            });
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('name', data.name);
+        formData.append('description', data.description);
+        formData.append('start_date', data.start_date);
+        formData.append('end_date', data.end_date);
+        formData.append('category_id', data.category_id);
+        formData.append('is_active', data.is_active ? 1 : 0);
+        formData.append('created_by', data.created_by);
+        if (data.poster) {
+            formData.append('poster', data.poster);
+        }
+
+        try {
+            await axios.post(route('admin.scholarship.store'), formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            setNotification({
+                show: true,
+                type: 'success',
+                message: 'Beasiswa berhasil ditambahkan!',
+            });
+
+            setData({
+                name: '',
+                description: '',
+                poster: null,
+                start_date: '',
+                end_date: '',
+                category_id: '',
+                is_active: true,
+                created_by: auth.user.id,
+                updated_by: null,
+            });
+            setPosterPreview(null);
+
+            setTimeout(() => {
+                router.visit(route('admin.scholarship.index'));
+            }, 1500);
+        } catch (error) {
+            if (error.response && error.response.status === 422) {
+                setErrors(error.response.data.errors);
+            }
+            setNotification({
+                show: true,
+                type: 'error',
+                message: 'Gagal menambahkan beasiswa: ' + (error.response?.data?.message || 'Terjadi kesalahan.'),
+            });
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
-            <Head title="Tambah Beasiswa" />
+            <Head title="Tambah Beasiswa Baru" />
 
             {/* Notification */}
             {notification.show && (
@@ -313,13 +319,12 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
             )}
 
             <div className="py-12 max-w-5xl mx-auto px-6 sm:px-8">
-                {/* Header */}
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50 flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            Tambah Beasiswa
+                            Tambah Beasiswa Baru
                         </h1>
-                        <p className="text-gray-500 mt-1">Buat beasiswa baru untuk membantu pelajar</p>
+                        <p className="text-gray-500 mt-1">Buat beasiswa baru untuk pendaftaran</p>
                     </div>
                     <Link
                         href={route('admin.scholarship.index')}
@@ -329,7 +334,7 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                     </Link>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-md p-8 mb-8">
+                <div className="bg-white rounded-xl shadow-md p-8">
                     <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6" noValidate>
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
@@ -338,7 +343,7 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                             <input
                                 type="text"
                                 value={data.name}
-                                onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
                                 className={`w-full px-4 py-3 border rounded-lg transition ${
                                     errors.name
                                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
@@ -355,7 +360,7 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                             </label>
                             <select
                                 value={data.category_id}
-                                onChange={(e) => setData((prev) => ({ ...prev, category_id: e.target.value }))}
+                                onChange={(e) => handleInputChange('category_id', e.target.value)}
                                 className={`w-full px-4 py-3 border rounded-lg transition ${
                                     errors.category_id
                                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
@@ -387,8 +392,8 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                                     >
                                         <input
                                             type="file"
-                                            accept="image/*"
-                                            onChange={handleImageChange}
+                                            accept="image/jpeg,image/png"
+                                            onChange={handlePosterChange}
                                             className="w-full cursor-pointer"
                                         />
                                     </div>
@@ -399,17 +404,17 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                                         <p className="text-red-500 text-xs mt-1">{errors.poster}</p>
                                     )}
                                 </div>
-                                {imagePreview && (
+                                {posterPreview && (
                                     <div className="relative">
                                         <img
-                                            src={imagePreview}
-                                            alt="Preview"
+                                            src={posterPreview}
+                                            alt="Poster Preview"
                                             className="w-24 h-24 object-cover rounded-lg border border-gray-300"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setImagePreview(null);
+                                                setPosterPreview(null);
                                                 setData((prev) => ({ ...prev, poster: null }));
                                                 setErrors((prev) => ({ ...prev, poster: undefined }));
                                             }}
@@ -420,44 +425,6 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                                     </div>
                                 )}
                             </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Buka <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.start_date}
-                                onChange={(e) => setData((prev) => ({ ...prev, start_date: e.target.value }))}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.start_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.start_date && (
-                                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Tutup <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.end_date}
-                                onChange={(e) => setData((prev) => ({ ...prev, end_date: e.target.value }))}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.end_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.end_date && (
-                                <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>
-                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -473,7 +440,7 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                             >
                                 <ReactQuill
                                     value={data.description}
-                                    onChange={(content) => setData((prev) => ({ ...prev, description: content }))}
+                                    onChange={(content) => handleInputChange('description', content)}
                                     modules={quillModules}
                                     formats={quillFormats}
                                     onEditorCreated={setupQuill}
@@ -484,6 +451,42 @@ export default function Add({ auth, userRole, permissions, menu, categories, fla
                             {errors.description && (
                                 <p className="text-red-500 text-xs mt-1">{errors.description}</p>
                             )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Tanggal Mulai <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={data.start_date}
+                                onChange={(e) => handleInputChange('start_date', e.target.value)}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.start_date
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {errors.start_date && (
+                                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Tanggal Selesai <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={data.end_date}
+                                onChange={(e) => handleInputChange('end_date', e.target.value)}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.end_date
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
                         </div>
 
                         <div className="flex justify-end space-x-4 pt-4 border-t">

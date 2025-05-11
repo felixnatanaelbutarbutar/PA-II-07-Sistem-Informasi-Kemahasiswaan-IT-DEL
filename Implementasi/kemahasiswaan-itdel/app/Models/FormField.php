@@ -1,5 +1,6 @@
 <?php
 
+// app/Models/FormField.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,13 @@ class FormField extends Model
         'is_active',
         'created_by',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'is_required' => 'boolean',
+        'is_active' => 'boolean',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     // Relationships

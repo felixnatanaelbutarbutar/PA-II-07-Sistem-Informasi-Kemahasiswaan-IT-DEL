@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { FaEye, FaTrash, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaEye, FaTrash, FaChevronLeft, FaChevronRight, FaPowerOff } from 'react-icons/fa';
 
-export default function AspirationIndex({ auth, userRole, permissions, menu, aspirations, flash }) {
+export default function AspirationIndex({ auth, userRole, permissions, menu, aspirations, mpm, flash }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [aspirationToDelete, setAspirationToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -78,6 +78,22 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
             onError: (errors) => {
                 console.error('Error navigating to detail:', errors);
                 setNotificationMessage('Gagal membuka detail aspirasi. Silakan coba lagi.');
+                setNotificationType('error');
+                setShowNotification(true);
+            },
+        });
+    };
+
+    const handleToggleAspirationStatus = (status) => {
+        router.post(route('admin.aspiration.updateStatus'), { status }, {
+            onSuccess: () => {
+                setNotificationMessage(status === 'OPEN' ? 'Pendataan aspirasi diaktifkan!' : 'Pendataan aspirasi ditutup!');
+                setNotificationType('success');
+                setShowNotification(true);
+            },
+            onError: (errors) => {
+                console.error('Error updating aspiration status:', errors);
+                setNotificationMessage('Gagal memperbarui status aspirasi: ' + (errors.error || 'Terjadi kesalahan.'));
                 setNotificationType('error');
                 setShowNotification(true);
             },
@@ -241,27 +257,27 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                             </h1>
                             <p className="text-gray-500 mt-1">Kelola aspirasi yang dikirim oleh pengguna</p>
                         </div>
-                        {/* Tombol Tambah Aspirasi (opsional, hapus jika tidak diperlukan) */}
-                        {/* <Link
-                            href={route('admin.aspiration.create')}
-                            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
-                        >
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                />
-                            </svg>
-                            Tambah Aspirasi
-                        </Link> */}
+                        <div className="flex gap-3">
+                            {mpm && (
+                                mpm.aspiration_status === 'OPEN' ? (
+                                    <button
+                                        onClick={() => handleToggleAspirationStatus('CLOSED')}
+                                        className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-2.5 rounded-lg hover:from-red-700 hover:to-rose-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
+                                    >
+                                        <FaPowerOff className="w-5 h-5" />
+                                        Tutup Pendataan Aspirasi
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => handleToggleAspirationStatus('OPEN')}
+                                        className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2.5 rounded-lg hover:from-green-700 hover:to-emerald-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
+                                    >
+                                        <FaPowerOff className="w-5 h-5" />
+                                        Aktifkan Pendataan Aspirasi
+                                    </button>
+                                )
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -271,9 +287,6 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                                        Pengirim
-                                    </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                         Kategori
                                     </th>
@@ -297,9 +310,6 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                                         key={aspiration.id}
                                         className="hover:bg-gray-50 transition-colors"
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {aspiration.user?.name || 'Anonim'}
-                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {aspiration.category?.name || 'Tidak Ada Kategori'}
                                         </td>
@@ -378,27 +388,6 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
                         <p className="text-gray-500 text-center max-w-md mb-6">
                             Belum ada aspirasi yang dikirimkan oleh pengguna.
                         </p>
-                        {/* Tombol Tambah Aspirasi (opsional, hapus jika tidak diperlukan) */}
-                        {/* <Link
-                            href={route('admin.aspiration.create')}
-                            className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
-                        >
-                            <svg
-                                className="w-5 h-5 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                />
-                            </svg>
-                            Tambah Aspirasi Baru
-                        </Link> */}
                     </div>
                 )}
 

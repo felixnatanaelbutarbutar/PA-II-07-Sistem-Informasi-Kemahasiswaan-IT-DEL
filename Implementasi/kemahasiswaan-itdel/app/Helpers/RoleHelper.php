@@ -28,45 +28,60 @@ class RoleHelper
                 'achievementtype' => true,
                 'counseling' => true,
                 'aspiration' => true,
-                'aspirationcategory' => true, // Added explicit permission for aspiration category
+                'aspirationcategory' => true,
                 'mpm' => true,
                 'bem' => true,
                 'downloads' => true,
+                'download-categories' => true,
                 'organizationadmin' => true,
                 'carousel' => true,
                 'kegiatan' => true,
+                'chatbot' => true,
+                'directors' => true,
+
             ],
             'adminbem' => [
-                'pengumuman' => true,
+                'announcementcategory' => true, // Ditambahkan untuk submenu Kategori Pengumuman
+                'announcement' => true, // Diubah dari 'pengumuman' menjadi 'announcement'
+                'newscategory' => true,
                 'news' => true,
-                'newscategory' => false,
                 'achievements' => true,
                 'achievementtype' => false,
                 'scholarship' => false,
                 'form' => false,
                 'counseling' => false,
                 'aspiration' => false,
-                'aspirationcategory' => false, // No access for adminbem
+                'aspirationcategory' => false,
                 'bem' => true,
                 'mpm' => false,
                 'carousel' => false,
                 'kegiatan' => true,
+                'chatbot' => true,
+                'downloads' => false,
+                'download-categories' => false,
+                'directors' => false,
             ],
             'adminmpm' => [
-                'pengumuman' => true,
-                'news' => false,
-                'newscategory' => false,
+                'announcementcategory' => true, // Ditambahkan untuk submenu Kategori Pengumuman
+                'announcement' => true, // Diubah dari 'pengumuman' menjadi 'announcement'
+                'newscategory' => true,
+                'news' => true,
                 'achievements' => false,
-                'achievementtype' => false,
+                'achievementtype' => true,
                 'scholarship' => false,
                 'form' => false,
                 'counseling' => false,
                 'aspiration' => true,
-                'aspirationcategory' => true, // Added explicit permission for aspiration category
+                'aspirationcategory' => true,
                 'bem' => false,
                 'mpm' => true,
                 'carousel' => false,
                 'kegiatan' => true,
+                'chatbot' => true,
+                'downloads' => false,
+                'download-categories' => false,
+                'directors' => false,
+
             ],
             'mahasiswa' => [
                 'pengumuman' => false,
@@ -79,22 +94,15 @@ class RoleHelper
                 'form' => false,
                 'counseling' => true,
                 'aspiration' => false,
-                'aspirationcategory' => false, // No access for mahasiswa
+                'aspirationcategory' => false,
                 'bem' => false,
                 'carousel' => false,
                 'kegiatan' => true,
-            ],
-            'guest' => [
-                'pengumuman' => true,
-                'news' => true,
-                'achievements' => true,
-                'counseling' => true,
-                'aspiration' => true,
-                'aspirationcategory' => false, // No access for guest
-                'bem' => true,
-                'mpm' => true,
-                'downloads' => true,
-                'kegiatan' => true,
+                'chatbot' => false,
+                'downloads' => false,
+                'download-categories' => false,
+                'directors' => false,
+
             ],
         ];
 
@@ -302,7 +310,7 @@ class RoleHelper
             $menuItems[] = [
                 'name' => 'Manajemen Form',
                 'route' => 'admin.form.index',
-                'icon' => 'organization',
+                'icon' => 'form',
                 'visible' => true,
             ];
         }
@@ -317,7 +325,7 @@ class RoleHelper
             ];
         }
 
-        // Menu untuk Manajemen Aspirasi (Combine Aspiration and AspirationCategory)
+        // Menu untuk Manajemen Aspirasi
         if (($permissions['aspiration'] ?? false) || ($permissions['aspirationcategory'] ?? false)) {
             $aspirationSubmenu = [];
             if ($permissions['aspirationcategory'] ?? false) {
@@ -364,11 +372,24 @@ class RoleHelper
 
         // Menu untuk Unduhan
         if ($permissions['downloads'] ?? false) {
-            $menuItems[] = [
+            $downloadSubmenu = [];
+            if ($permissions['download-categories'] ?? false) {
+                $downloadSubmenu[] = [
+                    'name' => 'Kategori Unduhan',
+                    'route' => 'admin.download-categories.index',
+                    'visible' => true,
+                ];
+            }
+            $downloadSubmenu[] = [
                 'name' => 'Unduhan',
                 'route' => 'admin.downloads.index',
+                'visible' => true,
+            ];
+            $menuItems[] = [
+                'name' => 'Unduhan',
                 'icon' => 'download',
                 'visible' => true,
+                'submenu' => $downloadSubmenu,
             ];
         }
 
@@ -398,6 +419,26 @@ class RoleHelper
                 'name' => 'Kegiatan',
                 'route' => $role === 'guest' ? 'activities.guest.index' : 'admin.activities.index',
                 'icon' => 'calendar',
+                'visible' => true,
+            ];
+        }
+
+        // Menu untuk Kelola Chatbot Rules
+        if ($permissions['chatbot'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Kelola Aturan Chatbot',
+                'route' => 'admin.chatbot-rules.index',
+                'icon' => 'chatbot',
+                'visible' => true,
+            ];
+        }
+
+        // Menu untuk Kelola Directors
+        if ($permissions['directors'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Kelola Sambutan Direktur',
+                'route' => 'admin.directors.index',
+                'icon' => 'directors',
                 'visible' => true,
             ];
         }

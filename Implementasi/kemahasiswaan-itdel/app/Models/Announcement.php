@@ -28,4 +28,14 @@ class Announcement extends Model
     {
         return $this->belongsTo(AnnouncementCategory::class, 'category_id', 'category_id');
     }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by')->select('id', 'role');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by')->select('id', 'role');
+    }
 }

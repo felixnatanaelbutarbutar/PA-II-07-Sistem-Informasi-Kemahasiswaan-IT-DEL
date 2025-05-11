@@ -54,8 +54,8 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
     };
 
     useEffect(() => {
-        console.log('User info:', auth.user);
-        console.log('User role:', userRole);
+        // console.log('User info:', auth.user);
+        // console.log('User role:', userRole);
 
         // Fetch jumlah kegiatan aktif
         axios.get('/admin/activities/count')
@@ -124,7 +124,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                 console.warn(`Route URL is undefined for route name: ${routeName}`);
                 return false;
             }
-            console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
+            // console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
             return true;
         } catch (e) {
             console.error(`Error checking route for ${routeName}:`, e);
@@ -376,7 +376,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                             </h3>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <div className={`flex items-center mb-2 
+                                    <div className={`flex items-center mb-2
                                         ${document.documentElement.classList.contains('light') ? 'text-blue-700' : ''}
                                         ${document.documentElement.classList.contains('dark') ? 'text-blue-400' : ''}
                                         ${document.documentElement.classList.contains('light-blue') ? 'text-blue-700' : ''}
@@ -393,7 +393,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                                     </p>
                                 </div>
                                 <div>
-                                    <div className={`flex items-center mb-2 
+                                    <div className={`flex items-center mb-2
                                         ${document.documentElement.classList.contains('light') ? 'text-green-700' : ''}
                                         ${document.documentElement.classList.contains('dark') ? 'text-green-400' : ''}
                                         ${document.documentElement.classList.contains('light-blue') ? 'text-green-700' : ''}
@@ -428,7 +428,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                             </h3>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <div className={`flex items-center mb-2 
+                                    <div className={`flex items-center mb-2
                                         ${document.documentElement.classList.contains('light') ? 'text-purple-700' : ''}
                                         ${document.documentElement.classList.contains('dark') ? 'text-purple-400' : ''}
                                         ${document.documentElement.classList.contains('light-blue') ? 'text-purple-700' : ''}

@@ -1,3 +1,279 @@
+import { Head, Link, router } from '@inertiajs/react';
+import GuestLayout from '@/Layouts/GuestLayout';
+import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import FooterLayout from '@/Layouts/FooterLayout';
+import { usePage } from '@inertiajs/react';
+
+export default function ScholarshipDetail({ scholarship, form }) {
+    const { url } = usePage();
+
+    // Fungsi untuk mendapatkan judul halaman
+    const getPageTitle = () => {
+        return scholarship.name || 'Detail Beasiswa';
+    };
+
+    // Fungsi untuk membuat breadcrumb
+    const getBreadcrumb = () => {
+        const breadcrumbItems = [];
+
+        breadcrumbItems.push(
+            <Link key="beranda" href="/" className="hover:underline">
+                Beranda
+            </Link>,
+            <span key="separator-1" className="mx-2">/</span>,
+            <span key="layanan">Layanan Kemahasiswaan</span>,
+            <span key="separator-2" className="mx-2">/</span>,
+            <Link key="beasiswa" href="/beasiswa" className="hover:underline">
+                Beasiswa
+            </Link>,
+            <span key="separator-3" className="mx-2">/</span>,
+            <span key="detail">{scholarship.name}</span>
+        );
+
+        return breadcrumbItems;
+    };
+
+    // Format tanggal ke dalam format DD MMMM YYYY
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Tidak Diketahui';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+        });
+    };
+
+    return (
+        <GuestLayout>
+            <NavbarGuestLayoutPage />
+            <Head title={`Detail Beasiswa - ${scholarship.name}`} />
+
+            {/* CSS Styles */}
+            <style>
+                {`
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-family: 'Inter', Arial, sans-serif;
+                        background: #f8fafc;
+                    }
+                    .main-container {
+                        min-height: 100vh;
+                        padding: 60px 20px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    .header-section {
+                        width: 100%;
+                        height: 400px;
+                        background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
+                        background-size: cover;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #ffffff;
+                        text-align: center;
+                        position: relative;
+                        margin-bottom: 40px;
+                    }
+                    .header-section::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.5);
+                    }
+                    .header-section h1 {
+                        font-size: 48px;
+                        font-weight: 700;
+                        position: relative;
+                        z-index: 1;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                    }
+                    .header-section p {
+                        font-size: 18px;
+                        position: relative;
+                        z-index: 1;
+                        margin-top: 10px;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    }
+                    .header-section p a, .header-section p span {
+                        color: #ffffff;
+                        font-weight: 500;
+                    }
+                    .detail-section {
+                        max-width: 1200px;
+                        width: 100%;
+                        background: #ffffff;
+                        border-radius: 16px;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+                        padding: 40px;
+                        margin-bottom: 40px;
+                    }
+                    .detail-section h2 {
+                        font-size: 32px;
+                        font-weight: 700;
+                        color: #1e40af;
+                        margin-bottom: 20px;
+                        text-align: center;
+                    }
+                    .detail-image {
+                        display: flex;
+                        justify-content: center;
+                        margin-bottom: 30px;
+                    }
+                    .detail-image img {
+                        max-width: 100%;
+                        max-height: 400px;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .detail-text {
+                        margin-bottom: 30px;
+                    }
+                    .detail-text p {
+                        font-size: 16px;
+                        color: #4b5563;
+                        line-height: 1.6;
+                        margin-bottom: 15px;
+                    }
+                    .detail-text .info-item {
+                        margin-bottom: 15px;
+                    }
+                    .detail-text .info-item strong {
+                        color: #1e40af;
+                        display: inline-block;
+                        min-width: 150px;
+                    }
+                    .register-button {
+                        display: block;
+                        margin: 0 auto 20px;
+                        padding: 12px 24px;
+                        background: #1e40af;
+                        color: #ffffff;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: background 0.3s ease;
+                    }
+                    .register-button:hover {
+                        background: #1e3a8a;
+                    }
+                    .timeline {
+                        text-align: center;
+                        margin-bottom: 40px;
+                    }
+                    .timeline p {
+                        font-size: 16px;
+                        color: #4b5563;
+                        margin: 5px 0;
+                    }
+                    .timeline p strong {
+                        color: #1e40af;
+                    }
+                    .back-button {
+                        display: inline-block;
+                        margin-top: 20px;
+                        padding: 12px 24px;
+                        background: #1e40af;
+                        color: #ffffff;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        text-decoration: none;
+                        transition: background 0.3s ease;
+                    }
+                    .back-button:hover {
+                        background: #1e3a8a;
+                    }
+                    @media (max-width: 768px) {
+                        .main-container {
+                            padding: 40px 15px;
+                        }
+                        .header-section {
+                            height: 300px;
+                        }
+                        .header-section h1 {
+                            font-size: 32px;
+                        }
+                        .header-section p {
+                            font-size: 16px;
+                        }
+                        .detail-section {
+                            padding: 30px;
+                        }
+                        .detail-image img {
+                            max-height: 300px;
+                        }
+                    }
+                `}
+            </style>
+
+            {/* Main Container */}
+            <div className="main-container">
+                {/* Header Section */}
+                <div className="header-section">
+                    <h1>{getPageTitle()}</h1>
+                    <p className="flex flex-wrap justify-center gap-1">
+                        {getBreadcrumb()}
+                    </p>
+                </div>
+
+                {/* Scholarship Detail Section */}
+                <div className="detail-section">
+                    <h2>Detail Beasiswa</h2>
+                    {scholarship.poster && (
+                        <div className="detail-image">
+                            <img src={scholarship.poster} alt={scholarship.name} />
+                        </div>
+                    )}
+                    <div className="detail-text">
+                        <div className="info-item">
+                            <strong>Nama Beasiswa:</strong> {scholarship.name}
+                        </div>
+                        <div className="info-item">
+                            <strong>Kategori:</strong> {scholarship.category?.category_name || 'Tidak Berkategori'}
+                        </div>
+                        <div className="info-item">
+                            <strong>Deskripsi:</strong>
+                            <p>{scholarship.description}</p>
+                        </div>
+                    </div>
+                    <button
+                        className="register-button"
+                        onClick={() => router.visit(`/beasiswa/${form.form_id}/form`)}
+                        disabled={!form}
+                    >
+                        Daftar Sekarang
+                    </button>
+                    {form && (
+                        <div className="timeline">
+                            <p>
+                                <strong>Tanggal Buka:</strong> {formatDate(form.open_date)}
+                            </p>
+                            <p>
+                                <strong>Tanggal Tutup:</strong> {form.close_date ? formatDate(form.close_date) : 'Belum Ditentukan'}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                <Link href="/beasiswa" className="back-button">
+                    Kembali ke Daftar Beasiswa
+                </Link>
+            </div>
+
+            <FooterLayout />
+        </GuestLayout>
+    );
+}
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';

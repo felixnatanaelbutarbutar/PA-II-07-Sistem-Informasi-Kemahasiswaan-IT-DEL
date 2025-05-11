@@ -239,9 +239,6 @@ const NavbarGuestLayout = () => {
                                                         Kalender Kegiatan
                                                     </Link>
                                                     <Link href="#" className="mega-menu-item">
-                                                        Prestasi
-                                                    </Link>
-                                                    <Link href="#" className="mega-menu-item">
                                                         Galeri
                                                     </Link>
                                                 </div>
@@ -253,23 +250,23 @@ const NavbarGuestLayout = () => {
                                                     MPM (Majelis Perwakilan Mahasiswa)
                                                 </div>
                                                 <div className="mt-2">
-                                                    <Link href="/mpm" className="mega-menu-item">
+                                                    <Link
+                                                        href="/mpm"
+                                                        className="mega-menu-item"
+                                                    >
                                                         Tentang MPM
                                                     </Link>
-                                                    <Link href="/mpm" className="mega-menu-item">
-                                                        Anggota MPM
+                                                    <Link
+                                                        href="/mpm#struktur-komisi"
+                                                        className="mega-menu-item"
+                                                    >
+                                                        Struktur Komisi
                                                     </Link>
-                                                    <Link href="/mpm" className="mega-menu-item">
-                                                        Komisi
-                                                    </Link>
-                                                    <Link href="#" className="mega-menu-item">
-                                                        Produk Legislasi
-                                                    </Link>
-                                                    <Link href="#" className="mega-menu-item">
-                                                        Rapat & Sidang
-                                                    </Link>
-                                                    <Link href="#" className="mega-menu-item">
-                                                        Advokasi Mahasiswa
+                                                    <Link
+                                                        href="/mpm#partisipasi-anda"
+                                                        className="mega-menu-item"
+                                                    >
+                                                        Partisipasi Anda
                                                     </Link>
                                                 </div>
                                             </div>
@@ -501,16 +498,7 @@ const NavbarGuestLayout = () => {
                                             >
                                                 Kalender Kegiatan
                                             </Link>
-                                            <Link
-                                                href="#"
-                                                className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                onClick={() => {
-                                                    setOrganisasiDropdownOpen(false);
-                                                    setMobileMenuOpen(false);
-                                                }}
-                                            >
-                                                Prestasi
-                                            </Link>
+
                                             <Link
                                                 href="#"
                                                 className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"

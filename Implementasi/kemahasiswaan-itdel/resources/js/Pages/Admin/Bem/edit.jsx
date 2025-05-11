@@ -169,11 +169,15 @@ export default function Edit({ auth, userRole, permissions, bem, navigation }) {
         });
 
         formData.append('structure', JSON.stringify(structureToSend));
+        formData.append('_method', 'PUT'); // Menambahkan _method untuk spoofing
 
-        router.post(
+        router.post( // Menggunakan router.post dengan _method spoofing
             route('admin.bem.update', bem.id),
             formData,
             {
+                onSuccess: () => {
+                    router.visit(route('admin.bem.index')); // Redirect ke halaman index setelah sukses
+                },
                 onError: (errors) => {
                     setErrors(errors);
                 },

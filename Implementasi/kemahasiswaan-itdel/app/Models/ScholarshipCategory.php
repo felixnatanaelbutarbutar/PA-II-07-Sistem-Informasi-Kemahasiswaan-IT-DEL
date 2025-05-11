@@ -14,11 +14,13 @@ class ScholarshipCategory extends Model
         'category_id',
         'category_name',
         'description',
+        'is_active',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
+        'is_active' => 'boolean', // Cast is_active as boolean
         'created_by' => 'integer',
         'updated_by' => 'integer',
     ];

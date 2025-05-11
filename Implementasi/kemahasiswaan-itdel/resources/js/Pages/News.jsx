@@ -1,8 +1,8 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { useState, useEffect } from 'react';
-import { Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 export default function News() {
     const [newsItems, setNewsItems] = useState([]);
@@ -101,7 +101,7 @@ export default function News() {
             backgroundColor: '#f5f7fa',
         },
         container: {
-            maxWidth: '1200px',
+            maxWidth: '1500px',
             margin: '0 auto',
             padding: '20px',
         },
@@ -120,7 +120,7 @@ export default function News() {
         },
         heroMainImg: {
             width: '100%',
-            height: '400px',
+            height: '500px',
             objectFit: 'cover',
         },
         heroMainCategory: {
@@ -189,7 +189,7 @@ export default function News() {
         },
         newsCardImg: {
             width: '100%',
-            height: '150px',
+            height: '200px',
             objectFit: 'cover',
         },
         newsCardCategory: {
@@ -265,7 +265,9 @@ export default function News() {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayout />
+            <NavbarGuestLayoutPage />
+            <Head title="Berita" />
+
             <div style={styles.body}>
                 <div style={styles.container}>
                     {/* Tampilkan pesan error jika ada */}
@@ -311,7 +313,7 @@ export default function News() {
                                 </div>
                                 <div style={styles.heroMainTitle}>{featuredNews.title}</div>
                             </div>
-                            {/* <div style={styles.heroSidebar}>
+                            <div style={styles.heroSidebar}>
                                 {sidebarNews.map((news) => (
                                     <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
                                         <div style={styles.heroSidebarNewsCard}>
@@ -327,7 +329,7 @@ export default function News() {
                                         </div>
                                     </Link>
                                 ))}
-                            </div> */}
+                            </div>
                         </div>
                     )}
 

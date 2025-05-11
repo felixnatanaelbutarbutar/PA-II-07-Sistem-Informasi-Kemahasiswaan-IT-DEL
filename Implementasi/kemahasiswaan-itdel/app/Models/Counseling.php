@@ -9,55 +9,35 @@ class Counseling extends Model
 {
     use HasFactory;
 
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
+    protected $primaryKey = 'id';
     public $incrementing = false;
-
-    /**
-     * The "type" of the primary key ID.
-     *
-     * @var string
-     */
     protected $keyType = 'string';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<string>
-     */
     protected $fillable = [
         'id',
         'requestBy',
         'issue',
-        'noTelephone',
+        'noWhatsApp',
+        'booking_date',
+        'booking_time',
         'status',
     ];
 
-    /**
-     * Boot the model.
-     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'requestBy');
+    }
+
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($model) {
             if (empty($model->id)) {
-                // Find the latest counseling record to determine the next ID
-                $latest = static::orderBy('id', 'desc')->first();
-                $nextNumber = $latest ? (int) substr($latest->id, 3) + 1 : 1;
-                $model->id = 'csl' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT); // e.g., csl001
+                $latest = static::orderBy('created_at', 'desc')->first();
+                $newId = $latest ? ((int) str_replace('csl', '', $latest->id) + 1) : 1;
+                $model->id = 'csl' . str_pad($newId, 3, '0', STR_PAD_LEFT);
             }
         });
-    }
-
-    /**
-     * Get the user that requested the counseling.
-     */
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'requestBy');
     }
 }

@@ -11,7 +11,7 @@ class AnnouncementController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->query('per_page', 10);
-        $announcements = Announcement::with('category')
+        $announcements = Announcement::with(['category', 'createdBy', 'updatedBy'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
@@ -20,7 +20,7 @@ class AnnouncementController extends Controller
 
     public function show($announcement_id)
     {
-        $announcement = Announcement::with('category')
+        $announcement = Announcement::with(['category', 'createdBy', 'updatedBy'])
             ->where('announcement_id', $announcement_id)
             ->firstOrFail();
 

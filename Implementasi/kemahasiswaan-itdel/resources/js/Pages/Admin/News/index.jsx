@@ -7,7 +7,7 @@ export default function Index({ auth, permissions, userRole, menu }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState("");
-    const [notificationType, setNotificationType] = useState('success'); // 'success' atau 'error'
+    const [notificationType, setNotificationType] = useState('success');
     const [isGridView, setIsGridView] = useState(true);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [newsIdToDelete, setNewsIdToDelete] = useState(null);
@@ -24,7 +24,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
                 setShowNotification(true);
             }
 
-            // Auto-hide notification after 5 seconds
             if (flash.success || flash.error) {
                 const timer = setTimeout(() => {
                     setShowNotification(false);
@@ -47,17 +46,13 @@ export default function Index({ auth, permissions, userRole, menu }) {
     const confirmDelete = () => {
         if (newsIdToDelete) {
             const deleteRoute = route("admin.news.destroy", newsIdToDelete);
-            console.log('Delete Route:', deleteRoute);
-
             router.post(deleteRoute, {}, {
                 onSuccess: () => {
-                    console.log('Delete Success');
                     setNotificationMessage('Berita berhasil dihapus!');
                     setNotificationType('success');
                     setShowNotification(true);
                 },
                 onError: (errors) => {
-                    console.log('Delete Error:', errors);
                     setNotificationMessage('Gagal menghapus berita: ' + (errors.error || 'Terjadi kesalahan.'));
                     setNotificationType('error');
                     setShowNotification(true);
@@ -75,6 +70,22 @@ export default function Index({ auth, permissions, userRole, menu }) {
         setNewsIdToDelete(null);
     };
 
+    const handleToggleActive = (news_id, currentStatus) => {
+        const toggleRoute = route("admin.news.toggleActive", news_id);
+        router.post(toggleRoute, {}, {
+            onSuccess: () => {
+                setNotificationMessage(`Berita ${currentStatus ? 'dinonaktifkan' : 'diaktifkan'} berhasil!`);
+                setNotificationType('success');
+                setShowNotification(true);
+            },
+            onError: (errors) => {
+                setNotificationMessage('Gagal mengubah status berita: ' + (errors.error || 'Terjadi kesalahan.'));
+                setNotificationType('error');
+                setShowNotification(true);
+            },
+        });
+    };
+
     const filteredNews = news.filter(item =>
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.category && item.category.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -89,7 +100,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
         >
             <Head title="Kelola Berita" />
 
-            {/* Enhanced Notification with Animation */}
             {showNotification && (
                 <div className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
                     notificationType === 'success'
@@ -131,31 +141,28 @@ export default function Index({ auth, permissions, userRole, menu }) {
                             </p>
                         </div>
                         <div className="ml-auto pl-3">
-                            <div className="-mx-1.5 -my-1.5">
-                                <button
-                                    onClick={() => setShowNotification(false)}
-                                    className={`inline-flex rounded-md p-1.5 ${
-                                        notificationType === 'success'
-                                            ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
-                                            : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
-                                    } focus:outline-none focus:ring-2`}
-                                >
-                                    <span className="sr-only">Dismiss</span>
-                                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => setShowNotification(false)}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notificationType === 'success'
+                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                                } focus:outline-none focus:ring-2`}
+                            >
+                                <span className="sr-only">Dismiss</span>
+                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Delete Confirmation Modal */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
@@ -190,7 +197,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
             )}
 
             <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
-                {/* Enhanced Header with Glass Effect */}
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
@@ -212,7 +218,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                 </svg>
                             </div>
 
-                            {/* View Toggle */}
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
                                     onClick={() => setIsGridView(true)}
@@ -249,7 +254,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredNews.map((item) => (
                             <div key={item.news_id} className="group bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]">
-                                {/* Enhanced Image Container with Gradient Overlay */}
                                 <div className="h-52 overflow-hidden relative">
                                     <img
                                         src={`/storage/${item.image}`}
@@ -263,11 +267,9 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                     </div>
                                 </div>
 
-                                {/* Enhanced Content */}
                                 <div className="p-5 flex flex-col flex-grow">
                                     <h2 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition">{item.title}</h2>
 
-                                    {/* Date Info with Enhanced Style */}
                                     <div className="flex items-center text-sm text-gray-500 mb-3">
                                         <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -279,14 +281,12 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                         })}
                                     </div>
 
-                                    {/* Content Preview with Enhanced Design */}
                                     <div className="mb-4">
                                         <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
                                             {stripHtmlTags(item.content || "")}
                                         </p>
                                     </div>
 
-                                    {/* Enhanced Action Buttons */}
                                     <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
                                         <Link
                                             href={route('admin.news.edit', item.news_id)}
@@ -306,6 +306,20 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                             Hapus
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleToggleActive(item.news_id, item.is_active)}
+                                            className={`flex items-center px-2 py-1 rounded-md transition ${item.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
+                                        >
+                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                {item.is_active ? (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11V7m0 5v4m-6-6h12m-6 6h6" />
+                                                ) : (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                )}
+                                            </svg>
+                                            {item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                         </button>
                                     </div>
                                 </div>
@@ -365,6 +379,20 @@ export default function Index({ auth, permissions, userRole, menu }) {
                                                 </svg>
                                                 Hapus
                                             </button>
+
+                                            <button
+                                                onClick={() => handleToggleActive(item.news_id, item.is_active)}
+                                                className={`flex items-center px-3 py-1.5 rounded-md transition ${item.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
+                                            >
+                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    {item.is_active ? (
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11V7m0 5v4m-6-6h12m-6 6h6" />
+                                                    ) : (
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                    )}
+                                                </svg>
+                                                {item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -373,7 +401,6 @@ export default function Index({ auth, permissions, userRole, menu }) {
                     </div>
                 )}
 
-                {/* Enhanced Empty State */}
                 {filteredNews.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
                         <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">

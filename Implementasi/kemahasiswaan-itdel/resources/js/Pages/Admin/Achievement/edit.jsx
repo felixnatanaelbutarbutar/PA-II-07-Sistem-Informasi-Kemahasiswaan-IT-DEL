@@ -2,7 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function Edit({ auth, userRole, permissions, menu, achievement, achievementTypes }) {
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         title: achievement.title || '',
         description: achievement.description || '',
         category: achievement.category || '',
@@ -11,12 +11,12 @@ export default function Edit({ auth, userRole, permissions, menu, achievement, a
         event_name: achievement.event_name || '',
         event_date: achievement.event_date || '',
         created_by: achievement.created_by || auth.user.id,
-        updated_by: auth.user.id, // Set updated_by to the current user
+        updated_by: auth.user.id,
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('admin.achievements.update', achievement.achievement_id), {
+        post(route('admin.achievements.update', { achievement: achievement.achievement_id }), {
             onSuccess: () => {
                 reset();
             },

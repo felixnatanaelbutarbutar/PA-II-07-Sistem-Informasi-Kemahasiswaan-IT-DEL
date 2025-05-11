@@ -26,7 +26,7 @@ class NewsController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        // Debugging flash message
+        // Debugging flash messagegu
         $flashSuccess = session('success');
         Log::info('Flash message in index: ' . ($flashSuccess ?? 'No flash message'));
 
@@ -65,6 +65,7 @@ class NewsController extends Controller
             'content' => 'required|string',
             'category_id' => 'required|exists:news_categories,category_id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'is_active' => 'boolean',
         ]);
 
         $user = Auth::user();
@@ -86,11 +87,11 @@ class NewsController extends Controller
             'content' => $request->content,
             'category_id' => $request->category_id,
             'image' => $imagePath,
+            'is_active' => $request->is_active ?? true, // Default true jika tidak diisi
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
 
-        // Redirect ke index dengan flash message
         return redirect()->route('admin.news.index')
             ->with('success', 'Berita berhasil ditambahkan.');
     }
@@ -103,6 +104,7 @@ class NewsController extends Controller
             'content' => 'required|string',
             'category_id' => 'required|exists:news_categories,category_id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'is_active' => 'boolean',
         ]);
 
         $news = News::findOrFail($news_id);
@@ -121,6 +123,7 @@ class NewsController extends Controller
             'content' => $request->content,
             'category_id' => $request->category_id,
             'image' => $news->image,
+            'is_active' => $request->is_active ?? $news->is_active, // Pertahankan nilai lama jika tidak diubah
             'updated_by' => Auth::id(),
         ]);
 
@@ -140,11 +143,25 @@ class NewsController extends Controller
 
             $news->delete();
 
-            // Redirect dengan flash message
             return redirect()->route('admin.news.index')->with('success', 'Berita berhasil dihapus.');
         } catch (\Exception $e) {
-            // Redirect dengan flash message untuk error
             return redirect()->route('admin.news.index')->with('error', 'Gagal menghapus berita: ' . $e->getMessage());
+        }
+    }
+
+    // Mengaktifkan atau menonaktifkan berita
+    public function toggleActive($news_id)
+    {
+        try {
+            $news = News::findOrFail($news_id);
+            $news->is_active = !$news->is_active;
+            $news->updated_by = Auth::id();
+            $news->save();
+
+            $status = $news->is_active ? 'diaktifkan' : 'dinonaktifkan';
+            return redirect()->route('admin.news.index')->with('success', "Berita berhasil {$status}.");
+        } catch (\Exception $e) {
+            return redirect()->route('admin.news.index')->with('error', 'Gagal mengubah status berita: ' . $e->getMessage());
         }
     }
 
@@ -186,28 +203,28 @@ class NewsController extends Controller
         ]);
     }
 
-    public function guestIndex()
-    {
-        $newsItems = News::with('category')->orderBy('created_at', 'desc')->get();
-        $categories = NewsCategory::all();
+    // public function guestIndex()
+    // {
+    //     $newsItems = News::with('category')->where('is_active', true)->orderBy('created_at', 'desc')->get();
+    //     $categories = NewsCategory::all();
 
-        return Inertia::render('News', [
-            'newsItems' => $newsItems,
-            'categories' => $categories,
-        ]);
-    }
+    //     return Inertia::render('News', [
+    //         'newsItems' => $newsItems,
+    //         'categories' => $categories,
+    //     ]);
+    // }
 
     public function show($news_id)
     {
-        $news = News::with('category')->where('news_id', $news_id)->firstOrFail();
-        $newsItems = News::with('category')->orderBy('created_at', 'desc')->get();
+        $news = News::with('category')->where('news_id', $news_id)->where('is_active', true)->firstOrFail();
+        $newsItems = News::with('category')->where('is_active', true)->orderBy('created_at', 'desc')->get();
         $categories = NewsCategory::all();
 
         return Inertia::render('NewsDetail', [
             'newsItems' => $newsItems,
             'categories' => $categories,
             'news' => $news,
-            'news_id' => $news_id, // Kirim news_id sebagai prop
+            'news_id' => $news_id,
         ]);
     }
 }

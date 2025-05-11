@@ -5,23 +5,38 @@ import AdminLayout from '@/Layouts/AdminLayout';
 export default function Index({ auth, permissions, userRole, menu, achievements = [] }) {
     const { flash } = usePage().props ?? {};
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest, 'asc' for oldest
-    const [showNotification, setShowNotification] = useState(false);
-    const [notificationMessage, setNotificationMessage] = useState('');
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [isGridView, setIsGridView] = useState(true);
-    const [isDeleting, setIsDeleting] = useState(null); // Track which achievement is being deleted
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [achievementIdToDelete, setAchievementIdToDelete] = useState(null);
 
-    // Handle flash messages for notifications
+    // Handle flash messages and notification state
     useEffect(() => {
-        if (flash && flash.success) {
-            setNotificationMessage(flash.success);
-            setShowNotification(true);
+        if (flash) {
+            if (flash.success) {
+                setNotification({
+                    show: true,
+                    type: 'success',
+                    message: flash.success,
+                });
+            } else if (flash.error) {
+                setNotification({
+                    show: true,
+                    type: 'error',
+                    message: flash.error,
+                });
+            }
+        }
+
+        if (notification.show) {
             const timer = setTimeout(() => {
-                setShowNotification(false);
+                setNotification({ ...notification, show: false });
             }, 5000);
             return () => clearTimeout(timer);
         }
-    }, [flash]);
+    }, [flash, notification]);
 
     // Filter and sort achievements
     const filteredAchievements = achievements
@@ -36,15 +51,52 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
             return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
         });
 
-    // Handle delete action with loading state
-    const handleDelete = (id) => {
-        if (confirm('Apakah Anda yakin ingin menghapus prestasi ini?')) {
-            setIsDeleting(id);
-            router.delete(route('admin.achievements.destroy', id), {
-                onFinish: () => setIsDeleting(null),
-                preserveScroll: true,
-            });
+    // Handle delete action with modal confirmation
+    const handleDeleteClick = (achievementId) => {
+        setAchievementIdToDelete(achievementId);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        if (achievementIdToDelete) {
+            setIsDeleting(true);
+            router.post(
+                route('admin.achievements.destroy', achievementIdToDelete),
+                {},
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onError: (errors) => {
+                        setNotification({
+                            show: true,
+                            type: 'error',
+                            message: 'Gagal menghapus prestasi: ' + (errors.error || 'Terjadi kesalahan.'),
+                        });
+                        setIsDeleting(false);
+                        setShowDeleteModal(false);
+                        setAchievementIdToDelete(null);
+                    },
+                    onSuccess: () => {
+                        setNotification({
+                            show: true,
+                            type: 'success',
+                            message: 'Prestasi berhasil dihapus!',
+                        });
+                        setIsDeleting(false);
+                        setShowDeleteModal(false);
+                        setAchievementIdToDelete(null);
+                    },
+                    onFinish: () => {
+                        setIsDeleting(false);
+                    },
+                }
+            );
         }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setAchievementIdToDelete(null);
     };
 
     // Helper function to render medal icon
@@ -76,31 +128,58 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
             <Head title="Kelola Prestasi" />
 
             {/* Notification */}
-            {showNotification && (
-                <div className="fixed top-4 right-4 z-50 max-w-md bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-emerald-500 px-6 py-4 rounded-lg shadow-xl transition-all duration-300 transform animate-slide-in-right">
+            {notification.show && (
+                <div
+                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
+                        notification.type === 'success'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
+                            : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
+                    }`}
+                >
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
                             <svg
-                                className="h-5 w-5 text-emerald-500"
+                                className={`h-5 w-5 ${
+                                    notification.type === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                }`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
                             >
-                                <path
-                                    fillRule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clipRule="evenodd"
-                                />
+                                {notification.type === 'success' ? (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clipRule="evenodd"
+                                    />
+                                ) : (
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
+                                        clipRule="evenodd"
+                                    />
+                                )}
                             </svg>
                         </div>
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-emerald-800">{notificationMessage}</p>
+                            <p
+                                className={`text-sm font-medium ${
+                                    notification.type === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                                }`}
+                            >
+                                {notification.message}
+                            </p>
                         </div>
                         <div className="ml-auto pl-3">
                             <button
-                                onClick={() => setShowNotification(false)}
-                                className="inline-flex rounded-md p-1.5 text-emerald-500 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                onClick={() => setNotification({ ...notification, show: false })}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notification.type === 'success'
+                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                                } focus:outline-none focus:ring-2`}
                             >
+                                <span className="sr-only">Dismiss</span>
                                 <svg
                                     className="h-5 w-5"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -113,6 +192,66 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                         clipRule="evenodd"
                                     />
                                 </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Konfirmasi Hapus */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-red-100 rounded-full p-3">
+                                <svg
+                                    className="w-8 h-8 text-red-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
+                        <p className="text-gray-600 text-center mb-6">
+                            Apakah Anda yakin ingin menghapus prestasi ini? Tindakan ini tidak dapat dibatalkan.
+                        </p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={cancelDelete}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                disabled={isDeleting}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"
+                                disabled={isDeleting}
+                            >
+                                <svg
+                                    className="w-4 h-4 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                </svg>
+                                {isDeleting ? 'Menghapus...' : 'Hapus'}
                             </button>
                         </div>
                     </div>
@@ -186,10 +325,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
                                     onClick={() => setIsGridView(true)}
-                                    className={`p-2 rounded-md ${isGridView
+                                    className={`p-2 rounded-md ${
+                                        isGridView
                                             ? 'bg-white shadow-sm text-blue-600'
                                             : 'text-gray-500 hover:text-gray-700'
-                                        } transition-all duration-200`}
+                                    } transition-all duration-200`}
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -208,10 +348,11 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                 </button>
                                 <button
                                     onClick={() => setIsGridView(false)}
-                                    className={`p-2 rounded-md ${!isGridView
+                                    className={`p-2 rounded-md ${
+                                        !isGridView
                                             ? 'bg-white shadow-sm text-blue-600'
                                             : 'text-gray-500 hover:text-gray-700'
-                                        } transition-all duration-200`}
+                                    } transition-all duration-200`}
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -329,41 +470,24 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                             Edit
                                         </Link>
                                         <button
-                                            onClick={() => handleDelete(achievement.achievement_id)}
-                                            disabled={isDeleting === achievement.achievement_id}
+                                            onClick={() => handleDeleteClick(achievement.achievement_id)}
+                                            disabled={isDeleting}
                                             className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 group-hover:scale-105 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {isDeleting === achievement.achievement_id ? (
-                                                <svg
-                                                    className="w-4 h-4 mr-2 animate-spin"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M4 12a8 8 0 0116 0 8 8 0 01-16 0z"
-                                                    />
-                                                </svg>
-                                            ) : (
-                                                <svg
-                                                    className="w-4 h-4 mr-2"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                    />
-                                                </svg>
-                                            )}
+                                            <svg
+                                                className="w-4 h-4 mr-2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                />
+                                            </svg>
                                             Hapus
                                         </button>
                                     </div>
@@ -377,8 +501,9 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                         {filteredAchievements.map((achievement, index) => (
                             <div
                                 key={achievement.achievement_id}
-                                className={`flex flex-col sm:flex-row items-start p-5 hover:bg-gray-50 transition-colors duration-200 ${index !== filteredAchievements.length - 1 ? 'border-b border-gray-100' : ''
-                                    }`}
+                                className={`flex flex-col sm:flex-row items-start p-5 hover:bg-gray-50 transition-colors duration-200 ${
+                                    index !== filteredAchievements.length - 1 ? 'border-b border-gray-100' : ''
+                                }`}
                             >
                                 <div className="flex-grow">
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
@@ -400,7 +525,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                         Jenis Prestasi:
                                                     </span>
                                                     <span className="text-gray-600">
-                                                        {achievement.achievementType?.type_name || 'N/A'}
+                                                        {achievement.achievement_type?.type_name || 'N/A'}
                                                     </span>
                                                 </p>
                                                 <p className="flex items-center">
@@ -462,41 +587,24 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                 Edit
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(achievement.achievement_id)}
-                                                disabled={isDeleting === achievement.achievement_id}
+                                                onClick={() => handleDeleteClick(achievement.achievement_id)}
+                                                disabled={isDeleting}
                                                 className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                {isDeleting === achievement.achievement_id ? (
-                                                    <svg
-                                                        className="w-4 h-4 mr-2 animate-spin"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M4 12a8 8 0 0116 0 8 8 0 01-16 0z"
-                                                        />
-                                                    </svg>
-                                                ) : (
-                                                    <svg
-                                                        className="w-4 h-4 mr-2"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                        />
-                                                    </svg>
-                                                )}
+                                                <svg
+                                                    className="w-4 h-4 mr-2"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                    />
+                                                </svg>
                                                 Hapus
                                             </button>
                                         </div>
@@ -564,7 +672,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                     className="w-5 h-5 mr-2"
                                     fill="none"
                                     stroke="currentColor"
-                                    viewBox="0 24 24"
+                                    viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg"
                                 >
                                     <path
@@ -580,6 +688,25 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                     </div>
                 )}
             </div>
+
+            {/* Animation Styles */}
+            <style>
+                {`
+                    @keyframes slide-in-right {
+                        0% {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        100% {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    .animate-slide-in-right {
+                        animation: slide-in-right 0.5s ease-out forwards;
+                    }
+                `}
+            </style>
         </AdminLayout>
     );
 }

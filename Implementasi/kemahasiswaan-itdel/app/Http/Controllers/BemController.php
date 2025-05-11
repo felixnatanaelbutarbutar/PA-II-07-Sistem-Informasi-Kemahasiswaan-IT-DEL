@@ -33,6 +33,10 @@ class BemController extends Controller
             'bem' => $bem,
             'menu' => $menuItems,
             'navigation' => $menuItems,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
@@ -54,6 +58,10 @@ class BemController extends Controller
             'menu' => $menuItems,
             'navigation' => $menuItems,
             'bemExists' => $bemExists,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
@@ -64,12 +72,12 @@ class BemController extends Controller
 
         try {
             $validated = $request->validate([
-                'introduction' => 'required|string', // Validasi untuk introduction
+                'introduction' => 'required|string',
                 'vision' => 'required|string',
-                'mission' => 'required|json', // Mission sekarang berupa JSON
+                'mission' => 'required|json',
                 'structure' => 'required|json',
-                'work_programs' => 'required|json', // Work programs memiliki description dan programs
-                'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096', // Validasi untuk logo
+                'work_programs' => 'required|json',
+                'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
                 'recruitment_status' => 'required|in:OPEN,CLOSED',
                 'positions.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
                 'departments.*.members.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
@@ -79,7 +87,6 @@ class BemController extends Controller
 
             $structure = json_decode($request->input('structure'), true);
 
-            // Proses file untuk positions
             if (!empty($structure['positions'])) {
                 foreach ($structure['positions'] as $positionIndex => &$position) {
                     if ($request->hasFile("positions.{$positionIndex}")) {
@@ -92,7 +99,6 @@ class BemController extends Controller
                 }
             }
 
-            // Proses file untuk departments
             if (!empty($structure['departments'])) {
                 foreach ($structure['departments'] as $deptIndex => &$department) {
                     if (!empty($department['members'])) {
@@ -109,7 +115,6 @@ class BemController extends Controller
                 }
             }
 
-            // Proses file logo
             $logoPath = null;
             if ($request->hasFile('logo')) {
                 $logoPath = $request->file('logo')->store('bem_logos', 'public');
@@ -121,9 +126,9 @@ class BemController extends Controller
             BEM::create([
                 'introduction' => $request->introduction,
                 'vision' => $request->vision,
-                'mission' => json_decode($request->mission, true), // Simpan mission sebagai array
+                'mission' => json_decode($request->mission, true),
                 'structure' => $structure,
-                'work_programs' => json_decode($request->work_programs, true), // Simpan work_programs sebagai array
+                'work_programs' => json_decode($request->work_programs, true),
                 'logo' => $logoPath,
                 'recruitment_status' => $request->recruitment_status,
                 'created_by' => Auth::id(),
@@ -158,6 +163,10 @@ class BemController extends Controller
             'bem' => $bem,
             'menu' => $menuItems,
             'navigation' => $menuItems,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
@@ -185,7 +194,6 @@ class BemController extends Controller
 
             $structure = json_decode($request->input('structure'), true);
 
-            // Proses file untuk positions
             if (!empty($structure['positions'])) {
                 foreach ($structure['positions'] as $positionIndex => &$position) {
                     if ($request->hasFile("positions.{$positionIndex}")) {
@@ -202,7 +210,6 @@ class BemController extends Controller
                 }
             }
 
-            // Proses file untuk departments
             if (!empty($structure['departments'])) {
                 foreach ($structure['departments'] as $deptIndex => &$department) {
                     if (!empty($department['members'])) {
@@ -223,10 +230,8 @@ class BemController extends Controller
                 }
             }
 
-            // Proses file logo
             $logoPath = $bem->logo;
             if ($request->hasFile('logo')) {
-                // Hapus logo lama jika ada
                 if ($logoPath) {
                     Storage::disk('public')->delete($logoPath);
                 }
@@ -263,7 +268,6 @@ class BemController extends Controller
             $bem = BEM::findOrFail($id);
             Log::info('Attempting to delete BEM with ID: ' . $id);
 
-            // Hapus foto positions
             if (!empty($bem->structure['positions'])) {
                 foreach ($bem->structure['positions'] as $position) {
                     if (!empty($position['photo'])) {
@@ -273,7 +277,6 @@ class BemController extends Controller
                 }
             }
 
-            // Hapus foto members di departments
             if (!empty($bem->structure['departments'])) {
                 foreach ($bem->structure['departments'] as $department) {
                     if (!empty($department['members'])) {
@@ -287,7 +290,6 @@ class BemController extends Controller
                 }
             }
 
-            // Hapus logo
             if ($bem->logo) {
                 Log::info('Deleting logo: ' . $bem->logo);
                 Storage::disk('public')->delete($bem->logo);
@@ -296,10 +298,10 @@ class BemController extends Controller
             $bem->delete();
             Log::info('BEM deleted successfully');
 
-            return redirect()->route('admin.bem.index')->with('success', 'Data BEM berhasil dihapus.');
+            return response()->json(['message' => 'Data BEM berhasil dihapus!'], 200);
         } catch (\Exception $e) {
             Log::error('Error deleting BEM data: ' . $e->getMessage());
-            return redirect()->route('admin.bem.index')->with('error', 'Gagal menghapus data BEM: ' . $e->getMessage());
+            return response()->json(['message' => 'Gagal menghapus data BEM: ' . $e->getMessage()], 500);
         }
     }
 
@@ -309,6 +311,10 @@ class BemController extends Controller
 
         return Inertia::render('BEM', [
             'bem' => $bem,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 }

@@ -21,6 +21,8 @@ import {
     Download,
     MessageSquare,
     Image,
+    Clipboard,
+    Megaphone // Tambahkan ikon Clipboard untuk form
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -30,7 +32,7 @@ export default function AdminLayout({
     navigation = []
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [theme, setTheme] = useState('light'); // Ganti darkMode menjadi theme
+    const [theme, setTheme] = useState('light');
     const [expandedMenu, setExpandedMenu] = useState(null);
     const [showThemeDropdown, setShowThemeDropdown] = useState(false);
     const { url } = usePage();
@@ -47,6 +49,10 @@ export default function AdminLayout({
         download: Download,
         aspiration: MessageSquare,
         carousel: Image,
+        chatbot: MessageSquare,
+        calendar: Bell,
+        form: Clipboard,
+        directors: Megaphone,
     };
 
     // Theme definitions with their icons
@@ -80,7 +86,7 @@ export default function AdminLayout({
         themes.forEach(t => document.documentElement.classList.remove(t.name));
         // Add the selected theme class
         document.documentElement.classList.add(newTheme);
-        setShowThemeDropdown(false); // Tutup dropdown setelah memilih tema
+        setShowThemeDropdown(false);
     };
 
     const defaultNavigation = [
@@ -97,44 +103,41 @@ export default function AdminLayout({
 
     const menuItems = navigation.length > 0 ? navigation : defaultNavigation;
 
-    console.log('Navigation Menu Items:', menuItems);
+    // console.log('Navigation Menu Items:', menuItems);
 
     const isRouteValid = (routeName) => {
         if (!routeName) {
-            console.warn('Route name is undefined or null');
+            // console.warn('Route name is undefined or null');
             return false;
         }
         try {
             const routeUrl = route(routeName);
-            if (!routeUrl) {
-                console.warn(`Route URL is undefined for route name: ${routeName}`);
-                return false;
-            }
-            console.log(`Route ${routeName} is valid with URL: ${routeUrl}`);
-            return true;
+            return !!routeUrl;
         } catch (e) {
-            console.error(`Error checking route for ${routeName}:`, e);
+            // console.error(`Error checking route for ${routeName}:`, e);
             return false;
         }
     };
 
     const isActive = (routeName) => {
-        if (!routeName) {
-            console.warn('Route name is undefined or null in isActive');
-            return false;
-        }
-        if (!isRouteValid(routeName)) {
+        if (!routeName || !isRouteValid(routeName)) {
+            console.warn(`Route invalid or undefined: ${routeName}`);
             return false;
         }
         try {
             const routeUrl = route(routeName);
-            return url.startsWith(routeUrl);
+            const baseUrl = url.split('?')[0]; // Path relatif dari current URL
+            // Ekstrak path dari routeUrl (hapus protokol dan domain)
+            const baseRouteUrl = routeUrl.replace(/^https?:\/\/[^\/]+/, '');
+            // console.log(`Checking route: ${routeName}, Base URL: ${baseUrl}, Base Route URL: ${baseRouteUrl}`);
+            const isActive = baseUrl === baseRouteUrl || baseUrl.startsWith(baseRouteUrl + '/');
+            // console.log(`Is Active for ${routeName}: ${isActive}`);
+            return isActive;
         } catch (e) {
-            console.error(`Route checking error for ${routeName}:`, e);
+                // console.error(`Route checking error for ${routeName}:`, e);
             return false;
         }
     };
-
     const toggleSubmenu = (index) => {
         setExpandedMenu(expandedMenu === index ? null : index);
     };
@@ -199,7 +202,7 @@ export default function AdminLayout({
                             const isOpen = expandedMenu === index;
                             const Icon = item.icon && iconMap[item.icon] ? iconMap[item.icon] : LayoutDashboard;
 
-                            console.log(`Icon for ${item.name}:`, item.icon, 'Mapped Icon:', Icon ? Icon.name : 'Not found');
+                            {/* console.log(`Icon for ${item.name}:`, item.icon, 'Mapped Icon:', Icon ? Icon.name : 'Not found'); */}
 
                             if (hasSubmenu) {
                                 const isSubmenuActive = item.submenu.some(subItem => {
@@ -288,11 +291,11 @@ export default function AdminLayout({
                             }
 
                             if (!item.route) {
-                                console.warn(`Menu item "${item.name}" has no route defined.`);
+                                {/* console.warn(`Menu item "${item.name}" has no route defined.`); */}
                                 return null;
                             }
                             if (!isRouteValid(item.route)) {
-                                console.warn(`Skipping menu item "${item.name}" due to invalid route: ${item.route}`);
+                                {/* console.warn(`Skipping menu item "${item.name}" due to invalid route: ${item.route}`); */}
                                 return null;
                             }
                             const isActiveRoute = isActive(item.route);

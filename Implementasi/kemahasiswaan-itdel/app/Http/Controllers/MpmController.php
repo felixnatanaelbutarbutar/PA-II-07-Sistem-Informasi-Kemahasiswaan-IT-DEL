@@ -17,7 +17,7 @@ class MpmController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $mpm = Mpm::with(['creator', 'updater'])->first();
+        $mpm = Mpm::with(['createdBy', 'updatedBy'])->first();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -33,6 +33,10 @@ class MpmController extends Controller
             'mpm' => $mpm,
             'menu' => $menuItems,
             'navigation' => $menuItems,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
@@ -54,6 +58,10 @@ class MpmController extends Controller
             'menu' => $menuItems,
             'navigation' => $menuItems,
             'mpmExists' => $mpmExists,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
@@ -101,7 +109,6 @@ class MpmController extends Controller
             // Proses foto untuk komisi
             if (!empty($structure['commissions'])) {
                 foreach ($structure['commissions'] as $commissionIndex => &$commission) {
-                    // Foto Ketua Komisi
                     if ($request->hasFile("commissions.{$commissionIndex}.chairman_photo")) {
                         $path = $request->file("commissions.{$commissionIndex}.chairman_photo")->store('mpm_photos', 'public');
                         Log::info("Commission {$commissionIndex} chairman photo uploaded to: " . $path);
@@ -110,7 +117,6 @@ class MpmController extends Controller
                         $commission['chairman']['photo'] = null;
                     }
 
-                    // Foto Anggota Komisi
                     if (!empty($commission['members'])) {
                         foreach ($commission['members'] as $memberIndex => &$member) {
                             if ($request->hasFile("commissions.{$commissionIndex}.members.{$memberIndex}.photo")) {
@@ -145,13 +151,13 @@ class MpmController extends Controller
                 'updated_by' => Auth::id(),
             ]);
 
-            return redirect()->route('admin.mpm.index')->with('success', 'Data MPM berhasil dibuat.');
+            return response()->json(['message' => 'Data MPM berhasil dibuat.'], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation failed: ' . json_encode($e->errors()));
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
             Log::error('Error saving MPM data: ' . $e->getMessage());
-            return redirect()->route('admin.mpm.index')->with('error', 'Gagal membuat data MPM: ' . $e->getMessage());
+            return response()->json(['message' => 'Gagal membuat data MPM: ' . $e->getMessage()], 500);
         }
     }
 
@@ -160,7 +166,7 @@ class MpmController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $mpm = Mpm::with(['creator', 'updater'])->findOrFail($id);
+        $mpm = Mpm::with(['createdBy', 'updatedBy'])->findOrFail($id);
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -173,6 +179,10 @@ class MpmController extends Controller
             'mpm' => $mpm,
             'menu' => $menuItems,
             'navigation' => $menuItems,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
@@ -355,7 +365,10 @@ class MpmController extends Controller
 
         return Inertia::render('MPM', [
             'mpm' => $mpm,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 }
-

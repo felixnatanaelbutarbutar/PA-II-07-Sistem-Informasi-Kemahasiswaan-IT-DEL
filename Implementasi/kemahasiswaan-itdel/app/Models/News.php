@@ -16,18 +16,34 @@ class News extends Model
 
     protected $fillable = [
         'news_id',
-        'title',    
+        'title',
         'image',
         'content',
         'category_id',
+        'is_active',
         'created_by',
         'updated_by'
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function category()
     {
         return $this->belongsTo(NewsCategory::class, 'category_id', 'category_id');
     }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by', 'id');
+    }
+
     public function getRouteKeyName()
     {
         return 'news_id';

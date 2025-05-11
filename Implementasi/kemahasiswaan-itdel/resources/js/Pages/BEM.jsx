@@ -1,15 +1,15 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
 import FooterLayout from '@/Layouts/FooterLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
 export default function BEM({ bem }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedDepartments, setExpandedDepartments] = useState({});
+    const { url } = usePage();
 
-    // Simulasi loading data (jika data diambil dari API)
     useEffect(() => {
         if (bem) {
             setIsLoading(false);
@@ -19,7 +19,18 @@ export default function BEM({ bem }) {
         }
     }, [bem]);
 
-    // Fungsi untuk toggle dropdown departemen
+    useEffect(() => {
+        const hash = url.split('#')[1];
+        if (hash) {
+            setTimeout(() => {
+                const element = document.getElementById(hash);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 100);
+        }
+    }, [url]);
+
     const toggleDepartment = (deptIndex) => {
         setExpandedDepartments((prev) => ({
             ...prev,
@@ -27,249 +38,27 @@ export default function BEM({ bem }) {
         }));
     };
 
-    // Fungsi untuk mendapatkan style responsif
-    const getResponsiveStyles = () => {
-        const width = window.innerWidth;
-        return {
-            body: {
-                fontFamily: "'Inter', sans-serif",
-                margin: 0,
-                padding: 0,
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                minHeight: '100vh',
-            },
-            container: {
-                maxWidth: '1200px',
-                margin: '0 auto',
-                padding: width <= 768 ? '10px' : '20px',
-            },
-            section: {
-                background: 'rgba(255, 255, 255, 0.95)',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                padding: width <= 768 ? '15px' : '20px',
-                marginBottom: '20px',
-                backdropFilter: 'blur(10px)',
-            },
-            sectionTitle: {
-                fontSize: width <= 768 ? '20px' : '24px',
-                fontWeight: '700',
-                color: '#2d3748',
-                marginBottom: '15px',
-                borderBottom: '2px solid #007bff',
-                paddingBottom: '5px',
-            },
-            logoContainer: {
-                display: 'flex',
-                justifyContent: 'center',
-                marginBottom: '20px',
-            },
-            logoImg: {
-                width: width <= 480 ? '120px' : '150px',
-                height: width <= 480 ? '120px' : '150px',
-                objectFit: 'contain',
-            },
-            textContent: {
-                fontSize: width <= 768 ? '14px' : '16px',
-                color: '#718096',
-                lineHeight: '1.6',
-                marginBottom: '15px',
-            },
-            listItem: {
-                fontSize: width <= 768 ? '14px' : '16px',
-                color: '#718096',
-                marginBottom: '10px',
-                lineHeight: '1.5',
-            },
-            positionGrid: {
-                display: 'grid',
-                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '20px',
-                marginBottom: '20px',
-            },
-            positionCard: {
-                background: 'linear-gradient(90deg, #ffffff 0%, #f9f9f9 100%)',
-                padding: '15px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
-                textAlign: 'center',
-                transition: 'transform 0.3s, box-shadow 0.3s',
-            },
-            positionCardHover: {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 15px rgba(0, 0, 0, 0.1)',
-            },
-            positionImg: {
-                width: '100px',
-                height: '100px',
-                objectFit: 'cover',
-                borderRadius: '50%',
-                margin: '0 auto 10px',
-            },
-            positionTitle: {
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#2d3748',
-                marginBottom: '5px',
-            },
-            positionName: {
-                fontSize: '14px',
-                color: '#718096',
-            },
-            departmentHeader: {
-                background: 'linear-gradient(90deg, #007bff 0%, #00c4ff 100%)',
-                color: '#fff',
-                padding: '10px 15px',
-                borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer',
-                marginBottom: '10px',
-            },
-            departmentTitle: {
-                fontSize: '16px',
-                fontWeight: '600',
-            },
-            departmentContent: {
-                padding: '15px',
-                background: '#f9f9f9',
-                borderRadius: '8px',
-                display: 'grid',
-                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '20px',
-            },
-            memberCard: {
-                background: 'linear-gradient(90deg, #ffffff 0%, #f9f9f9 100%)',
-                padding: '15px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
-                textAlign: 'center',
-                transition: 'transform 0.3s, box-shadow 0.3s',
-            },
-            memberCardHover: {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 15px rgba(0, 0, 0, 0.1)',
-            },
-            memberImg: {
-                width: '80px',
-                height: '80px',
-                objectFit: 'cover',
-                borderRadius: '50%',
-                margin: '0 auto 10px',
-            },
-            memberPosition: {
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#2d3748',
-                marginBottom: '5px',
-            },
-            memberName: {
-                fontSize: '14px',
-                color: '#718096',
-            },
-            recruitmentStatus: {
-                background: bem?.recruitment_status === 'OPEN' ? '#28a745' : '#dc3545',
-                color: '#fff',
-                padding: '10px 20px',
-                borderRadius: '20px',
-                fontSize: '16px',
-                fontWeight: '600',
-                textAlign: 'center',
-                marginTop: '20px',
-                display: 'inline-block',
-            },
-            recruitmentLink: {
-                display: 'block',
-                textAlign: 'center',
-                marginTop: '10px',
-                color: '#007bff',
-                textDecoration: 'none',
-                fontSize: '16px',
-                fontWeight: '500',
-            },
-            recruitmentLinkHover: {
-                color: '#0056b3',
-            },
-            emptyState: {
-                textAlign: 'center',
-                padding: '40px',
-                background: 'rgba(255, 255, 255, 0.95)',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                backdropFilter: 'blur(10px)',
-            },
-            emptyStateTitle: {
-                fontSize: '20px',
-                fontWeight: '500',
-                color: '#4a4a4a',
-                marginBottom: '10px',
-            },
-            emptyStateText: {
-                color: '#718096',
-                fontSize: '16px',
-            },
-            loadingState: {
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '300px',
-            },
-            errorMessage: {
-                textAlign: 'center',
-                color: '#e53e3e',
-                padding: '20px',
-                background: 'rgba(255, 255, 255, 0.9)',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                marginBottom: '20px',
-            },
-        };
-    };
-
-    // State untuk menyimpan styles responsif
-    const [styles, setStyles] = useState(getResponsiveStyles());
-
-    // Update styles saat ukuran layar berubah
-    useEffect(() => {
-        const handleResize = () => {
-            setStyles(getResponsiveStyles());
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
     return (
         <GuestLayout>
             <NavbarGuestLayoutPage />
             <Head title="BEM IT Del" />
-            <div style={styles.body}>
-                <div style={styles.container}>
-                    {/* Error Message */}
+            <div className="bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen font-inter">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                     {error && (
-                        <div style={styles.errorMessage}>
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl shadow-md text-red-600 animate__animated animate__fadeIn">
                             {error}
                         </div>
                     )}
 
-                    {/* Loading State */}
                     {isLoading ? (
-                        <div style={styles.loadingState}>
+                        <div className="flex justify-center items-center h-96">
                             <svg
-                                className="animate-spin h-10 w-10 text-blue-500"
+                                className="animate-spin h-12 w-12 text-blue-600"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
                             >
-                                <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                />
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path
                                     className="opacity-75"
                                     fill="currentColor"
@@ -281,182 +70,203 @@ export default function BEM({ bem }) {
                         <>
                             {bem ? (
                                 <>
-                                    {/* Introduction Section */}
-                                    <div style={styles.section}>
-                                        <h2 style={styles.sectionTitle}>Badan Eksekutif Mahasiswa (BEM)</h2>
-                                        {bem.logo && (
-                                            <div style={styles.logoContainer}>
+                                    <section className="bg-white/90 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 animate__animated animate__fadeIn" id="profil-bem">
+                                        <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4 border-b-2 border-blue-500 pb-2">
+                                            Badan Eksekutif Mahasiswa (BEM)
+                                        </h2>
+                                        {bem.logo ? (
+                                            <div className="flex justify-center mb-6">
                                                 <img
                                                     src={`/storage/${bem.logo}`}
                                                     alt="Logo BEM IT Del"
-                                                    style={styles.logoImg}
+                                                    className="w-32 h-32 object-contain rounded-lg shadow-md"
+                                                    onError={(e) => (e.target.src = 'https://via.placeholder.com/150?text=Logo+BEM')}
                                                 />
                                             </div>
+                                        ) : (
+                                            <div className="flex justify-center mb-6">
+                                                <div className="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-sm">
+                                                    Tidak ada logo
+                                                </div>
+                                            </div>
                                         )}
-                                        <p style={styles.textContent}>{bem.introduction}</p>
-                                    </div>
+                                        <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{bem.introduction || 'Tidak ada perkenalan.'}</p>
+                                    </section>
 
-                                    {/* Visi & Misi Section */}
-                                    <div style={styles.section}>
-                                        <h2 style={styles.sectionTitle}>Visi & Misi BEM</h2>
-                                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#2d3748', marginBottom: '10px' }}>
-                                            Visi
-                                        </h3>
-                                        <p style={styles.textContent}>{bem.vision}</p>
-                                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#2d3748', marginBottom: '10px', marginTop: '20px' }}>
-                                            Misi
-                                        </h3>
-                                        <ul style={{ paddingLeft: '20px' }}>
-                                            {bem.mission?.map((mission, index) => (
-                                                <li key={index} style={styles.listItem}>
-                                                    {mission}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    {/* Struktur Organisasi Section */}
-                                    <div style={styles.section}>
-                                        <h2 style={styles.sectionTitle}>Struktur Organisasi BEM</h2>
-
-                                        {/* Jabatan Utama (BPH) */}
-                                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#2d3748', marginBottom: '15px' }}>
-                                            BPH BEM IT Del
-                                        </h3>
-                                        <div style={styles.positionGrid}>
-                                            {bem.structure?.positions?.map((position, index) => (
-                                                <div
-                                                    key={index}
-                                                    style={styles.positionCard}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.transform = styles.positionCardHover.transform;
-                                                        e.currentTarget.style.boxShadow = styles.positionCardHover.boxShadow;
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.transform = 'none';
-                                                        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.05)';
-                                                    }}
-                                                >
-                                                    {position.photo ? (
-                                                        <img
-                                                            src={`/storage/${position.photo}`}
-                                                            alt={position.name}
-                                                            style={styles.positionImg}
-                                                        />
-                                                    ) : (
-                                                        <div style={{ ...styles.positionImg, background: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#718096' }}>
-                                                            Tidak ada foto
-                                                        </div>
-                                                    )}
-                                                    <div style={styles.positionTitle}>{position.title}</div>
-                                                    <div style={styles.positionName}>{position.name}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Departemen */}
-                                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#2d3748', marginBottom: '15px', marginTop: '20px' }}>
-                                            Departemen
-                                        </h3>
-                                        {bem.structure?.departments?.map((dept, deptIndex) => (
-                                            <div key={deptIndex}>
-                                                <div
-                                                    style={styles.departmentHeader}
-                                                    onClick={() => toggleDepartment(deptIndex)}
-                                                >
-                                                    <span style={styles.departmentTitle}>{dept.name}</span>
-                                                    <svg
-                                                        className={`w-5 h-5 transition-transform ${expandedDepartments[deptIndex] ? 'rotate-180' : ''}`}
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </div>
-                                                {expandedDepartments[deptIndex] && (
-                                                    <div style={styles.departmentContent}>
-                                                        {dept.members && dept.members.length > 0 ? (
-                                                            dept.members.map((member, memberIndex) => (
-                                                                <div
-                                                                    key={memberIndex}
-                                                                    style={styles.memberCard}
-                                                                    onMouseEnter={(e) => {
-                                                                        e.currentTarget.style.transform = styles.memberCardHover.transform;
-                                                                        e.currentTarget.style.boxShadow = styles.memberCardHover.boxShadow;
-                                                                    }}
-                                                                    onMouseLeave={(e) => {
-                                                                        e.currentTarget.style.transform = 'none';
-                                                                        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.05)';
-                                                                    }}
-                                                                >
-                                                                    {member.photo ? (
-                                                                        <img
-                                                                            src={`/storage/${member.photo}`}
-                                                                            alt={member.name}
-                                                                            style={styles.memberImg}
-                                                                        />
-                                                                    ) : (
-                                                                        <div style={{ ...styles.memberImg, background: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#718096' }}>
-                                                                            Tidak ada foto
-                                                                        </div>
-                                                                    )}
-                                                                    <div style={styles.memberPosition}>{member.position}</div>
-                                                                    <div style={styles.memberName}>{member.name}</div>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <p style={styles.textContent}>Belum ada anggota di departemen ini.</p>
-                                                        )}
-                                                    </div>
+                                    <section className="bg-white/90 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 animate__animated animate__fadeIn" id="visi-misi">
+                                        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 border-b-2 border-blue-500 pb-2">
+                                            Visi & Misi BEM
+                                        </h2>
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">Visi</h3>
+                                                <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                                    {bem.vision || 'Tidak ada visi.'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">Misi</h3>
+                                                {bem.mission && bem.mission.length > 0 ? (
+                                                    <ul className="list-disc pl-5 text-gray-600 text-sm sm:text-base space-y-2">
+                                                        {bem.mission.map((mission, index) => (
+                                                            <li key={index}>{mission || 'Misi Tanpa Deskripsi'}</li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <p className="text-gray-600 text-sm sm:text-base">Tidak ada misi.</p>
                                                 )}
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    </section>
 
-                                    {/* Program Kerja Section */}
-                                    <div style={styles.section}>
-                                        <h2 style={styles.sectionTitle}>Program Kerja BEM</h2>
-                                        <p style={styles.textContent}>{bem.work_programs?.description}</p>
-                                        <ul style={{ paddingLeft: '20px' }}>
-                                            {bem.work_programs?.programs?.map((program, index) => (
-                                                <li key={index} style={styles.listItem}>
-                                                    {program}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                                    <section className="bg-white/90 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 animate__animated animate__fadeIn" id="struktur-organisasi">
+                                        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 border-b-2 border-blue-500 pb-2">
+                                            Struktur Organisasi BEM
+                                        </h2>
+                                        <div className="space-y-8">
+                                            <div>
+                                                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">BPH BEM IT Del</h3>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    {bem.structure?.positions?.map((position, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="bg-gradient-to-br from-white to-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 text-center"
+                                                        >
+                                                            {position.photo ? (
+                                                                <img
+                                                                    src={`/storage/${position.photo}`}
+                                                                    alt={position.name}
+                                                                    className="w-24 h-24 mx-auto rounded-full object-cover border-2 border-gray-200 shadow-sm"
+                                                                    onError={(e) => (e.target.src = 'https://via.placeholder.com/120?text=Foto')}
+                                                                />
+                                                            ) : (
+                                                                <div className="w-24 h-24 mx-auto rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+                                                                    Tidak ada foto
+                                                                </div>
+                                                            )}
+                                                            <div className="mt-2">
+                                                                <h4 className="text-sm sm:text-base font-semibold text-gray-800">{position.title}</h4>
+                                                                <p className="text-gray-600 text-sm">{position.name}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
 
-                                    {/* Partisipasi Anda Section */}
-                                    <div style={styles.section}>
-                                        <h2 style={styles.sectionTitle}>Partisipasi Anda</h2>
-                                        <div style={styles.recruitmentStatus}>
-                                            {bem.recruitment_status === 'OPEN' ? 'OPEN RECRUITMENT' : 'CLOSED RECRUITMENT'}
+                                            <div>
+                                                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Departemen</h3>
+                                                {bem.structure?.departments?.map((dept, deptIndex) => (
+                                                    <div key={deptIndex} className="mb-4">
+                                                        <div
+                                                            className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-blue-600 transition-all"
+                                                            onClick={() => toggleDepartment(deptIndex)}
+                                                        >
+                                                            <span className="text-sm sm:text-base font-semibold">{dept.name}</span>
+                                                            <svg
+                                                                className={`w-5 h-5 transition-transform ${expandedDepartments[deptIndex] ? 'rotate-180' : ''}`}
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </div>
+                                                        {expandedDepartments[deptIndex] && (
+                                                            <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow-inner grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                                {dept.members && dept.members.length > 0 ? (
+                                                                    dept.members.map((member, memberIndex) => (
+                                                                        <div
+                                                                            key={memberIndex}
+                                                                            className="bg-gradient-to-br from-white to-gray-50 p-3 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 text-center"
+                                                                        >
+                                                                            {member.photo ? (
+                                                                                <img
+                                                                                    src={`/storage/${member.photo}`}
+                                                                                    alt={member.name}
+                                                                                    className="w-20 h-20 mx-auto rounded-full object-cover border-2 border-gray-200 shadow-sm"
+                                                                                    onError={(e) => (e.target.src = 'https://via.placeholder.com/80?text=Foto')}
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="w-20 h-20 mx-auto rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+                                                                                    Tidak ada foto
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="mt-2">
+                                                                                <h4 className="text-sm font-semibold text-gray-800">{member.position}</h4>
+                                                                                <p className="text-gray-600 text-sm">{member.name}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))
+                                                                ) : (
+                                                                    <p className="text-gray-600 text-sm sm:text-base">Belum ada anggota di departemen ini.</p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="bg-white/90 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 animate__animated animate__fadeIn" id="program-kerja">
+                                        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 border-b-2 border-blue-500 pb-2">
+                                            Program Kerja BEM
+                                        </h2>
+                                        <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4">
+                                            {bem.work_programs?.description || 'Tidak ada deskripsi program kerja.'}
+                                        </p>
+                                        {bem.work_programs?.programs && bem.work_programs.programs.length > 0 ? (
+                                            <ul className="list-disc pl-5 text-gray-600 text-sm sm:text-base space-y-2">
+                                                {bem.work_programs.programs.map((program, index) => (
+                                                    <li key={index}>{program || 'Program Tanpa Deskripsi'}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-gray-600 text-sm sm:text-base">Tidak ada program kerja.</p>
+                                        )}
+                                    </section>
+
+                                    <section className="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl shadow-lg p-6 mb-8 text-white text-center animate__animated animate__fadeIn" id="partisipasi-anda">
+                                        <h2 className="text-xl sm:text-2xl font-semibold mb-4 border-b-2 border-white pb-2">
+                                            Partisipasi Anda
+                                        </h2>
+                                        <div className="mb-4">
+                                            <div
+                                                className={`inline-block px-6 py-2 rounded-full text-lg font-semibold ${
+                                                    bem.recruitment_status === 'OPEN' ? 'bg-green-500' : 'bg-red-500'
+                                                }`}
+                                            >
+                                                {bem.recruitment_status === 'OPEN' ? 'OPEN RECRUITMENT' : 'CLOSED RECRUITMENT'}
+                                            </div>
                                         </div>
                                         {bem.recruitment_status === 'OPEN' && (
                                             <a
                                                 href="#"
-                                                style={styles.recruitmentLink}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.color = styles.recruitmentLinkHover.color;
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.color = '#007bff';
-                                                }}
+                                                className="block mt-4 text-white font-medium hover:text-blue-200 transition-colors duration-300 text-sm sm:text-base"
                                             >
                                                 Daftar Sekarang!
                                             </a>
                                         )}
-                                    </div>
+                                    </section>
                                 </>
                             ) : (
-                                <div style={styles.emptyState}>
-                                    <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                <div className="bg-white/90 rounded-2xl shadow-lg p-8 text-center border border-gray-100 animate__animated animate__fadeIn">
+                                    <svg
+                                        className="w-16 h-16 text-gray-400 mb-4 mx-auto"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                        />
                                     </svg>
-                                    <h3 style={styles.emptyStateTitle}>Tidak ada data BEM</h3>
-                                    <p style={styles.emptyStateText}>Belum ada data BEM yang tersedia saat ini.</p>
+                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Tidak ada data BEM</h3>
+                                    <p className="text-gray-600 text-sm">Belum ada data BEM yang tersedia saat ini.</p>
                                 </div>
                             )}
                         </>

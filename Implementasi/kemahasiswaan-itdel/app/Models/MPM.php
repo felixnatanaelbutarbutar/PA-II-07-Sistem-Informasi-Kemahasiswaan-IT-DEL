@@ -13,6 +13,7 @@ class Mpm extends Model
         'mission',
         'structure',
         'recruitment_status',
+        'aspiration_status',
         'created_by',
         'updated_by',
     ];
@@ -22,12 +23,17 @@ class Mpm extends Model
         'structure' => 'array',
     ];
 
-    public function creator()
+    public function aspirations()
+    {
+        return $this->hasMany(Aspiration::class, 'mpm_id');
+    }
+
+    public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function updater()
+    public function updatedBy()
     {
         return $this->belongsTo(User::class, 'updated_by');
     }

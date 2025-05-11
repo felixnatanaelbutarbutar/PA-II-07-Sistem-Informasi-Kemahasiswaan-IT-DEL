@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import ChatbotWidget from '@/Layouts/Chatbot';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
@@ -19,6 +19,7 @@ export default function ActivityCalendar({ activities }) {
             start: new Date(activity.start_date),
             end: activity.end_date ? new Date(activity.end_date) : new Date(activity.start_date),
             description: activity.description,
+            creatorRole: activity.creator?.role.toLowerCase(), // Ambil role pembuat kegiatan
         }));
     }, [activities]);
 
@@ -29,10 +30,8 @@ export default function ActivityCalendar({ activities }) {
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        // Animasi fade-in saat komponen dimuat
         setIsLoaded(true);
 
-        // Efek animasi untuk detail kegiatan
         const detailCard = document.querySelector('.detail-card');
         if (detailCard) {
             const observer = new IntersectionObserver(
@@ -73,13 +72,28 @@ export default function ActivityCalendar({ activities }) {
         ? `${route('activities.guest.export.pdf')}?start_date=${startDate}&end_date=${endDate}`
         : route('activities.guest.export.pdf');
 
-    // Format date helper
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
 
-    // Styles yang disesuaikan dengan Achievement.jsx
+    const eventStyleGetter = (event, start, end, isSelected) => {
+        let backgroundColor = '#F54243'; // Kemahasiswaan
+        if (event.creatorRole === 'adminbem') backgroundColor = '#22A7F4'; // Admin BEM
+        if (event.creatorRole === 'adminmpm') backgroundColor = '#E7E73E'; // Admin MPM
+
+        return {
+            style: {
+                backgroundColor,
+                borderRadius: '5px',
+                opacity: 0.8,
+                color: 'black',
+                border: 'none',
+                display: 'block',
+            },
+        };
+    };
+
     const styles = {
         container: {
             padding: '60px 0',
@@ -135,6 +149,46 @@ export default function ActivityCalendar({ activities }) {
             textAlign: 'center',
             maxWidth: '700px',
             margin: '16px auto 0',
+        },
+        colorGuideWrapper: {
+            marginTop: '24px',
+            textAlign: 'center',
+        },
+        colorGuideTitle: {
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '16px',
+        },
+        colorGuideContainer: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: '16px',
+        },
+        colorGuideItem: {
+            display: 'flex',
+            alignItems: 'center',
+            padding: '12px 16px',
+            background: 'rgba(255, 255, 255, 0.97)',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
+            transition: 'all 0.3s ease',
+        },
+        colorGuideItemHover: {
+            transform: 'translateY(-2px)',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
+        },
+        colorBox: {
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            marginRight: '12px',
+        },
+        colorText: {
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#475569',
         },
         calendarContainer: {
             maxWidth: '1280px',
@@ -276,21 +330,65 @@ export default function ActivityCalendar({ activities }) {
     return (
         <GuestLayout>
             <Head title="Kalender Kegiatan" />
-            <NavbarGuestLayout />
+            <Navbar />
 
-            {/* Activity Calendar Section */}
             <div style={styles.container}>
                 <div style={styles.backgroundEffect}></div>
                 <div style={styles.contentWrapper}>
                     <div style={styles.sectionHeader}>
-                        <h2 style={styles.sectionTitle}>
+                        {/* <h2 style={styles.sectionTitle}>
                             Kalender Kegiatan
                             <div style={styles.sectionTitleUnderline}></div>
-                        </h2>
-                        <p style={styles.sectionSubtitle}>
-                            Lihat jadwal kegiatan yang telah direncanakan dalam berbagai acara
-                        </p>
-                        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                        </h2> */}
+
+                        <div style={styles.colorGuideWrapper}>
+                            <h3 style={styles.colorGuideTitle}>Panduan Warna Kegiatan</h3>
+                            <div style={styles.colorGuideContainer}>
+                                <div
+                                    style={styles.colorGuideItem}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = styles.colorGuideItemHover.transform;
+                                        e.currentTarget.style.boxShadow = styles.colorGuideItemHover.boxShadow;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = styles.colorGuideItem.boxShadow;
+                                    }}
+                                >
+                                    <div style={{ ...styles.colorBox, backgroundColor: '#F54243' }}></div>
+                                    <span style={styles.colorText}>Kegiatan dari Kemahasiswaan</span>
+                                </div>
+                                <div
+                                    style={styles.colorGuideItem}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = styles.colorGuideItemHover.transform;
+                                        e.currentTarget.style.boxShadow = styles.colorGuideItemHover.boxShadow;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = styles.colorGuideItem.boxShadow;
+                                    }}
+                                >
+                                    <div style={{ ...styles.colorBox, backgroundColor: '#22A7F4' }}></div>
+                                    <span style={styles.colorText}>Kegiatan dari Admin BEM</span>
+                                </div>
+                                <div
+                                    style={styles.colorGuideItem}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = styles.colorGuideItemHover.transform;
+                                        e.currentTarget.style.boxShadow = styles.colorGuideItemHover.boxShadow;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = styles.colorGuideItem.boxShadow;
+                                    }}
+                                >
+                                    <div style={{ ...styles.colorBox, backgroundColor: '#E7E73E' }}></div>
+                                    <span style={styles.colorText}>Kegiatan dari Admin MPM</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ textAlign: 'center', marginTop: '50px' }}>
                             <button
                                 onClick={() => setIsModalOpen(true)}
                                 style={styles.buttonExport}
@@ -309,9 +407,11 @@ export default function ActivityCalendar({ activities }) {
                                 Ekspor ke PDF
                             </button>
                         </div>
+                        <p style={styles.sectionSubtitle}>
+                            Lihat jadwal kegiatan yang telah direncanakan dalam berbagai acara
+                        </p>
                     </div>
 
-                    {/* Modal untuk memilih rentang tanggal */}
                     {isModalOpen && (
                         <div style={styles.modalOverlay}>
                             <div style={styles.modalContent}>
@@ -367,7 +467,6 @@ export default function ActivityCalendar({ activities }) {
                         </div>
                     )}
 
-                    {/* Kalender */}
                     <div style={styles.calendarContainer}>
                         <BigCalendar
                             localizer={localizer}
@@ -376,11 +475,11 @@ export default function ActivityCalendar({ activities }) {
                             endAccessor="end"
                             style={{ height: 600 }}
                             onSelectEvent={handleSelectEvent}
+                            eventPropGetter={eventStyleGetter}
                             className="rbc-calendar-custom"
                         />
                     </div>
 
-                    {/* Detail Kegiatan */}
                     {selectedEvent && (
                         <div
                             className="detail-card"
@@ -404,9 +503,7 @@ export default function ActivityCalendar({ activities }) {
                 </div>
             </div>
 
-            {/* Chatbot Widget */}
             <ChatbotWidget />
-
             <FooterLayout />
         </GuestLayout>
     );
