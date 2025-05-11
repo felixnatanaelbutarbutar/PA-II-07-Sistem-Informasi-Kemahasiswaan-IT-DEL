@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\CarouselController;
+use App\Http\Controllers\Api\DirectorController;
 use App\Http\Controllers\API\SubmissionController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\NewsCategoryController;
@@ -29,6 +30,9 @@ use App\Http\Controllers\Api\AnnouncementCategoryController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Route untuk Director (Kata Sambutan)
+Route::get('/director/active', [DirectorController::class, 'getActiveWelcomeMessage'])->name('api.director.active');
 
 // Routes untuk News
 Route::get('/news', [NewsController::class, 'index']);
