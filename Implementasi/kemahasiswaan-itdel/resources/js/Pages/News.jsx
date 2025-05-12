@@ -1,5 +1,5 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
@@ -265,7 +265,7 @@ export default function News() {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayoutPage />
+            <Navbar />
             <Head title="Berita" />
 
             <div style={styles.body}>

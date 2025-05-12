@@ -73,7 +73,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
             case '/achievements':
                 return 'Prestasi';
             case '/activities':
-                return 'Kegiatan';
+                return 'Kalender Kegiatan';
             case '/counseling':
                 return 'Konseling';
             case '/aspiration':
@@ -191,7 +191,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     href="/activities"
                                     className={`nav-item flex items-center px-2 md:px-3 font-medium text-white ${isActive('/activities') ? 'nav-item-active' : 'transition-colors hover:text-white'}`}
                                 >
-                                    Kegiatan
+                                    Kalender Kegiatan
                                 </Link>
 
                                 <div className="relative" ref={layananDropdownRef}>

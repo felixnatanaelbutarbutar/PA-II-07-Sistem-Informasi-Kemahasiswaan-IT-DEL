@@ -1,5 +1,5 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
@@ -179,7 +179,7 @@ export default function Announcement() {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayoutPage />
+            <Navbar />
             <Head title="Pengumuman" />
 
             <div className="min-h-screen bg-white py-12">

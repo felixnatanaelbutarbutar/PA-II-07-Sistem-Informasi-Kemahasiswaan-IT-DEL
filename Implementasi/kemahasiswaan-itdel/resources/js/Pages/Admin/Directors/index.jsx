@@ -300,7 +300,7 @@ export default function Index({ auth, permissions, userRole, menu, directors = [
                         <div key={item.director_id} className="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]">
                             <div className="flex flex-col sm:flex-row">
                                 <div className="w-full sm:w-48 h-68 overflow-hidden relative">
-                                    <img
+                                    <imggit
                                         src={`/storage/${item.photo}`}
                                         alt={item.name}
                                         className="w-48 h-68 object-cover transition duration-700 group-hover:scale-110"

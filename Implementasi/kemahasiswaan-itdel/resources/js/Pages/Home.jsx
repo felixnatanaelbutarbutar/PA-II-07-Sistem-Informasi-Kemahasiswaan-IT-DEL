@@ -28,25 +28,21 @@ export default function Home() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                // Fetch News
                 const newsResponse = await fetch('http://localhost:8000/api/news?per_page=4');
                 if (!newsResponse.ok) throw new Error('Gagal mengambil data berita');
                 const newsData = await newsResponse.json();
                 setNews(newsData.data || []);
 
-                // Fetch Categories
                 const categoriesResponse = await fetch('http://localhost:8000/api/news-categories');
                 if (!categoriesResponse.ok) throw new Error('Gagal mengambil data kategori');
                 const categoriesData = await categoriesResponse.json();
                 setCategories(categoriesData);
 
-                // Fetch Announcements
                 const announcementsResponse = await fetch('http://localhost:8000/api/announcements?per_page=4');
                 if (!announcementsResponse.ok) throw new Error('Gagal mengambil data pengumuman');
                 const announcementsData = await announcementsResponse.json();
                 setAnnouncements(announcementsData.data || []);
 
-                // Fetch Achievements
                 const achievementsResponse = await fetch('http://localhost:8000/api/achievements-grouped');
                 if (!achievementsResponse.ok) throw new Error('Gagal mengambil data prestasi');
                 const achievementsData = await achievementsResponse.json();
@@ -106,12 +102,11 @@ export default function Home() {
 
         swiperScript.onload = () => {
             if (typeof Swiper !== 'undefined' && swiperElRef.current) {
-                // Hanya aktifkan loop dan navigasi jika ada lebih dari 1 slide
                 const shouldLoop = carousels.length > 1;
                 swiperInstance = new Swiper('.swiper-container', {
                     slidesPerView: 1,
                     spaceBetween: 0,
-                    loop: shouldLoop, // Nonaktifkan loop jika hanya 1 slide
+                    loop: shouldLoop,
                     speed: 1000,
                     effect: 'fade',
                     fadeEffect: { crossFade: true },
@@ -119,12 +114,12 @@ export default function Home() {
                     autoplay: { delay: 5000, disableOnInteraction: false },
                     pagination: {
                         el: '.swiper-pagination',
-                        clickable: true
+                        clickable: true,
                     },
                     navigation: {
                         nextEl: '.swiper-button-next',
                         prevEl: '.swiper-button-prev',
-                        disabledClass: 'swiper-button-disabled' // Pastikan kelas disabled diterapkan
+                        disabledClass: 'swiper-button-disabled',
                     },
                 });
             }
@@ -132,12 +127,12 @@ export default function Home() {
 
         return () => {
             if (swiperInstance) {
-                swiperInstance.destroy(true, true); // Bersihkan instance Swiper
+                swiperInstance.destroy(true, true);
             }
             if (swiperStyles.parentNode) document.head.removeChild(swiperStyles);
             if (swiperScript.parentNode) document.body.removeChild(swiperScript);
         };
-    }, [carousels]); // Tambahkan dependency carousels agar Swiper diinisialisasi ulang
+    }, [carousels]);
 
     // Add scroll event listener for navbar
     useEffect(() => {
@@ -168,7 +163,45 @@ export default function Home() {
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
 
-    // Inline styles
+    // Hitung total prestasi per kategori
+    const getTotalAchievements = (category) => {
+        return (
+            achievements[category]['Gold'] +
+            achievements[category]['Silver'] +
+            achievements[category]['Bronze']
+        );
+    };
+
+    // State untuk animasi welcome section
+    const [isWelcomeVisible, setIsWelcomeVisible] = useState(false);
+    const welcomeSectionRef = useRef(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry.isIntersecting) {
+                    setIsWelcomeVisible(true);
+                    observer.unobserve(welcomeSectionRef.current);
+                }
+            },
+            {
+                threshold: 0.2, // Animasi dipicu saat 20% elemen terlihat
+            }
+        );
+
+        if (welcomeSectionRef.current) {
+            observer.observe(welcomeSectionRef.current);
+        }
+
+        return () => {
+            if (welcomeSectionRef.current) {
+                observer.unobserve(welcomeSectionRef.current);
+            }
+        };
+    }, []);
+
+    // Inline styles dengan animasi kompleks
     const styles = {
         body: {
             fontFamily: "'Inter', sans-serif",
@@ -197,6 +230,10 @@ export default function Home() {
             borderRadius: '12px',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             background: '#f3f4f6',
+            opacity: isWelcomeVisible ? 1 : 0,
+            transform: isWelcomeVisible ? 'translateX(0) scale(1)' : 'translateX(-20px) scale(0.9)',
+            filter: isWelcomeVisible ? 'blur(0)' : 'blur(5px)',
+            transition: 'opacity 0.8s ease-out, transform 0.8s ease-out, filter 0.8s ease-out',
         },
         welcomePhoto: {
             width: '100%',
@@ -218,6 +255,10 @@ export default function Home() {
             color: '#1f2937',
             marginBottom: '16px',
             textAlign: 'left',
+            opacity: isWelcomeVisible ? 1 : 0,
+            transform: isWelcomeVisible ? 'translateX(0) scale(1)' : 'translateX(20px) scale(0.95)',
+            filter: isWelcomeVisible ? 'blur(0)' : 'blur(3px)',
+            transition: 'opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s, filter 0.8s ease-out 0.2s',
         },
         welcomeMessage: {
             fontSize: '15px',
@@ -231,10 +272,14 @@ export default function Home() {
             maxHeight: '350px',
             overflowY: 'auto',
             textAlign: 'justify',
+            opacity: isWelcomeVisible ? 1 : 0,
+            transform: isWelcomeVisible ? 'translateX(0) scale(1)' : 'translateX(20px) scale(0.95)',
+            filter: isWelcomeVisible ? 'blur(0)' : 'blur(3px)',
+            transition: 'opacity 0.8s ease-out 0.4s, transform 0.8s ease-out 0.4s, filter 0.8s ease-out 0.4s',
         },
         latestNews: {
             padding: '48px 0',
-            background: 'rgba(245, 247, 250, 0.92)',
+            background: '#ffffff',
         },
         latestAnnouncements: {
             padding: '48px 0',
@@ -242,7 +287,7 @@ export default function Home() {
         },
         achievementsSection: {
             padding: '48px 0',
-            background: 'rgba(245, 247, 250, 0.92)',
+            background: '#ffffff',
         },
         sectionHeader: {
             maxWidth: '1280px',
@@ -342,7 +387,7 @@ export default function Home() {
         announcementCard: {
             background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '8px',
-            borderLeft: '4px solid #2563eb', // Border kiri diganti menjadi biru
+            borderLeft: '4px solid #2563eb',
             padding: '16px',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
             transition: 'transform 0.3s, box-shadow 0.3s',
@@ -385,7 +430,7 @@ export default function Home() {
             height: '48px',
             color: '#6b7280',
         },
-        newsCardCategory: { // Kategori khusus untuk newsCard
+        newsCardCategory: {
             position: 'absolute',
             top: '0',
             right: '0',
@@ -395,7 +440,7 @@ export default function Home() {
             fontSize: '12px',
             borderBottomLeftRadius: '8px',
         },
-        announcementCardCategory: { // Kategori khusus untuk announcementCard
+        announcementCardCategory: {
             background: 'linear-gradient(45deg, #007bff, #00c4ff)',
             color: '#fff',
             padding: '4px 12px',
@@ -455,7 +500,7 @@ export default function Home() {
         announcementMegaphoneIcon: {
             width: '20px',
             height: '20px',
-            color: '#2563eb', // Ikon megafon diganti menjadi biru
+            color: '#2563eb',
         },
         cardButton: {
             marginTop: 'auto',
@@ -543,15 +588,6 @@ export default function Home() {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             marginBottom: '20px',
         },
-    };
-
-    // Hitung total prestasi per kategori (hanya medali Gold, Silver, Bronze)
-    const getTotalAchievements = (category) => {
-        return (
-            achievements[category]['Gold'] +
-            achievements[category]['Silver'] +
-            achievements[category]['Bronze']
-        );
     };
 
     return (
@@ -744,7 +780,7 @@ export default function Home() {
             </div>
 
             {/* Welcome Message Section */}
-            <div style={styles.welcomeSection}>
+            <div style={styles.welcomeSection} ref={welcomeSectionRef}>
                 <div style={styles.welcomeContainer}>
                     <div style={styles.welcomePhotoContainer}>
                         {directorError ? (
@@ -776,6 +812,13 @@ export default function Home() {
                     </div>
                 </div>
             </div>
+
+            {/* Error Message */}
+            {error && (
+                <div style={styles.errorMessage}>
+                    {error}
+                </div>
+            )}
 
             {/* Error Message */}
             {error && (

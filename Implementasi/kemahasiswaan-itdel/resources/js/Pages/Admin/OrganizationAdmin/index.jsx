@@ -218,7 +218,7 @@ export default function OrganizationAdminIndex({ permissions, navigation, existi
                                         Status
                                     </th> */}
                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
-                                        Aksi
+                                        Aksi Ubah Role
                                     </th>
                                 </tr>
                             </thead>

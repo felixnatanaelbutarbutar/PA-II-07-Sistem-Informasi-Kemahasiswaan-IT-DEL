@@ -57,7 +57,7 @@
 <body>
     <div class="header">
         <img src="{{ $logoPath }}" alt="Logo">
-        <h1>Agenda Kegiatan</h1>
+        <h1>Agenda Kegiatan Kemahasiswaan</h1>
     </div>
     @if(request()->query('start_date') && request()->query('end_date'))
         <div class="date-range">

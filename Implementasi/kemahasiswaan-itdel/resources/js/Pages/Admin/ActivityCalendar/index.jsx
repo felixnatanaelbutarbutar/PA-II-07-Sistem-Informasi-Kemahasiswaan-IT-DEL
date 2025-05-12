@@ -8,7 +8,7 @@ import { PlusCircle, Edit, Trash2, Download, Calendar } from 'lucide-react';
 
 const localizer = momentLocalizer(moment);
 
-export default function ActivityCalendar({ auth, userRole, permissions, menu, activities }) {
+export default function ActivityCalendar({ auth, userRole, permissions, menu, activities, activeActivities }) {
     const { flash } = usePage().props ?? {};
     const events = useMemo(() => {
         return activities.map(activity => ({
@@ -456,6 +456,98 @@ export default function ActivityCalendar({ auth, userRole, permissions, menu, ac
                             eventPropGetter={eventStyleGetter}
                             className="rbc-calendar-custom"
                         />
+                    </div>
+
+                    {/* Daftar Kegiatan Aktif */}
+                    <div className={`mt-6 p-6 rounded-xl shadow-sm border
+                        ${document.documentElement.classList.contains('light') ? 'bg-white border-gray-200/50' : ''}
+                        ${document.documentElement.classList.contains('dark') ? 'bg-zinc-800 border-zinc-700/50' : ''}
+                        ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-50 border-blue-200/50' : ''}
+                        ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-950 border-blue-800/50' : ''}`}>
+                        <h3 className={`text-lg font-medium mb-4
+                            ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                            ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                            ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                            ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                            Daftar Kegiatan Aktif
+                        </h3>
+                        {activeActivities.length > 0 ? (
+                            <div className="space-y-4">
+                                {activeActivities.map(activity => (
+                                    <div
+                                        key={activity.id}
+                                        className={`p-4 rounded-lg border
+                                            ${document.documentElement.classList.contains('light') ? 'border-gray-200 bg-gray-50' : ''}
+                                            ${document.documentElement.classList.contains('dark') ? 'border-zinc-600 bg-zinc-700' : ''}
+                                            ${document.documentElement.classList.contains('light-blue') ? 'border-blue-200 bg-blue-100' : ''}
+                                            ${document.documentElement.classList.contains('dark-blue') ? 'border-blue-700 bg-blue-900' : ''}`}
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <h4 className={`text-md font-semibold
+                                                    ${document.documentElement.classList.contains('light') ? 'text-gray-800' : ''}
+                                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-200' : ''}
+                                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-800' : ''}
+                                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-100' : ''}`}>
+                                                    {activity.title}
+                                                </h4>
+                                                <p className={`text-sm mt-1
+                                                    ${document.documentElement.classList.contains('light') ? 'text-gray-600' : ''}
+                                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-400' : ''}
+                                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-600' : ''}
+                                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-200' : ''}`}>
+                                                    Deskripsi: {activity.description || 'Tidak ada deskripsi.'}
+                                                </p>
+                                                <p className={`text-sm mt-1
+                                                    ${document.documentElement.classList.contains('light') ? 'text-gray-600' : ''}
+                                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-400' : ''}
+                                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-600' : ''}
+                                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-200' : ''}`}>
+                                                    Tanggal Mulai: {moment(activity.start_date).format('DD MMMM YYYY')}
+                                                </p>
+                                                <p className={`text-sm mt-1
+                                                    ${document.documentElement.classList.contains('light') ? 'text-gray-600' : ''}
+                                                    ${document.documentElement.classList.contains('dark') ? 'text-gray-400' : ''}
+                                                    ${document.documentElement.classList.contains('light-blue') ? 'text-blue-600' : ''}
+                                                    ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-200' : ''}`}>
+                                                    Tanggal Selesai: {activity.end_date ? moment(activity.end_date).format('DD MMMM YYYY') : 'Belum ditentukan'}
+                                                </p>
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <Link
+                                                    href={route('admin.activities.edit', activity.id)}
+                                                    className={`flex items-center px-3 py-1 rounded-full
+                                                        ${document.documentElement.classList.contains('light') ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : ''}
+                                                        ${document.documentElement.classList.contains('dark') ? 'bg-blue-900 text-blue-300 hover:bg-blue-800' : ''}
+                                                        ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-200 text-blue-900 hover:bg-blue-300' : ''}
+                                                        ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-800 text-blue-200 hover:bg-blue-700' : ''}`}>
+                                                    <Edit className="h-4 w-4 mr-1" />
+                                                    Edit
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDeleteClick(activity.id)}
+                                                    className={`flex items-center px-3 py-1 rounded-full
+                                                        ${document.documentElement.classList.contains('light') ? 'bg-red-100 text-red-800 hover:bg-red-200' : ''}
+                                                        ${document.documentElement.classList.contains('dark') ? 'bg-red-900 text-red-300 hover:bg-red-800' : ''}
+                                                        ${document.documentElement.classList.contains('light-blue') ? 'bg-red-200 text-red-900 hover:bg-red-300' : ''}
+                                                        ${document.documentElement.classList.contains('dark-blue') ? 'bg-red-800 text-red-200 hover:bg-red-700' : ''}`}>
+                                                    <Trash2 className="h-4 w-4 mr-1" />
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`p-4 rounded-lg text-center
+                                ${document.documentElement.classList.contains('light') ? 'bg-gray-50 text-gray-600' : ''}
+                                ${document.documentElement.classList.contains('dark') ? 'bg-zinc-700 text-gray-400' : ''}
+                                ${document.documentElement.classList.contains('light-blue') ? 'bg-blue-100 text-blue-600' : ''}
+                                ${document.documentElement.classList.contains('dark-blue') ? 'bg-blue-900 text-blue-200' : ''}`}>
+                                Tidak ada kegiatan aktif saat ini.
+                            </div>
+                        )}
                     </div>
 
                     {/* Detail Kegiatan */}

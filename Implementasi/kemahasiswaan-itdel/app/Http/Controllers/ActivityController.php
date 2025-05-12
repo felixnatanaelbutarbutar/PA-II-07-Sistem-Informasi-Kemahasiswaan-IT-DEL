@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class ActivityController extends Controller
 {
@@ -19,16 +20,29 @@ class ActivityController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
+        // Ambil semua kegiatan untuk kalender
         $activities = Activity::with(['creator', 'updater'])->get();
 
+        // Ambil kegiatan aktif (end_date >= hari ini atau end_date null)
+        $today = Carbon::today(); // Tanggal saat ini: 12 Mei 2025
+        $activeActivities = Activity::with(['creator', 'updater'])
+            ->where(function ($query) use ($today) {
+                $query->where('end_date', '>=', $today) // Kegiatan yang end_date-nya setelah atau sama dengan hari ini
+                      ->orWhereNull('end_date'); // Kegiatan yang end_date-nya null dianggap masih berlangsung
+            })
+            ->orderBy('start_date', 'asc') // Urutkan berdasarkan tanggal mulai
+            ->get();
+
         Log::info('Activities fetched:', ['activities' => $activities->toArray()]);
+        Log::info('Active activities fetched:', ['activeActivities' => $activeActivities->toArray()]);
 
         return Inertia::render('Admin/ActivityCalendar/index', [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
-            'activities' => $activities,
+            'activities' => $activities, // Untuk kalender
+            'activeActivities' => $activeActivities, // Untuk daftar kegiatan aktif
         ]);
     }
 
@@ -160,12 +174,23 @@ class ActivityController extends Controller
 
     public function guestIndex()
     {
-        // Ambil semua data kegiatan beserta pembuatnya
+        // Ambil semua data kegiatan beserta pembuatnya untuk kalender
         $activities = Activity::with('creator')->get();
+
+        // Ambil kegiatan aktif (end_date >= hari ini atau end_date null)
+        $today = Carbon::today(); // Tanggal saat ini: 12 Mei 2025
+        $activeActivities = Activity::with('creator')
+            ->where(function ($query) use ($today) {
+                $query->where('end_date', '>=', $today) // Kegiatan yang end_date-nya setelah atau sama dengan hari ini
+                      ->orWhereNull('end_date'); // Kegiatan yang end_date-nya null dianggap masih berlangsung
+            })
+            ->orderBy('start_date', 'asc') // Urutkan berdasarkan tanggal mulai
+            ->get();
 
         // Render halaman guest menggunakan Inertia
         return Inertia::render('ActivityCalendar', [
-            'activities' => $activities,
+            'activities' => $activities, // Untuk kalender
+            'activeActivities' => $activeActivities, // Untuk daftar kegiatan aktif
         ]);
     }
     public function guestExportToPDF(Request $request)

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import Navbar from '@/Layouts/Navbar';
@@ -11,7 +11,7 @@ import { Download } from 'lucide-react';
 
 const localizer = momentLocalizer(moment);
 
-export default function ActivityCalendar({ activities }) {
+export default function ActivityCalendar({ activities, activeActivities }) {
     const events = useMemo(() => {
         return activities.map(activity => ({
             id: activity.id,
@@ -19,7 +19,7 @@ export default function ActivityCalendar({ activities }) {
             start: new Date(activity.start_date),
             end: activity.end_date ? new Date(activity.end_date) : new Date(activity.start_date),
             description: activity.description,
-            creatorRole: activity.creator?.role.toLowerCase(), // Ambil role pembuat kegiatan
+            creatorRole: activity.creator?.role.toLowerCase(), // Pastikan role sesuai (misalnya adminbem, adminmpm)
         }));
     }, [activities]);
 
@@ -27,33 +27,35 @@ export default function ActivityCalendar({ activities }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isDetailVisible, setIsDetailVisible] = useState(false);
+    const detailCardRef = useRef(null);
 
     useEffect(() => {
-        setIsLoaded(true);
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry.isIntersecting) {
+                    setIsDetailVisible(true);
+                    observer.unobserve(detailCardRef.current);
+                }
+            },
+            { threshold: 0.2 }
+        );
 
-        const detailCard = document.querySelector('.detail-card');
-        if (detailCard) {
-            const observer = new IntersectionObserver(
-                (entries) => {
-                    entries.forEach((entry) => {
-                        if (entry.isIntersecting) {
-                            entry.target.classList.add('animate-in');
-                            observer.unobserve(entry.target);
-                        }
-                    });
-                },
-                { threshold: 0.1 }
-            );
-
-            observer.observe(detailCard);
-
-            return () => observer.disconnect();
+        if (detailCardRef.current) {
+            observer.observe(detailCardRef.current);
         }
+
+        return () => {
+            if (detailCardRef.current) {
+                observer.unobserve(detailCardRef.current);
+            }
+        };
     }, [selectedEvent]);
 
     const handleSelectEvent = (event) => {
         setSelectedEvent(event);
+        setIsDetailVisible(false); // Reset visibilitas agar animasi berulang saat event baru dipilih
     };
 
     const handleExportPDF = () => {
@@ -77,6 +79,7 @@ export default function ActivityCalendar({ activities }) {
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
 
+    // Perbaiki eventStyleGetter agar sesuai dengan getRoleColor
     const eventStyleGetter = (event, start, end, isSelected) => {
         let backgroundColor = '#F54243'; // Kemahasiswaan
         if (event.creatorRole === 'adminbem') backgroundColor = '#22A7F4'; // Admin BEM
@@ -94,61 +97,42 @@ export default function ActivityCalendar({ activities }) {
         };
     };
 
+    // Fungsi untuk mendapatkan warna berdasarkan role pengupload (sudah konsisten dengan eventStyleGetter)
+    const getRoleColor = (role) => {
+        switch (role?.toLowerCase()) {
+            case 'adminbem':
+                return '#22A7F4'; // Admin BEM
+            case 'adminmpm':
+                return '#E7E73E'; // Admin MPM
+            default:
+                return '#F54243'; // Kemahasiswaan
+        }
+    };
+
     const styles = {
         container: {
-            padding: '60px 0',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+            padding: '48px 0',
+            background: '#fffff',
             minHeight: '100vh',
-            position: 'relative',
-            overflow: 'hidden',
-        },
-        backgroundEffect: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.2) 0%, transparent 50%)',
-            zIndex: 0,
-        },
-        contentWrapper: {
-            position: 'relative',
-            zIndex: 1,
+            fontFamily: "'Inter', sans-serif",
         },
         sectionHeader: {
             maxWidth: '1280px',
             margin: '0 auto',
             padding: '0 16px',
-            marginBottom: '50px',
+            marginBottom: '40px',
         },
         sectionTitle: {
-            fontSize: '36px',
-            fontWeight: '800',
-            color: '#1e293b',
+            fontSize: '30px',
+            fontWeight: 'bold',
+            color: '#1f2937',
             textAlign: 'center',
-            position: 'relative',
-            display: 'inline-block',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '0 20px',
-        },
-        sectionTitleUnderline: {
-            content: '""',
-            position: 'absolute',
-            bottom: '-10px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '80px',
-            height: '4px',
-            background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
-            borderRadius: '2px',
         },
         sectionSubtitle: {
-            fontSize: '18px',
-            color: '#64748b',
+            color: '#6b7280',
             textAlign: 'center',
-            maxWidth: '700px',
-            margin: '16px auto 0',
+            marginTop: '8px',
+            fontSize: '15px',
         },
         colorGuideWrapper: {
             marginTop: '24px',
@@ -157,7 +141,7 @@ export default function ActivityCalendar({ activities }) {
         colorGuideTitle: {
             fontSize: '20px',
             fontWeight: '600',
-            color: '#1e293b',
+            color: '#1f2937',
             marginBottom: '16px',
         },
         colorGuideContainer: {
@@ -173,79 +157,123 @@ export default function ActivityCalendar({ activities }) {
             background: 'rgba(255, 255, 255, 0.97)',
             borderRadius: '8px',
             boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-            transition: 'all 0.3s ease',
-        },
-        colorGuideItemHover: {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
         },
         colorBox: {
-            width: '32px',
-            height: '32px',
+            width: '24px',
+            height: '24px',
             borderRadius: '50%',
             marginRight: '12px',
         },
         colorText: {
             fontSize: '14px',
             fontWeight: '500',
-            color: '#475569',
+            color: '#4b5563',
         },
         calendarContainer: {
             maxWidth: '1280px',
             margin: '0 auto',
-            padding: '0 16px',
+            padding: '16px',
             background: 'rgba(255, 255, 255, 0.97)',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.18)',
+        },
+        activeActivitiesContainer: {
+            maxWidth: '1280px',
+            margin: '24px auto',
+            padding: '24px',
+            background: 'rgba(255, 255, 255, 0.97)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+        },
+        activeActivitiesTitle: {
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#1f2937',
+            marginBottom: '16px',
+        },
+        activeActivityItem: {
+            display: 'flex',
+            alignItems: 'center',
+            padding: '16px',
+            background: 'rgba(255, 255, 255, 0.97)',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            marginBottom: '16px',
+        },
+        activeActivityColorIndicator: {
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            marginRight: '16px',
+        },
+        activeActivityContent: {
+            flex: 1,
+        },
+        activeActivityTitle: {
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#1f2937',
+            marginBottom: '8px',
+        },
+        activeActivityText: {
+            fontSize: '14px',
+            color: '#4b5563',
+            marginBottom: '4px',
+        },
+        noActivitiesMessage: {
+            padding: '16px',
+            background: 'rgba(255, 255, 255, 0.97)',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            textAlign: 'center',
+            fontSize: '14px',
+            color: '#4b5563',
         },
         buttonExport: {
             display: 'inline-flex',
             alignItems: 'center',
-            padding: '10px 20px',
-            background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
-            color: '#ffffff',
+            padding: '12px 24px',
+            background: '#2563eb',
+            color: '#fff',
             borderRadius: '8px',
-            fontWeight: '600',
-            fontSize: '16px',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            fontWeight: '500',
+            fontSize: '15px',
+            textDecoration: 'none',
+            transition: 'background 0.3s',
         },
         buttonExportHover: {
-            background: 'linear-gradient(90deg, #2563eb, #3b82f6)',
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+            background: '#1d4ed8',
         },
         detailCard: {
+            maxWidth: '1280px',
+            margin: '24px auto',
+            padding: '24px',
             background: 'rgba(255, 255, 255, 0.97)',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.18)',
-            opacity: 0,
-            transform: 'translateY(20px)',
-            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-            margin: '24px auto',
-            maxWidth: '1280px',
-            padding: '24px',
-        },
-        detailCardLoaded: {
-            opacity: 1,
-            transform: 'translateY(0)',
+            opacity: isDetailVisible ? 1 : 0,
+            transform: isDetailVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+            transition: 'opacity 0.8s ease-out, transform 0.8s ease-out',
         },
         detailTitle: {
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#1e293b',
-            marginBottom: '16px',
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#1f2937',
+            marginBottom: '12px',
         },
         detailText: {
-            fontSize: '16px',
-            color: '#475569',
-            marginBottom: '12px',
+            fontSize: '15px',
+            color: '#4b5563',
+            marginBottom: '8px',
         },
         modalOverlay: {
             position: 'fixed',
@@ -261,18 +289,18 @@ export default function ActivityCalendar({ activities }) {
         },
         modalContent: {
             background: 'rgba(255, 255, 255, 0.97)',
-            borderRadius: '16px',
+            borderRadius: '12px',
             padding: '24px',
             maxWidth: '500px',
-            width: '100%',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+            width: '90%',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.18)',
         },
         modalTitle: {
             fontSize: '20px',
             fontWeight: '600',
-            color: '#1e293b',
+            color: '#1f2937',
             marginBottom: '16px',
         },
         inputGroup: {
@@ -282,7 +310,7 @@ export default function ActivityCalendar({ activities }) {
             display: 'block',
             fontSize: '14px',
             fontWeight: '500',
-            color: '#475569',
+            color: '#4b5563',
             marginBottom: '8px',
         },
         input: {
@@ -291,7 +319,7 @@ export default function ActivityCalendar({ activities }) {
             borderRadius: '8px',
             border: '1px solid #e2e8f0',
             fontSize: '14px',
-            color: '#1e293b',
+            color: '#1f2937',
             background: '#fff',
         },
         buttonContainer: {
@@ -301,12 +329,12 @@ export default function ActivityCalendar({ activities }) {
         },
         buttonCancel: {
             padding: '10px 20px',
-            background: '#e2e8f0',
-            color: '#475569',
+            background: '#e5e7eb',
+            color: '#374151',
             borderRadius: '8px',
             fontWeight: '500',
             fontSize: '14px',
-            transition: 'all 0.3s ease',
+            transition: 'background 0.3s',
         },
         buttonCancelHover: {
             background: '#d1d5db',
@@ -315,15 +343,15 @@ export default function ActivityCalendar({ activities }) {
             display: 'inline-flex',
             alignItems: 'center',
             padding: '10px 20px',
-            background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
-            color: '#ffffff',
+            background: '#2563eb',
+            color: '#fff',
             borderRadius: '8px',
-            fontWeight: '600',
+            fontWeight: '500',
             fontSize: '14px',
-            transition: 'all 0.3s ease',
+            transition: 'background 0.3s',
         },
         buttonExportModalHover: {
-            background: 'linear-gradient(90deg, #2563eb, #3b82f6)',
+            background: '#1d4ed8',
         },
     };
 
@@ -333,173 +361,158 @@ export default function ActivityCalendar({ activities }) {
             <Navbar />
 
             <div style={styles.container}>
-                <div style={styles.backgroundEffect}></div>
-                <div style={styles.contentWrapper}>
-                    <div style={styles.sectionHeader}>
-                        {/* <h2 style={styles.sectionTitle}>
-                            Kalender Kegiatan
-                            <div style={styles.sectionTitleUnderline}></div>
-                        </h2> */}
-
-                        <div style={styles.colorGuideWrapper}>
-                            <h3 style={styles.colorGuideTitle}>Panduan Warna Kegiatan</h3>
-                            <div style={styles.colorGuideContainer}>
-                                <div
-                                    style={styles.colorGuideItem}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = styles.colorGuideItemHover.transform;
-                                        e.currentTarget.style.boxShadow = styles.colorGuideItemHover.boxShadow;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = styles.colorGuideItem.boxShadow;
-                                    }}
-                                >
-                                    <div style={{ ...styles.colorBox, backgroundColor: '#F54243' }}></div>
-                                    <span style={styles.colorText}>Kegiatan dari Kemahasiswaan</span>
-                                </div>
-                                <div
-                                    style={styles.colorGuideItem}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = styles.colorGuideItemHover.transform;
-                                        e.currentTarget.style.boxShadow = styles.colorGuideItemHover.boxShadow;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = styles.colorGuideItem.boxShadow;
-                                    }}
-                                >
-                                    <div style={{ ...styles.colorBox, backgroundColor: '#22A7F4' }}></div>
-                                    <span style={styles.colorText}>Kegiatan dari Admin BEM</span>
-                                </div>
-                                <div
-                                    style={styles.colorGuideItem}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = styles.colorGuideItemHover.transform;
-                                        e.currentTarget.style.boxShadow = styles.colorGuideItemHover.boxShadow;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = styles.colorGuideItem.boxShadow;
-                                    }}
-                                >
-                                    <div style={{ ...styles.colorBox, backgroundColor: '#E7E73E' }}></div>
-                                    <span style={styles.colorText}>Kegiatan dari Admin MPM</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style={{ textAlign: 'center', marginTop: '50px' }}>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                style={styles.buttonExport}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = styles.buttonExportHover.background;
-                                    e.currentTarget.style.transform = styles.buttonExportHover.transform;
-                                    e.currentTarget.style.boxShadow = styles.buttonExportHover.boxShadow;
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = styles.buttonExport.background;
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = styles.buttonExport.boxShadow;
-                                }}
-                            >
-                                <Download style={{ width: '18px', height: '18px', marginRight: '8px' }} />
-                                Ekspor ke PDF
-                            </button>
-                        </div>
-                        <p style={styles.sectionSubtitle}>
-                            Lihat jadwal kegiatan yang telah direncanakan dalam berbagai acara
-                        </p>
-                    </div>
-
-                    {isModalOpen && (
-                        <div style={styles.modalOverlay}>
-                            <div style={styles.modalContent}>
-                                <h2 style={styles.modalTitle}>Pilih Rentang Tanggal</h2>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.inputLabel}>Tanggal Mulai</label>
-                                    <input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        style={styles.input}
-                                    />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.inputLabel}>Tanggal Selesai</label>
-                                    <input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        style={styles.input}
-                                    />
-                                </div>
-                                <div style={styles.buttonContainer}>
-                                    <button
-                                        onClick={() => setIsModalOpen(false)}
-                                        style={styles.buttonCancel}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = styles.buttonCancelHover.background;
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = styles.buttonCancel.background;
-                                        }}
-                                    >
-                                        Batal
-                                    </button>
-                                    <a
-                                        href={exportUrl}
-                                        onClick={handleExportPDF}
-                                        style={styles.buttonExportModal}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = styles.buttonExportModalHover.background;
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = styles.buttonExportModal.background;
-                                        }}
-                                        download
-                                    >
-                                        <Download style={{ width: '18px', height: '18px', marginRight: '8px' }} />
-                                        Ekspor
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div style={styles.calendarContainer}>
-                        <BigCalendar
-                            localizer={localizer}
-                            events={events}
-                            startAccessor="start"
-                            endAccessor="end"
-                            style={{ height: 600 }}
-                            onSelectEvent={handleSelectEvent}
-                            eventPropGetter={eventStyleGetter}
-                            className="rbc-calendar-custom"
-                        />
-                    </div>
-
-                    {selectedEvent && (
-                        <div
-                            className="detail-card"
-                            style={{
-                                ...styles.detailCard,
-                                ...(isLoaded && { ...styles.detailCardLoaded }),
+                <div style={styles.sectionHeader}>
+                    <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            style={styles.buttonExport}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = styles.buttonExportHover.background;
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = styles.buttonExport.background;
                             }}
                         >
-                            <h3 style={styles.detailTitle}>{selectedEvent.title}</h3>
-                            <p style={styles.detailText}>
-                                Deskripsi: {selectedEvent.description || 'Tidak ada deskripsi.'}
-                            </p>
-                            <p style={styles.detailText}>
-                                Tanggal Mulai: {formatDate(selectedEvent.start)}
-                            </p>
-                            <p style={styles.detailText}>
-                                Tanggal Selesai: {selectedEvent.end ? formatDate(selectedEvent.end) : 'Sama dengan tanggal mulai'}
-                            </p>
+                            <Download style={{ width: '18px', height: '18px', marginRight: '8px' }} />
+                            Ekspor ke PDF
+                        </button>
+                    </div>
+                </div>
+
+                {isModalOpen && (
+                    <div style={styles.modalOverlay}>
+                        <div style={styles.modalContent}>
+                            <h2 style={styles.modalTitle}>Pilih Rentang Tanggal</h2>
+                            <div style={styles.inputGroup}>
+                                <label style={styles.inputLabel}>Tanggal Mulai</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    style={styles.input}
+                                />
+                            </div>
+                            <div style={styles.inputGroup}>
+                                <label style={styles.inputLabel}>Tanggal Selesai</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    style={styles.input}
+                                />
+                            </div>
+                            <div style={styles.buttonContainer}>
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    style={styles.buttonCancel}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = styles.buttonCancelHover.background;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = styles.buttonCancel.background;
+                                    }}
+                                >
+                                    Batal
+                                </button>
+                                <a
+                                    href={exportUrl}
+                                    onClick={handleExportPDF}
+                                    style={styles.buttonExportModal}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = styles.buttonExportModalHover.background;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = styles.buttonExportModal.background;
+                                    }}
+                                    download
+                                >
+                                    <Download style={{ width: '18px', height: '18px', marginRight: '8px' }} />
+                                    Ekspor
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div style={styles.calendarContainer}>
+                    <BigCalendar
+                        localizer={localizer}
+                        events={events}
+                        startAccessor="start"
+                        endAccessor="end"
+                        style={{ height: 600 }}
+                        onSelectEvent={handleSelectEvent}
+                        eventPropGetter={eventStyleGetter}
+                        className="rbc-calendar-custom"
+                    />
+                </div>
+
+                {/* Daftar Kegiatan Aktif */}
+                <div style={styles.activeActivitiesContainer}>
+                    <h3 style={styles.activeActivitiesTitle}>Daftar Kegiatan Aktif</h3>
+                    {activeActivities.length > 0 ? (
+                        <div>
+                            {activeActivities.map(activity => (
+                                <div key={activity.id} style={styles.activeActivityItem}>
+                                    <div
+                                        style={{
+                                            ...styles.activeActivityColorIndicator,
+                                            backgroundColor: getRoleColor(activity.creator?.role),
+                                        }}
+                                    />
+                                    <div style={styles.activeActivityContent}>
+                                        <h4 style={styles.activeActivityTitle}>{activity.title}</h4>
+                                        <p style={styles.activeActivityText}>
+                                            Deskripsi: {activity.description || 'Tidak ada deskripsi.'}
+                                        </p>
+                                        <p style={styles.activeActivityText}>
+                                            Tanggal Mulai: {formatDate(activity.start_date)}
+                                        </p>
+                                        <p style={styles.activeActivityText}>
+                                            Tanggal Selesai: {activity.end_date ? formatDate(activity.end_date) : 'Belum ditentukan'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={styles.noActivitiesMessage}>
+                            Tidak ada kegiatan aktif saat ini.
                         </div>
                     )}
+                </div>
+
+                {selectedEvent && (
+                    <div ref={detailCardRef} style={styles.detailCard}>
+                        <h3 style={styles.detailTitle}>{selectedEvent.title}</h3>
+                        <p style={styles.detailText}>
+                            Deskripsi: {selectedEvent.description || 'Tidak ada deskripsi.'}
+                        </p>
+                        <p style={styles.detailText}>
+                            Tanggal Mulai: {formatDate(selectedEvent.start)}
+                        </p>
+                        <p style={styles.detailText}>
+                            Tanggal Selesai: {selectedEvent.end ? formatDate(selectedEvent.end) : 'Sama dengan tanggal mulai'}
+                        </p>
+                    </div>
+                )}
+
+                <div style={styles.colorGuideWrapper}>
+                    <h3 style={styles.colorGuideTitle}>Panduan Warna Kegiatan</h3>
+                    <div style={styles.colorGuideContainer}>
+                        <div style={styles.colorGuideItem}>
+                            <div style={{ ...styles.colorBox, backgroundColor: '#F54243' }}></div>
+                            <span style={styles.colorText}>Kegiatan dari Kemahasiswaan</span>
+                        </div>
+                        <div style={styles.colorGuideItem}>
+                            <div style={{ ...styles.colorBox, backgroundColor: '#22A7F4' }}></div>
+                            <span style={styles.colorText}>Kegiatan dari Admin BEM</span>
+                        </div>
+                        <div style={styles.colorGuideItem}>
+                            <div style={{ ...styles.colorBox, backgroundColor: '#E7E73E' }}></div>
+                            <span style={styles.colorText}>Kegiatan dari Admin MPM</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
