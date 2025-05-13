@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import ChatbotWidget from '@/Layouts/Chatbot';
 import { useState, useEffect } from 'react';
@@ -83,7 +83,7 @@ export default function Download({ downloads, categories }) {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayoutPage />
+            <Navbar />
             <Head title="Daftar Unduhan" />
 
             {/* CSS Styles */}

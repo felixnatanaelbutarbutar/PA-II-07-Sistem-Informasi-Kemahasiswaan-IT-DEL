@@ -10,6 +10,7 @@ export default function Home() {
     const [news, setNews] = useState([]);
     const [categories, setCategories] = useState([]);
     const [announcements, setAnnouncements] = useState([]);
+    const [activities, setActivities] = useState([]);
     const [achievements, setAchievements] = useState({
         International: { 'Gold': 0, 'Silver': 0, 'Bronze': 0 },
         National: { 'Gold': 0, 'Silver': 0, 'Bronze': 0 },
@@ -23,7 +24,6 @@ export default function Home() {
     const [carouselError, setCarouselError] = useState(null);
     const [directorError, setDirectorError] = useState(null);
 
-    // Ambil data dari API saat komponen dimuat
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
@@ -42,6 +42,11 @@ export default function Home() {
                 if (!announcementsResponse.ok) throw new Error('Gagal mengambil data pengumuman');
                 const announcementsData = await announcementsResponse.json();
                 setAnnouncements(announcementsData.data || []);
+
+                const activitiesResponse = await fetch('http://localhost:8000/api/activities/nearest');
+                if (!activitiesResponse.ok) throw new Error('Gagal mengambil data kegiatan terdekat');
+                const activitiesData = await activitiesResponse.json();
+                setActivities(activitiesData || []);
 
                 const achievementsResponse = await fetch('http://localhost:8000/api/achievements-grouped');
                 if (!achievementsResponse.ok) throw new Error('Gagal mengambil data prestasi');
@@ -69,6 +74,7 @@ export default function Home() {
                 setCarouselLoading(false);
             }
         };
+
         const fetchDirector = async () => {
             try {
                 const directorResponse = await fetch('http://localhost:8000/api/director/active');
@@ -86,7 +92,6 @@ export default function Home() {
         fetchDirector();
     }, []);
 
-    // Initialize Swiper
     useEffect(() => {
         const swiperStyles = document.createElement('link');
         swiperStyles.rel = 'stylesheet';
@@ -134,7 +139,6 @@ export default function Home() {
         };
     }, [carousels]);
 
-    // Add scroll event listener for navbar
     useEffect(() => {
         const handleScroll = () => {
             const navbar = document.querySelector('.navbar');
@@ -149,7 +153,6 @@ export default function Home() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Add smooth scroll behavior
     useEffect(() => {
         document.documentElement.style.scrollBehavior = 'smooth';
         return () => {
@@ -157,13 +160,11 @@ export default function Home() {
         };
     }, []);
 
-    // Format date helper
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
 
-    // Hitung total prestasi per kategori
     const getTotalAchievements = (category) => {
         return (
             achievements[category]['Gold'] +
@@ -172,7 +173,6 @@ export default function Home() {
         );
     };
 
-    // State untuk animasi welcome section
     const [isWelcomeVisible, setIsWelcomeVisible] = useState(false);
     const welcomeSectionRef = useRef(null);
 
@@ -186,7 +186,7 @@ export default function Home() {
                 }
             },
             {
-                threshold: 0.2, // Animasi dipicu saat 20% elemen terlihat
+                threshold: 0.2,
             }
         );
 
@@ -201,7 +201,6 @@ export default function Home() {
         };
     }, []);
 
-    // Inline styles dengan animasi kompleks
     const styles = {
         body: {
             fontFamily: "'Inter', sans-serif",
@@ -285,6 +284,10 @@ export default function Home() {
             padding: '48px 0',
             background: '#ffffff',
         },
+        nearestActivities: {
+            padding: '48px 0',
+            background: '#ffffff',
+        },
         achievementsSection: {
             padding: '48px 0',
             background: '#ffffff',
@@ -334,7 +337,7 @@ export default function Home() {
             fontSize: '16px',
             fontWeight: '600',
             marginBottom: '20px',
-            textTextTransform: 'uppercase',
+            textTransform: 'uppercase',
         },
         achievementDetail: {
             display: 'flex',
@@ -376,6 +379,14 @@ export default function Home() {
             margin: '0 auto',
             padding: '0 16px',
         },
+        activityGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)', // Ubah ke 4 kolom tetap
+            gap: '20px',
+            maxWidth: '1280px',
+            margin: '0 auto',
+            padding: '0 16px',
+        },
         newsCard: {
             background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '10px',
@@ -396,6 +407,18 @@ export default function Home() {
             flexDirection: 'column',
             gap: '8px',
         },
+        activityCard: {
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '10px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            transition: 'transform 0.3s, box-shadow 0.3s',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '14px',
+            minHeight: '120px'
+        },
         cardHover: {
             transform: 'translateY(-4px)',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
@@ -406,6 +429,9 @@ export default function Home() {
             overflow: 'hidden',
         },
         announcementCardImgContainer: {
+            display: 'none',
+        },
+        activityCardImgContainer: {
             display: 'none',
         },
         cardImg: {
@@ -458,6 +484,12 @@ export default function Home() {
             flexDirection: 'column',
             gap: '8px',
         },
+        activityCardContent: {
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+        },
         cardTitle: {
             fontSize: '20px',
             fontWeight: '600',
@@ -476,6 +508,15 @@ export default function Home() {
             alignItems: 'center',
             gap: '8px',
         },
+        activityCardTitle: {
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#1f2937',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+        },
         cardDescription: {
             fontSize: '14px',
             color: '#4b5563',
@@ -492,10 +533,41 @@ export default function Home() {
             color: '#6b7280',
             marginBottom: '16px',
         },
+        activityDateBox: {
+            background: '#2563eb',
+            color: 'white',
+            width: '60px',
+            height: '60px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '8px',
+            marginRight: '16px',
+            flexShrink: 0,
+        },
+        activityDay: {
+            fontSize: '24px',
+            fontWeight: 'bold',
+            lineHeight: '1',
+        },
+        activityMonth: {
+            fontSize: '12px',
+            textTransform: 'uppercase',
+        },
+        activityDateRange: {
+            fontSize: '14px',
+            color: '#6b7280',
+        },
         cardDateIcon: {
             width: '16px',
             height: '16px',
             marginRight: '4px',
+        },
+        activityCalendarIcon: {
+            width: '20px',
+            height: '20px',
+            color: '#2563eb',
         },
         announcementMegaphoneIcon: {
             width: '20px',
@@ -524,10 +596,23 @@ export default function Home() {
             transition: 'background 0.3s',
             alignSelf: 'flex-start',
         },
+        activityCardButton: {
+            display: 'inline-block',
+            background: '#2563eb',
+            color: '#fff',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            textDecoration: 'none',
+            transition: 'background 0.3s',
+        },
         cardButtonHover: {
             background: '#1d4ed8',
         },
         announcementCardButtonHover: {
+            background: '#1d4ed8',
+        },
+        activityCardButtonHover: {
             background: '#1d4ed8',
         },
         emptyState: {
@@ -589,7 +674,6 @@ export default function Home() {
             marginBottom: '20px',
         },
     };
-
     return (
         <GuestLayout>
             <Head title="Beranda" />
@@ -812,13 +896,6 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-
-            {/* Error Message */}
-            {error && (
-                <div style={styles.errorMessage}>
-                    {error}
-                </div>
-            )}
 
             {/* Error Message */}
             {error && (
@@ -1128,6 +1205,110 @@ export default function Home() {
                 </div>
             </div>
 
+            {/* Nearest Activities Section */}
+            <div style={styles.nearestActivities}>
+                <div style={styles.sectionHeader}>
+                    <h2 style={styles.sectionTitle}>Kegiatan Terdekat</h2>
+                </div>
+                {isLoading ? (
+                    <div style={styles.loadingState}>
+                        <svg
+                            className="animate-spin h-10 w-10 text-blue-500"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                            />
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
+                        </svg>
+                    </div>
+                ) : (
+                    <div style={styles.activityGrid}>
+                        {activities.length > 0 ? (
+                            activities.map((item) => {
+                                const startDate = new Date(item.start_date);
+                                const day = startDate.getDate();
+                                const month = startDate.toLocaleString('id-ID', { month: 'short' });
+                                return (
+                                    <Link
+                                        key={item.id}
+                                        href="/activitycalendar"
+                                        style={{ textDecoration: 'none' }}
+                                    >
+                                        <div
+                                            style={styles.activityCard}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = styles.cardHover.transform;
+                                                e.currentTarget.style.boxShadow = styles.cardHover.boxShadow;
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = 'none';
+                                                e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+                                            }}
+                                        >
+                                            <div style={styles.activityDateBox}>
+                                                <span style={styles.activityDay}>{day}</span>
+                                                <span style={styles.activityMonth}>{month}</span>
+                                            </div>
+                                            <div style={styles.activityCardContent}>
+                                                <h3 style={styles.activityCardTitle}>{item.title}</h3>
+                                                <p style={styles.activityDateRange}>
+                                                    {formatDate(item.start_date)} {item.end_date && `- ${formatDate(item.end_date)}`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })
+                        ) : (
+                            <div style={styles.emptyState}>
+                                <svg
+                                    style={styles.emptyStateIcon}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                                <h3 style={styles.emptyStateTitle}>Tidak ada kegiatan terdekat</h3>
+                                <p style={styles.emptyStateText}>Silakan periksa kembali nanti.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+                <div style={styles.viewAllButtonContainer}>
+                    <Link
+                        href="/activitycalendar"
+                        style={styles.viewAllButton}
+                        onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = styles.viewAllButtonHover.background)
+                        }
+                        onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = styles.viewAllButton.background)
+                        }
+                    >
+                        Lihat Semua Kegiatan
+                    </Link>
+                </div>
+            </div>
+
             {/* Achievements Section */}
             <div style={styles.achievementsSection}>
                 <div style={styles.sectionHeader}>
@@ -1227,6 +1408,7 @@ export default function Home() {
                     </Link>
                 </div>
             </div>
+
             {/* Tambahkan Chatbot Widget */}
             <ChatbotWidget />
 

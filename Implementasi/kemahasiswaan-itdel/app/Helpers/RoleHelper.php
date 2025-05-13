@@ -436,7 +436,7 @@ class RoleHelper
         // Menu untuk Kelola Directors
         if ($permissions['directors'] ?? false) {
             $menuItems[] = [
-                'name' => 'Kelola Sambutan Direktur',
+                'name' => 'Kelola Sambutan Kemahasiswaan',
                 'route' => 'admin.directors.index',
                 'icon' => 'directors',
                 'visible' => true,

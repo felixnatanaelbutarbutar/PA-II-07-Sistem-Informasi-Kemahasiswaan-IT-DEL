@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import Navbar from '@/Layouts/Navbar';
@@ -11,24 +11,55 @@ import { Download } from 'lucide-react';
 
 const localizer = momentLocalizer(moment);
 
-export default function ActivityCalendar({ activities, activeActivities }) {
-    const events = useMemo(() => {
-        return activities.map(activity => ({
-            id: activity.id,
-            title: activity.title,
-            start: new Date(activity.start_date),
-            end: activity.end_date ? new Date(activity.end_date) : new Date(activity.start_date),
-            description: activity.description,
-            creatorRole: activity.creator?.role.toLowerCase(), // Pastikan role sesuai (misalnya adminbem, adminmpm)
-        }));
-    }, [activities]);
-
+export default function ActivityCalendar() {
+    const [activities, setActivities] = useState([]);
+    const [activeActivities, setActiveActivities] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [isDetailVisible, setIsDetailVisible] = useState(false);
+    const [error, setError] = useState(null);
     const detailCardRef = useRef(null);
+
+    // Fetch data from API
+    useEffect(() => {
+        const fetchActivities = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/activities');
+                if (!response.ok) throw new Error('Gagal mengambil data kegiatan');
+                const data = await response.json();
+                setActivities(data.data || []);
+            } catch (err) {
+                console.error('Error fetching activities:', err);
+                setError('Gagal memuat kegiatan. Silakan coba lagi nanti.');
+            }
+        };
+
+        const fetchActiveActivities = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/activities/active');
+                if (!response.ok) throw new Error('Gagal mengambil data kegiatan aktif');
+                const data = await response.json();
+                setActiveActivities(data);
+            } catch (err) {
+                console.error('Error fetching active activities:', err);
+                setError('Gagal memuat kegiatan aktif. Silakan coba lagi nanti.');
+            }
+        };
+
+        fetchActivities();
+        fetchActiveActivities();
+    }, []);
+
+    const events = activities.map(activity => ({
+        id: activity.id,
+        title: activity.title,
+        start: new Date(activity.start_date),
+        end: activity.end_date ? new Date(activity.end_date) : new Date(activity.start_date),
+        description: activity.description,
+        creatorRole: activity.creator?.role.toLowerCase(),
+    }));
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -55,7 +86,7 @@ export default function ActivityCalendar({ activities, activeActivities }) {
 
     const handleSelectEvent = (event) => {
         setSelectedEvent(event);
-        setIsDetailVisible(false); // Reset visibilitas agar animasi berulang saat event baru dipilih
+        setIsDetailVisible(false);
     };
 
     const handleExportPDF = () => {
@@ -71,20 +102,18 @@ export default function ActivityCalendar({ activities, activeActivities }) {
     };
 
     const exportUrl = startDate && endDate 
-        ? `${route('activities.guest.export.pdf')}?start_date=${startDate}&end_date=${endDate}`
-        : route('activities.guest.export.pdf');
+        ? `http://localhost:8000/activities/guest-export-pdf?start_date=${startDate}&end_date=${endDate}`
+        : 'http://localhost:8000/activities/guest-export-pdf';
 
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('id-ID', options);
     };
 
-    // Perbaiki eventStyleGetter agar sesuai dengan getRoleColor
     const eventStyleGetter = (event, start, end, isSelected) => {
         let backgroundColor = '#F54243'; // Kemahasiswaan
         if (event.creatorRole === 'adminbem') backgroundColor = '#22A7F4'; // Admin BEM
         if (event.creatorRole === 'adminmpm') backgroundColor = '#E7E73E'; // Admin MPM
-
         return {
             style: {
                 backgroundColor,
@@ -97,7 +126,6 @@ export default function ActivityCalendar({ activities, activeActivities }) {
         };
     };
 
-    // Fungsi untuk mendapatkan warna berdasarkan role pengupload (sudah konsisten dengan eventStyleGetter)
     const getRoleColor = (role) => {
         switch (role?.toLowerCase()) {
             case 'adminbem':
@@ -127,12 +155,6 @@ export default function ActivityCalendar({ activities, activeActivities }) {
             fontWeight: 'bold',
             color: '#1f2937',
             textAlign: 'center',
-        },
-        sectionSubtitle: {
-            color: '#6b7280',
-            textAlign: 'center',
-            marginTop: '8px',
-            fontSize: '15px',
         },
         colorGuideWrapper: {
             marginTop: '24px',
@@ -361,6 +383,12 @@ export default function ActivityCalendar({ activities, activeActivities }) {
             <Navbar />
 
             <div style={styles.container}>
+                {error && (
+                    <div style={{ textAlign: 'center', color: 'red', padding: '20px' }}>
+                        {error}
+                    </div>
+                )}
+
                 <div style={styles.sectionHeader}>
                     <div style={{ textAlign: 'center', marginTop: '24px' }}>
                         <button
@@ -447,7 +475,6 @@ export default function ActivityCalendar({ activities, activeActivities }) {
                     />
                 </div>
 
-                {/* Daftar Kegiatan Aktif */}
                 <div style={styles.activeActivitiesContainer}>
                     <h3 style={styles.activeActivitiesTitle}>Daftar Kegiatan Aktif</h3>
                     {activeActivities.length > 0 ? (

@@ -7,6 +7,7 @@ use App\Http\Controllers\ApiProxyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\CarouselController;
 use App\Http\Controllers\Api\DirectorController;
 use App\Http\Controllers\API\SubmissionController;
@@ -54,6 +55,9 @@ Route::get('/carousel/guest', [CarouselController::class, 'guestIndex'])->name('
 // Route untuk Aspiration Categories (for Dashboard statistics)
 Route::get('/aspiration-categories', [DashboardController::class, 'getAspirationCategories'])->name('api.aspiration-categories');
 
+Route::get('/activities', [ActivityController::class, 'index']);
+Route::get('/activities/active', [ActivityController::class, 'active']);
+Route::get('/activities/nearest', [ActivityController::class, 'nearest']);
 // Route::middleware(['debug.sanctum', 'session', 'auth:sanctum'])->group(function () {
 //     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
 // });
