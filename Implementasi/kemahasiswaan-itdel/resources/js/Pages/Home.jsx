@@ -211,7 +211,7 @@ export default function Home() {
         },
         welcomeSection: {
             padding: '48px 0',
-            background: '#ffffff',
+            background: '#f5f7fa',
         },
         welcomeContainer: {
             maxWidth: '1280px',
@@ -278,19 +278,19 @@ export default function Home() {
         },
         latestNews: {
             padding: '48px 0',
-            background: '#ffffff',
+            background: '#f5f7fa',
         },
         latestAnnouncements: {
             padding: '48px 0',
-            background: '#ffffff',
+            background: '#f5f7fa',
         },
         nearestActivities: {
             padding: '48px 0',
-            background: '#ffffff',
+            background: '#f5f7fa',
         },
         achievementsSection: {
             padding: '48px 0',
-            background: '#ffffff',
+            background: '#f5f7fa',
         },
         sectionHeader: {
             maxWidth: '1280px',
@@ -1157,12 +1157,12 @@ export default function Home() {
                                                 </svg>
                                                 {formatDate(item.created_at)}
                                             </div>
-                                            <Link
+                                            {/* <Link
                                                 href={`/announcement/${item.announcement_id}`}
                                                 style={styles.announcementCardButton}
                                             >
                                                 Baca Selengkapnya
-                                            </Link>
+                                            </Link> */}
                                         </div>
                                     </div>
                                 </Link>

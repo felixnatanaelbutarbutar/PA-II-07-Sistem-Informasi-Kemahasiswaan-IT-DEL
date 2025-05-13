@@ -248,7 +248,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         text-align: center;
                         margin-bottom: 40px;
                         width: 100%;
-                        max-width: 1400px; /* Increased for wider layout */
+                        max-width: 1400px;
                         position: relative;
                         padding: 50px 20px;
                         background: #ffffff;
@@ -303,7 +303,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         gap: 15px;
                         margin-bottom: 30px;
                         width: 100%;
-                        max-width: 1400px; /* Increased for wider layout */
+                        max-width: 1400px;
                         background: #fff;
                         padding: 10px;
                         border-radius: 15px;
@@ -333,7 +333,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
                     }
                     .content-section {
-                        max-width: 1400px; /* Increased for wider layout */
+                        max-width: 1400px;
                         width: 100%;
                         background: #ffffff;
                         border-radius: 20px;
@@ -356,7 +356,8 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         color: #0369a1;
                         margin-bottom: 30px;
                         position: relative;
-                        display: inline-block;
+                        display: block;
+                        width: 100%;
                     }
                     .info-section h2:after {
                         content: '';
@@ -371,7 +372,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                     }
                     .info-cards {
                         display: flex;
-                        flex-wrap: nowrap; /* Ensure cards stay in one row */
+                        flex-wrap: nowrap;
                         justify-content: space-between;
                         gap: 30px;
                         margin: 40px 0;
@@ -380,7 +381,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
                         border-radius: 16px;
                         padding: 30px;
-                        width: 33.33%; /* Each card takes up 1/3 of the container width */
+                        width: 33.33%;
                         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
                         transition: all 0.3s ease;
                         text-align: center;
@@ -393,7 +394,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                     .info-card img {
                         width: 80px;
                         height: 80px;
-                        margin: 0 auto 20px; /* Center the image and add bottom margin */
+                        margin: 0 auto 20px;
                         display: block;
                     }
                     .info-card h3 {
@@ -501,7 +502,8 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         text-align: center;
                         margin-bottom: 20px;
                         position: relative;
-                        display: inline-block;
+                        display: block;
+                        width: 100%;
                     }
                     .calendar-section h2:after {
                         content: '';
@@ -583,7 +585,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         font-weight: 600;
                         color: #0369a1;
                         margin-bottom: 20px;
-                        text-align: center WORKS HERE
+                        text-align: center;
                     }
                     .modal-content h4 {
                         font-size: 18px;
@@ -654,7 +656,10 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         text-align: center;
                         margin-bottom: 20px;
                         position: relative;
-                        display: inline-block;
+                        display: block; /* Changed from inline-block to block */
+                        width: 100%; /* Ensure it takes full width */
+                        margin-left: auto;
+                        margin-right: auto;
                     }
                     .form-section h2:after {
                         content: '';
@@ -891,12 +896,12 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                     }
                     @media (max-width: 1024px) {
                         .info-cards {
-                            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+                            flex-wrap: wrap;
                             justify-content: center;
                         }
                         .info-card {
                             width: 100%;
-                            max-width: 340px; /* Revert to original max-width for smaller screens */
+                            max-width: 340px;
                         }
                     }
                     @media (max-width: 768px) {
@@ -905,7 +910,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         }
                         .page-header {
                             padding: 30px 15px;
-                            max-width: 100%; /* Full width on mobile */
+                            max-width: 100%;
                         }
                         .page-header h1 {
                             font-size: 32px;
@@ -920,7 +925,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                             flex-wrap: wrap;
                             gap: 10px;
                             padding: 8px;
-                            max-width: 100%; /* Full width on mobile */
+                            max-width: 100%;
                         }
                         .tab-button {
                             padding: 10px 16px;
@@ -928,7 +933,7 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         }
                         .content-section {
                             padding: 20px;
-                            max-width: 100%; /* Full width on mobile */
+                            max-width: 100%;
                         }
                         .info-section h2, .form-section h2, .calendar-section h2 {
                             font-size: 24px;
@@ -986,18 +991,6 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
             </style>
 
             <div className="main-container">
-                {/* <div className="page-header">
-                    <img
-                        src="https://img.icons8.com/fluency/96/000000/collaboration.png"
-                        alt="Header Illustration"
-                        className="header-illustration"
-                    />
-                    <h1>Konseling</h1>
-                    <p>
-                        Dapatkan dukungan yang Anda butuhkan untuk kesejahteraan mental dan akademik. Pesan sesi konseling dengan mudah dan mulailah langkah menuju kehidupan yang lebih seimbang.
-                    </p>
-                </div> */}
-
                 <div className="tab-navigation">
                     <button
                         className={`tab-button ${activeTab === 'info' ? 'active' : ''}`}
@@ -1133,9 +1126,6 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                                                 {bookedSlots.map((slot, index) => (
                                                     <li key={index} className="booked-slot">
                                                         {slot.time}
-                                                        {/* <div className="slot-info">
-                                                            Nama: {slot.name} | NIM: {slot.nim}
-                                                        </div> */}
                                                     </li>
                                                 ))}
                                             </ul>

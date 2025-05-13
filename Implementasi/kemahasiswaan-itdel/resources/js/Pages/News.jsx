@@ -13,71 +13,79 @@ export default function News() {
     const [featuredNews, setFeaturedNews] = useState(null);
     const [sidebarNews, setSidebarNews] = useState([]);
     const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const categoryList = ['Semua', ...categories.map(cat => cat.category_name)];
     const itemsPerPage = 4;
 
     // Ambil data dari API saat komponen dimuat
     useEffect(() => {
-        fetch('http://localhost:8000/api/news')
-            .then(response => {
+        const fetchNews = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('http://localhost:8000/api/news');
                 if (!response.ok) {
                     throw new Error('Gagal mengambil data berita');
                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Data Berita dari API:', data);
-                // Pastikan data adalah array
-                const newsArray = Array.isArray(data) ? data : data.data || [];
+                const data = await response.json();
+                const newsArray = Array.isArray(data.data) ? data.data : data || [];
                 setNewsItems(newsArray);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error fetching news:', error);
                 setError('Gagal memuat berita. Silakan coba lagi nanti.');
-            });
+            }
+        };
 
-        fetch('http://localhost:8000/api/news-categories')
-            .then(response => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/news-categories');
                 if (!response.ok) {
                     throw new Error('Gagal mengambil data kategori');
                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Data Kategori dari API:', data);
-                setCategories(data);
-            })
-            .catch(error => {
+                const data = await response.json();
+                setCategories(Array.isArray(data) ? data : []);
+            } catch (error) {
                 console.error('Error fetching categories:', error);
                 setError('Gagal memuat kategori. Silakan coba lagi nanti.');
-            });
+            }
+        };
+
+        Promise.all([fetchNews(), fetchCategories()])
+            .finally(() => setIsLoading(false));
     }, []);
 
     // Set featured news dan sidebar news setelah newsItems berubah
     useEffect(() => {
         if (newsItems.length > 0) {
-            const featured = newsItems.find(news => news.isFeatured) || 
-                            (newsItems.length > 0 ? {...newsItems[0], isFeatured: true} : null);
+            // Urutkan berdasarkan created_at (terbaru ke terlama)
+            const sortedNews = [...newsItems].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            // Featured news: berita terbaru (pertama setelah diurutkan)
+            const featured = sortedNews[0];
             setFeaturedNews(featured);
 
-            const sidebarItems = [...newsItems]
-                .filter(news => news.news_id !== (featured?.news_id || 0))
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 5);
+            // Sidebar news: 2 berita terbaru setelah featured news
+            const sidebarItems = sortedNews.slice(1, 3); // Ambil 2 berita setelah featured
             setSidebarNews(sidebarItems);
         }
     }, [newsItems]);
 
-    // Filter news based on search and category
+    // Filter news untuk NewsGrid, kecualikan yang sudah ditampilkan di HeroMain dan HeroSidebar
+    const displayedNewsIds = [
+        featuredNews?.news_id,
+        ...sidebarNews.map(news => news.news_id)
+    ].filter(id => id);
+
     const filteredNews = Array.isArray(newsItems) ? newsItems.filter((news) => {
+        if (!news.news_id) return false;
         const matchesSearch =
-            news.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            news.content.toLowerCase().includes(searchQuery.toLowerCase());
+            (news.title?.toLowerCase().includes(searchQuery.toLowerCase()) || '') ||
+            (news.content?.toLowerCase().includes(searchQuery.toLowerCase()) || '');
         const matchesCategory =
             selectedCategory === 'Semua' ||
             categories.find(cat => cat.category_id === news.category_id)?.category_name === selectedCategory;
-        return matchesSearch && matchesCategory;
+        const isNotDisplayed = !displayedNewsIds.includes(news.news_id);
+        return matchesSearch && matchesCategory && isNotDisplayed;
     }) : [];
 
     // Pagination logic
@@ -89,8 +97,13 @@ export default function News() {
 
     // Format date helper
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString('id-ID', options);
+        try {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Tanggal tidak valid';
+        }
     };
     
     const styles = {
@@ -120,7 +133,7 @@ export default function News() {
         },
         heroMainImg: {
             width: '100%',
-            height: '500px',
+            height: '580px',
             objectFit: 'cover',
         },
         heroMainCategory: {
@@ -261,6 +274,12 @@ export default function News() {
             color: 'red',
             padding: '20px',
         },
+        loadingState: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '20px',
+        },
     };
 
     return (
@@ -277,127 +296,164 @@ export default function News() {
                         </div>
                     )}
 
-                    {/* Search and Filter Section */}
-                    <div style={styles.searchFilterContainer}>
-                        <input
-                            type="text"
-                            style={styles.searchInput}
-                            placeholder="Cari berita..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <select
-                            style={styles.filterSelect}
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                        >
-                            {categoryList.map((category) => (
-                                <option key={category} value={category}>
-                                    {category}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Hero Section */}
-                    {featuredNews && (
-                        <div style={styles.heroSection}>
-                            <div style={styles.heroMain}>
-                                <img
-                                    style={styles.heroMainImg}
-                                    src={featuredNews.image ? `/storage/${featuredNews.image}` : 'https://via.placeholder.com/800x400'}
-                                    alt={featuredNews.title}
+                    {/* Tampilkan loading state */}
+                    {isLoading ? (
+                        <div style={styles.loadingState}>
+                            <svg
+                                className="animate-spin h-10 w-10 text-blue-500"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
                                 />
-                                <div style={styles.heroMainCategory}>
-                                    {categories.find(cat => cat.category_id === featuredNews.category_id)?.category_name || 'Uncategorized'}
-                                </div>
-                                <div style={styles.heroMainTitle}>{featuredNews.title}</div>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                            </svg>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Search and Filter Section */}
+                            <div style={styles.searchFilterContainer}>
+                                <input
+                                    type="text"
+                                    style={styles.searchInput}
+                                    placeholder="Cari berita..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                <select
+                                    style={styles.filterSelect}
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    {categoryList.map((category) => (
+                                        <option key={category} value={category}>
+                                            {category}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-                            <div style={styles.heroSidebar}>
-                                {sidebarNews.map((news) => (
-                                    <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
-                                        <div style={styles.heroSidebarNewsCard}>
+
+                            {/* Hero Section */}
+                            {featuredNews ? (
+                                <div style={styles.heroSection}>
+                                    <Link href={route('news.show', featuredNews.news_id)} style={{ textDecoration: 'none' }}>
+                                        <div style={styles.heroMain}>
                                             <img
-                                                style={styles.heroSidebarNewsCardImg}
-                                                src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/400x150'}
-                                                alt={news.title}
+                                                style={styles.heroMainImg}
+                                                src={featuredNews.image ? `/storage/${featuredNews.image}` : 'https://via.placeholder.com/800x400'}
+                                                alt={featuredNews.title || 'Berita Utama'}
                                             />
-                                            <div style={styles.heroSidebarNewsCardCategory}>
-                                                {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
+                                            <div style={styles.heroMainCategory}>
+                                                {categories.find(cat => cat.category_id === featuredNews.category_id)?.category_name || 'Uncategorized'}
                                             </div>
-                                            <div style={styles.heroSidebarNewsCardTitle}>{news.title}</div>
+                                            <div style={styles.heroMainTitle}>{featuredNews.title || 'Judul Tidak Tersedia'}</div>
                                         </div>
                                     </Link>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* News Grid */}
-                    <div style={styles.newsGrid}>
-                        {paginatedNews.length > 0 ? (
-                            paginatedNews.map((news) => (
-                                <Link 
-                                key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
-                                    <div style={styles.newsCard}>
-                                        <img
-                                            style={styles.newsCardImg}
-                                            src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/300x150'}
-                                            alt={news.title}
-                                        />
-                                        <div style={styles.newsCardCategory}>
-                                            {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
-                                        </div>
-                                        <div style={styles.newsCardTitle}>{news.title}</div>
-                                        <div style={styles.newsCardDescription}>
-                                            {news.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...'}
-                                        </div>
+                                    <div style={styles.heroSidebar}>
+                                        {sidebarNews.length > 0 ? sidebarNews.map((news) => (
+                                            <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
+                                                <div style={styles.heroSidebarNewsCard}>
+                                                    <img
+                                                        style={styles.heroSidebarNewsCardImg}
+                                                        src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/400x150'}
+                                                        alt={news.title || 'Berita Sidebar'}
+                                                    />
+                                                    <div style={styles.heroSidebarNewsCardCategory}>
+                                                        {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
+                                                    </div>
+                                                    <div style={styles.heroSidebarNewsCardTitle}>{news.title || 'Judul Tidak Tersedia'}</div>
+                                                </div>
+                                            </Link>
+                                        )) : (
+                                            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                                                Tidak ada berita sidebar tersedia.
+                                            </div>
+                                        )}
                                     </div>
-                                </Link>
-                            ))
-                        ) : (
-                            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
-                                Tidak ada berita yang ditemukan.
-                            </div>
-                        )}
-                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                                    Tidak ada berita utama tersedia.
+                                </div>
+                            )}
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div style={styles.pagination}>
-                            <button
-                                style={{
-                                    ...styles.pageButton,
-                                    ...(currentPage === 1 ? styles.pageButtonDisabled : {}),
-                                }}
-                                onClick={() => setCurrentPage(currentPage - 1)}
-                                disabled={currentPage === 1}
-                            >
-                                <i className="fas fa-chevron-left"></i>
-                            </button>
-                            {[...Array(totalPages)].map((_, index) => (
-                                <button
-                                    key={index}
-                                    style={{
-                                        ...styles.pageButton,
-                                        ...(currentPage === index + 1 ? styles.pageButtonActive : {}),
-                                    }}
-                                    onClick={() => setCurrentPage(index + 1)}
-                                >
-                                    {index + 1}
-                                </button>
-                            ))}
-                            <button
-                                style={{
-                                    ...styles.pageButton,
-                                    ...(currentPage === totalPages ? styles.pageButtonDisabled : {}),
-                                }}
-                                onClick={() => setCurrentPage(currentPage + 1)}
-                                disabled={currentPage === totalPages}
-                            >
-                                <i className="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
+                            {/* News Grid */}
+                            <div style={styles.newsGrid}>
+                                {paginatedNews.length > 0 ? (
+                                    paginatedNews.map((news) => (
+                                        <Link key={news.news_id} href={route('news.show', news.news_id)} style={{ textDecoration: 'none' }}>
+                                            <div style={styles.newsCard}>
+                                                <img
+                                                    style={styles.newsCardImg}
+                                                    src={news.image ? `/storage/${news.image}` : 'https://via.placeholder.com/300x150'}
+                                                    alt={news.title || 'Berita'}
+                                                />
+                                                <div style={styles.newsCardCategory}>
+                                                    {categories.find(cat => cat.category_id === news.category_id)?.category_name || 'Uncategorized'}
+                                                </div>
+                                                <div style={styles.newsCardTitle}>{news.title || 'Judul Tidak Tersedia'}</div>
+                                                <div style={styles.newsCardDescription}>
+                                                    {(news.content?.replace(/<[^>]+>/g, '')?.substring(0, 100) || 'Deskripsi tidak tersedia') + '...'}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
+                                        Tidak ada berita yang ditemukan.
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div style={styles.pagination}>
+                                    <button
+                                        style={{
+                                            ...styles.pageButton,
+                                            ...(currentPage === 1 ? styles.pageButtonDisabled : {}),
+                                        }}
+                                        onClick={() => setCurrentPage(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                    >
+                                        <i className="fas fa-chevron-left"></i>
+                                    </button>
+                                    {[...Array(totalPages)].map((_, index) => (
+                                        <button
+                                            key={index}
+                                            style={{
+                                                ...styles.pageButton,
+                                                ...(currentPage === index + 1 ? styles.pageButtonActive : {}),
+                                            }}
+                                            onClick={() => setCurrentPage(index + 1)}
+                                        >
+                                            {index + 1}
+                                        </button>
+                                    ))}
+                                    <button
+                                        style={{
+                                            ...styles.pageButton,
+                                            ...(currentPage === totalPages ? styles.pageButtonDisabled : {}),
+                                        }}
+                                        onClick={() => setCurrentPage(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        <i className="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
