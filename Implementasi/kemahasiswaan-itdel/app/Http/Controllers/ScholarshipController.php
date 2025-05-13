@@ -171,7 +171,7 @@ class ScholarshipController extends Controller
 
         $role = strtolower($user->role);
         $menuItems = RoleHelper::getNavigationMenu($role);
-        $permissions = RouteHelper::getRolePermissions($role);
+        $permissions = RoleHelper::getRolePermissions($role);
         $categories = ScholarshipCategory::where('is_active', true)->get();
 
         return Inertia::render('Admin/Scholarship/edit', [
