@@ -34,7 +34,7 @@ export default function Login({ status, error, canResetPassword }) {
             style={{
                 backgroundImage: 'url(/assets/images/background/main-bg.png)',
                 backgroundSize: '300px',
-                backgroundRepeat: 'repeat',
+                backgroundRepeat: 'repeat',  
             }}
         >
             <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -228,7 +228,7 @@ export default function Login({ status, error, canResetPassword }) {
                                 </button>
                             </div>
                         </form>
-                        
+
                         <div className="mt-6 text-center">
                             <p className="text-sm font-medium text-gray-500">
                                 Portal Sistem Kemahasiswaan IT DEL &copy; {new Date().getFullYear()}

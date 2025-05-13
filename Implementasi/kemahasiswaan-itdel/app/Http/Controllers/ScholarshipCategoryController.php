@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\ScholarshipCategory;
+use App\Models\Scholarship;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ScholarshipCategoryController extends Controller
 {
@@ -177,10 +179,23 @@ class ScholarshipCategoryController extends Controller
                 'updated_by' => Auth::id(),
             ]);
 
+            // If category is being deactivated, deactivate associated scholarships
+            $newIsActive = $request->has('is_active') ? $request->is_active : $category->is_active;
+            if ($category->is_active && !$newIsActive) {
+                Scholarship::where('category_id', $category_id)->update([
+                    'is_active' => false,
+                    'updated_by' => Auth::id(),
+                ]);
+                Log::info('Deactivated scholarships for category', [
+                    'category_id' => $category_id,
+                    'updated_by' => Auth::id(),
+                ]);
+            }
+
             $category->update([
                 'category_name' => $request->category_name,
                 'description' => $request->description,
-                'is_active' => $request->has('is_active') ? $request->is_active : $category->is_active,
+                'is_active' => $newIsActive,
                 'updated_by' => Auth::id(),
             ]);
         } catch (\Exception $e) {
@@ -196,14 +211,35 @@ class ScholarshipCategoryController extends Controller
     {
         try {
             $category = ScholarshipCategory::findOrFail($category_id);
+
+            // Delete associated scholarships and their posters
+            $scholarships = Scholarship::where('category_id', $category_id)->get();
+            foreach ($scholarships as $scholarship) {
+                if ($scholarship->poster) {
+                    Storage::disk('public')->delete($scholarship->poster);
+                    Log::debug('Deleted scholarship poster', [
+                        'scholarship_id' => $scholarship->scholarship_id,
+                        'poster' => $scholarship->poster,
+                    ]);
+                }
+                $scholarship->delete();
+                Log::info('Deleted scholarship', [
+                    'scholarship_id' => $scholarship->scholarship_id,
+                    'category_id' => $category_id,
+                ]);
+            }
+
             $category->delete();
+            Log::info('Deleted scholarship category', [
+                'category_id' => $category_id,
+            ]);
         } catch (\Exception $e) {
             Log::error('Error deleting scholarship category: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to delete scholarship category: ' . $e->getMessage()]);
         }
 
         return redirect()->route('admin.scholarship-category.index')
-            ->with('success', 'Kategori berhasil dihapus!');
+            ->with('success', 'Kategori dan beasiswa terkait berhasil dihapus!');
     }
 
     public function toggleActive(Request $request, $category_id)
@@ -213,24 +249,36 @@ class ScholarshipCategoryController extends Controller
             $oldStatus = $category->is_active;
             $newStatus = !$category->is_active;
 
-            \Log::debug('Toggling scholarship category status', [
+            Log::debug('Toggling scholarship category status', [
                 'category_id' => $category_id,
                 'old_status' => $oldStatus,
                 'new_status' => $newStatus,
                 'updated_by' => Auth::id(),
             ]);
 
+            // If deactivating the category, deactivate associated scholarships
+            if ($oldStatus && !$newStatus) {
+                Scholarship::where('category_id', $category_id)->update([
+                    'is_active' => false,
+                    'updated_by' => Auth::id(),
+                ]);
+                Log::info('Deactivated scholarships for category', [
+                    'category_id' => $category_id,
+                    'updated_by' => Auth::id(),
+                ]);
+            }
+
             $category->update([
                 'is_active' => $newStatus,
                 'updated_by' => Auth::id(),
             ]);
 
-            \Log::debug('Category updated', [
+            Log::debug('Category updated', [
                 'category_id' => $category_id,
                 'is_active' => $category->fresh()->is_active,
             ]);
 
-            $message = $newStatus ? 'Kategori berhasil diaktifkan.' : 'Kategori berhasil dinonaktifkan.';
+            $message = $newStatus ? 'Kategori berhasil diaktifkan.' : 'Kategori dan beasiswa terkait berhasil dinonaktifkan.';
 
             if ($request->header('X-Inertia')) {
                 $user = Auth::user();
@@ -264,7 +312,7 @@ class ScholarshipCategoryController extends Controller
 
             return redirect()->route('admin.scholarship-category.index')->with('success', $message);
         } catch (\Exception $e) {
-            \Log::error('Error toggling scholarship category status: ' . $e->getMessage(), [
+            Log::error('Error toggling scholarship category status: ' . $e->getMessage(), [
                 'category_id' => $category_id,
                 'user_id' => Auth::id(),
             ]);

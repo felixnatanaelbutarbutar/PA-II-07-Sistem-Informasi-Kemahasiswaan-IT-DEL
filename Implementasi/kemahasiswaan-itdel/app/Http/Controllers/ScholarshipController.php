@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Scholarship;
 use App\Models\ScholarshipCategory;
 use Illuminate\Http\Request;
@@ -11,13 +10,12 @@ use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\PDF; // Tambahkan ini untuk PDF
+use Barryvdh\DomPDF\Facade\PDF;
 
 class ScholarshipController extends Controller
 {
     public function index(Request $request)
     {
-        // Pastikan user sudah login
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
@@ -27,40 +25,43 @@ class ScholarshipController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        // Ambil parameter filter dari request
+        // Get query parameters for filtering and searching
+        $status = $request->query('status'); // 'active', 'inactive', or null
+        $sortBy = $request->query('sort_by', 'updated_at'); // Default to updated_at
+        $sortDirection = $request->query('sort_direction', 'desc'); // Default to desc
         $search = $request->query('search');
-        $status = $request->query('status');
-        $dateFilter = $request->query('date_filter', 'terbaru');
 
-        // Query dasar untuk scholarships
         $query = Scholarship::with(['category', 'creator', 'updater']);
 
-        // Filter berdasarkan pencarian
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhereHas('category', function ($q) use ($search) {
-                      $q->where('category_name', 'like', '%' . $search . '%');
-                  });
-            });
-        }
-
-        // Filter berdasarkan status
+        // Apply status filter
         if ($status === 'active') {
             $query->where('is_active', true);
         } elseif ($status === 'inactive') {
             $query->where('is_active', false);
         }
 
-        // Sorting berdasarkan tanggal (Terlama/Terbaru)
-        if ($dateFilter === 'terlama') {
-            $query->orderBy('created_at', 'asc');
-        } else {
-            $query->orderBy('created_at', 'desc');
+        // Apply case-insensitive search on name, description, and category_name
+        if ($search) {
+            $searchTerms = array_filter(explode(' ', trim($search)));
+            $query->where(function ($q) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    $lowerTerm = strtolower($term);
+                    $q->orWhereRaw('LOWER(name) LIKE ?', ['%' . $lowerTerm . '%'])
+                      ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $lowerTerm . '%'])
+                      ->orWhereHas('category', function ($q) use ($lowerTerm) {
+                          $q->whereRaw('LOWER(category_name) LIKE ?', ['%' . $lowerTerm . '%']);
+                      });
+                }
+            });
         }
 
-        // Ambil data scholarships dengan pagination
-        $scholarships = $query->paginate(10)->through(function ($scholarship) {
+        // Apply sorting
+        if ($sortBy === 'updated_at') {
+            $query->orderBy('is_active', 'desc') // Prioritize active status
+                  ->orderBy('updated_at', $sortDirection);
+        }
+
+        $scholarships = $query->get()->map(function ($scholarship) {
             return [
                 'scholarship_id' => $scholarship->scholarship_id,
                 'name' => $scholarship->name,
@@ -72,8 +73,8 @@ class ScholarshipController extends Controller
                 'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
                 'is_active' => $scholarship->is_active,
                 'status' => $scholarship->is_active ? 'Aktif' : 'Non-Aktif',
-                'created_by' => $scholarship->creator ? $scholarship->creator->name : 'Unknown',
-                'updated_by' => $scholarship->updater ? $scholarship->updater->name : 'Unknown',
+                'created_by' => $scholarship->creator ? $scholarship->creator->name : null,
+                'updated_by' => $scholarship->updater ? $scholarship->updater->name : null,
                 'created_at' => $scholarship->created_at->toDateTimeString(),
                 'updated_at' => $scholarship->updated_at->toDateTimeString(),
             ];
@@ -86,9 +87,10 @@ class ScholarshipController extends Controller
             'menu' => $menuItems,
             'scholarships' => $scholarships,
             'filters' => [
-                'search' => $search,
                 'status' => $status,
-                'date_filter' => $dateFilter,
+                'sort_by' => $sortBy,
+                'sort_direction' => $sortDirection,
+                'search' => $search,
             ],
         ]);
     }
@@ -154,15 +156,12 @@ class ScholarshipController extends Controller
 
             return redirect()->route('admin.scholarship.index')
                 ->with('success', 'Beasiswa berhasil ditambahkan.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error creating scholarship: ' . json_encode($e->errors()), ['trace' => $e->getTraceAsString()]);
-            return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            Log::error('Error creating scholarship: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Error creating scholarship: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Gagal membuat beasiswa: ' . $e->getMessage()])->withInput();
         }
     }
-    
+
     public function edit(Scholarship $scholarship)
     {
         $user = Auth::user();
@@ -172,7 +171,7 @@ class ScholarshipController extends Controller
 
         $role = strtolower($user->role);
         $menuItems = RoleHelper::getNavigationMenu($role);
-        $permissions = RoleHelper::getRolePermissions($role);
+        $permissions = RouteHelper::getRolePermissions($role);
         $categories = ScholarshipCategory::where('is_active', true)->get();
 
         return Inertia::render('Admin/Scholarship/edit', [
@@ -255,17 +254,81 @@ class ScholarshipController extends Controller
     {
         try {
             $scholarship = Scholarship::where('scholarship_id', $scholarship_id)->firstOrFail();
-            $scholarship->update([
-                'is_active' => !$scholarship->is_active,
+            $oldStatus = $scholarship->is_active;
+            $newStatus = !$scholarship->is_active;
+
+            Log::debug('Toggling scholarship status', [
+                'scholarship_id' => $scholarship_id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
                 'updated_by' => Auth::id(),
             ]);
 
-            return redirect()->route('admin.scholarship.index')
-                ->with('success', $scholarship->is_active ? 'Beasiswa berhasil diaktifkan.' : 'Beasiswa berhasil dinonaktifkan.');
+            $scholarship->update([
+                'is_active' => $newStatus,
+                'updated_by' => Auth::id(),
+            ]);
+
+            Log::debug('Scholarship updated', [
+                'scholarship_id' => $scholarship_id,
+                'is_active' => $scholarship->fresh()->is_active,
+            ]);
+
+            $message = $newStatus ? 'Beasiswa berhasil diaktifkan.' : 'Beasiswa berhasil dinonaktifkan.';
+
+            if ($request->header('X-Inertia')) {
+                $user = Auth::user();
+                $role = strtolower($user->role);
+                $menuItems = RoleHelper::getNavigationMenu($role);
+                $permissions = RoleHelper::getRolePermissions($role);
+
+                $scholarships = Scholarship::with(['category', 'creator', 'updater'])->get()->map(function ($scholarship) {
+                    return [
+                        'scholarship_id' => $scholarship->scholarship_id,
+                        'name' => $scholarship->name,
+                        'description' => $scholarship->description,
+                        'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
+                        'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateString() : null,
+                        'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
+                        'category_id' => $scholarship->category_id,
+                        'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
+                        'is_active' => $scholarship->is_active,
+                        'status' => $scholarship->is_active ? 'Aktif' : 'Non-Aktif',
+                        'created_by' => $scholarship->creator ? $scholarship->creator->name : null,
+                        'updated_by' => $scholarship->updater ? $scholarship->updater->name : null,
+                        'created_at' => $scholarship->created_at->toDateTimeString(),
+                        'updated_at' => $scholarship->updated_at->toDateTimeString(),
+                    ];
+                });
+
+                return Inertia::render('Admin/Scholarship/index', [
+                    'auth' => ['user' => $user],
+                    'userRole' => $role,
+                    'permissions' => $permissions,
+                    'menu' => $menuItems,
+                    'scholarships' => $scholarships,
+                    'filters' => [
+                        'status' => $request->query('status'),
+                        'sort_by' => $request->query('sort_by', 'updated_at'),
+                        'sort_direction' => $request->query('sort_direction', 'desc'),
+                        'search' => $request->query('search'),
+                    ],
+                    'flash' => ['success' => $message],
+                ]);
+            }
+
+            return redirect()->route('admin.scholarship.index')->with('success', $message);
         } catch (\Exception $e) {
-            Log::error('Error toggling scholarship status: ' . $e->getMessage());
-            return redirect()->route('admin.scholarship.index')
-                ->with('error', 'Gagal mengubah status beasiswa: ' . $e->getMessage());
+            Log::error('Error toggling scholarship status: ' . $e->getMessage(), [
+                'scholarship_id' => $scholarship_id,
+                'user_id' => Auth::id(),
+            ]);
+            if ($request->header('X-Inertia')) {
+                return Inertia::render('Admin/Scholarship/index', [
+                    'flash' => ['error' => 'Failed to toggle scholarship status: ' . $e->getMessage()],
+                ])->withStatus(422);
+            }
+            return back()->withErrors(['error' => 'Failed to toggle scholarship status: ' . $e->getMessage()]);
         }
     }
 
@@ -337,39 +400,38 @@ class ScholarshipController extends Controller
     public function exportPDF(Request $request)
     {
         try {
-            // Ambil filter dari request (sama seperti index)
             $search = $request->query('search');
             $status = $request->query('status');
-            $dateFilter = $request->query('date_filter', 'terbaru');
+            $sortBy = $request->query('sort_by', 'updated_at');
+            $sortDirection = $request->query('sort_direction', 'desc');
 
-            // Query dasar untuk scholarships
             $query = Scholarship::with(['category', 'creator', 'updater']);
 
-            // Filter berdasarkan pencarian
             if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhereHas('category', function ($q) use ($search) {
-                          $q->where('category_name', 'like', '%' . $search . '%');
-                      });
+                $searchTerms = array_filter(explode(' ', trim($search)));
+                $query->where(function ($q) use ($searchTerms) {
+                    foreach ($searchTerms as $term) {
+                        $lowerTerm = strtolower($term);
+                        $q->orWhereRaw('LOWER(name) LIKE ?', ['%' . $lowerTerm . '%'])
+                          ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $lowerTerm . '%'])
+                          ->orWhereHas('category', function ($q) use ($lowerTerm) {
+                              $q->whereRaw('LOWER(category_name) LIKE ?', ['%' . $lowerTerm . '%']);
+                          });
+                    }
                 });
             }
 
-            // Filter berdasarkan status
             if ($status === 'active') {
                 $query->where('is_active', true);
             } elseif ($status === 'inactive') {
                 $query->where('is_active', false);
             }
 
-            // Sorting berdasarkan tanggal
-            if ($dateFilter === 'terlama') {
-                $query->orderBy('created_at', 'asc');
-            } else {
-                $query->orderBy('created_at', 'desc');
+            if ($sortBy === 'updated_at') {
+                $query->orderBy('is_active', 'desc')
+                      ->orderBy('updated_at', $sortDirection);
             }
 
-            // Ambil data
             $scholarships = $query->get()->map(function ($scholarship) {
                 return [
                     'scholarship_id' => $scholarship->scholarship_id,
@@ -379,12 +441,11 @@ class ScholarshipController extends Controller
                     'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
                     'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
                     'status' => $scholarship->is_active ? 'Aktif' : 'Non-Aktif',
-                    'created_by' => $scholarship->creator ? $scholarship->creator->name : 'Unknown',
+                    'created_by' => $scholarship->creator ? $scholarship->creator->name : null,
                     'updated_at' => $scholarship->updated_at->toDateString(),
                 ];
             });
 
-            // Load view untuk PDF
             $pdf = PDF::loadView('pdf.scholarships', compact('scholarships'));
             return $pdf->download('beasiswa.pdf');
         } catch (\Exception $e) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
@@ -18,7 +18,12 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
     const [isDeleting, setIsDeleting] = useState(false);
     const [isToggling, setIsToggling] = useState(false);
     const [viewMode, setViewMode] = useState('table');
+    const [openDropdownId, setOpenDropdownId] = useState(null);
 
+    // Create refs for each dropdown
+    const dropdownRefs = useRef({});
+
+    // Handle flash messages
     useEffect(() => {
         if (flash) {
             if (flash.success) {
@@ -40,6 +45,36 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
         }
     }, [flash]);
 
+    // Handle click outside to close dropdown and Escape key press
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            let isOutside = true;
+            Object.values(dropdownRefs.current).forEach((ref) => {
+                if (ref && ref.contains(event.target)) {
+                    isOutside = false;
+                }
+            });
+            if (isOutside) {
+                setOpenDropdownId(null);
+            }
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                setOpenDropdownId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
+    // Debounce search and filter updates
     useEffect(() => {
         const timer = setTimeout(() => {
             const queryParams = {
@@ -63,17 +98,21 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
         return () => clearTimeout(timer);
     }, [searchTerm, statusFilter, sortBy, sortDirection]);
 
+    // Handle initiating actions
     const handleDeleteClick = (category_id) => {
         setCategoryIdToDelete(category_id);
         setShowDeleteModal(true);
+        setOpenDropdownId(null);
     };
 
     const handleToggleClick = (category_id, is_active) => {
         setCategoryIdToToggle(category_id);
         setToggleAction(is_active ? 'deactivate' : 'activate');
         setShowToggleModal(true);
+        setOpenDropdownId(null);
     };
 
+    // Confirm and perform deletion
     const confirmDelete = () => {
         if (categoryIdToDelete) {
             setIsDeleting(true);
@@ -103,6 +142,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
         }
     };
 
+    // Confirm and perform toggle
     const confirmToggle = () => {
         if (categoryIdToToggle) {
             setIsToggling(true);
@@ -131,6 +171,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
         }
     };
 
+    // Cancel actions
     const cancelDelete = () => {
         setShowDeleteModal(false);
         setCategoryIdToDelete(null);
@@ -142,6 +183,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
         setToggleAction(null);
     };
 
+    // Handle sorting
     const handleSort = (column) => {
         if (sortBy === column) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -149,6 +191,65 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
             setSortBy(column);
             setSortDirection('desc');
         }
+    };
+
+    // Toggle dropdown visibility
+    const toggleDropdown = (categoryId) => {
+        setOpenDropdownId(openDropdownId === categoryId ? null : categoryId);
+    };
+
+    // Calculate fixed position for table view dropdown (below the button)
+    const getTableDropdownPosition = (categoryId) => {
+        const button = document.querySelector(`[data-category-id="${categoryId}"]`);
+        if (!button) return { top: 0, left: 0 };
+
+        const rect = button.getBoundingClientRect();
+        const dropdownHeight = 150; // Approximate dropdown height in pixels
+        const dropdownWidth = 192; // Approximate w-48 in pixels
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const viewportWidth = window.innerWidth;
+
+        let top = rect.bottom + 8;
+        let left = rect.right - dropdownWidth;
+
+        if (top + dropdownHeight > window.innerHeight) {
+            top = rect.top - dropdownHeight - 8;
+        }
+
+        if (left < 0) {
+            left = 8;
+        } else if (left + dropdownWidth > viewportWidth) {
+            left = viewportWidth - dropdownWidth - 8;
+        }
+
+        return { top, left };
+    };
+
+    // Calculate fixed position for grid view dropdown
+    const getGridDropdownPosition = (categoryId) => {
+        const button = document.querySelector(`[data-category-id="${categoryId}"]`);
+        if (!button) return { top: 0, left: 0 };
+
+        const rect = button.getBoundingClientRect();
+        const dropdownHeight = 150;
+        const dropdownWidth = 192;
+        const spaceAbove = rect.top;
+        const viewportWidth = window.innerWidth;
+
+        let top = rect.top - dropdownHeight - 8;
+        let left = rect.right - dropdownWidth;
+
+        if (top < 0) {
+            top = rect.bottom + 8;
+        }
+
+        if (left < 0) {
+            left = 8;
+        } else if (left + dropdownWidth > viewportWidth) {
+            left = viewportWidth - dropdownWidth - 8;
+        }
+
+        return { top, left };
     };
 
     return (
@@ -241,9 +342,12 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                                 </svg>
                             </div>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
-                        <p className="text-gray-600 text-center mb-6">
-                            Apakah Anda yakin ingin menghapus kategori ini? Tindakan ini tidak dapat dibatalkan.
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan Kategori</h3>
+                        <p className="text-gray-600 text-center mb-4">
+                            Apakah Anda yakin ingin menghapus kategori beasiswa ini? Penghapusan ini bersifat permanen dan tidak dapat dibatalkan.
+                        </p>
+                        <p className="text-red-600 font-semibold text-center mb-6 flex items-center justify-center">
+                            Seluruh beasiswa yang terkait dengan kategori ini juga akan dihapus.
                         </p>
                         <div className="flex justify-center space-x-4">
                             <button
@@ -306,6 +410,9 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                         </h3>
                         <p className="text-gray-600 text-center mb-6">
                             Apakah Anda yakin ingin {toggleAction === 'activate' ? 'mengaktifkan' : 'menonaktifkan'} kategori ini?
+                        </p>
+                        <p className="text-red-600 font-semibold text-center mb-6 flex items-center justify-center">
+                            Seluruh beasiswa yang terkait dengan kategori ini juga akan di{toggleAction === 'activate' ? 'aktifkan' : 'nonaktifkan'}.
                         </p>
                         <div className="flex justify-center space-x-4">
                             <button
@@ -522,66 +629,152 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {categories.map((category) => (
-                                    <tr
-                                        key={category.category_id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {category.category_name}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            {category.description || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    category.is_active
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
-                                                }`}
-                                            >
-                                                {category.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {new Date(category.updated_at).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {category.created_by || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <Link
-                                                href={route('admin.scholarship-category.edit', category.category_id)}
-                                                className="text-blue-600 hover:text-blue-700 transition mr-4"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() => handleToggleClick(category.category_id, category.is_active)}
-                                                className={`${
-                                                    category.is_active
-                                                        ? 'text-yellow-600 hover:text-yellow-700'
-                                                        : 'text-green-600 hover:text-green-700'
-                                                } transition mr-4`}
-                                                disabled={isToggling}
-                                            >
-                                                {category.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteClick(category.category_id)}
-                                                className="text-red-600 hover:text-red-700 transition"
-                                                disabled={isDeleting}
-                                            >
-                                                Hapus
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {categories.map((category) => {
+                                    const dropdownPosition = openDropdownId === category.category_id ? getTableDropdownPosition(category.category_id) : { top: 0, left: 0 };
+                                    return (
+                                        <tr
+                                            key={category.category_id}
+                                            className="hover:bg-gray-50 transition-colors"
+                                        >
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {category.category_name}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                {category.description || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                <span
+                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                        category.is_active
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-red-100 text-red-800'
+                                                    }`}
+                                                >
+                                                    {category.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {new Date(category.updated_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {category.created_by || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div
+                                                    className="relative"
+                                                    ref={(el) => (dropdownRefs.current[category.category_id] = el)}
+                                                >
+                                                    <button
+                                                        onClick={() => toggleDropdown(category.category_id)}
+                                                        className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition focus:outline-none"
+                                                        aria-label="More actions"
+                                                        aria-expanded={openDropdownId === category.category_id}
+                                                        disabled={isDeleting || isToggling}
+                                                        data-category-id={category.category_id}
+                                                    >
+                                                        <svg
+                                                            className="w-5 h-5"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                    {openDropdownId === category.category_id && (
+                                                        <div
+                                                            className="fixed w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
+                                                            style={{
+                                                                top: `${dropdownPosition.top}px`,
+                                                                left: `${dropdownPosition.left}px`,
+                                                            }}
+                                                        >
+                                                            <div className="py-1">
+                                                                <Link
+                                                                    href={route('admin.scholarship-category.edit', category.category_id)}
+                                                                    className="flex items-center px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition"
+                                                                    onClick={() => setOpenDropdownId(null)}
+                                                                >
+                                                                    <svg
+                                                                        className="w-4 h-4 mr-2"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={2}
+                                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                                        />
+                                                                    </svg>
+                                                                    Edit
+                                                                </Link>
+                                                                <button
+                                                                    onClick={() => handleToggleClick(category.category_id, category.is_active)}
+                                                                    className="flex items-center px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition w-full text-left"
+                                                                    disabled={isToggling}
+                                                                >
+                                                                    <svg
+                                                                        className="w-4 h-4 mr-2"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={2}
+                                                                            d={
+                                                                                category.is_active
+                                                                                    ? 'M6 18L18 6M6 6l12 12'
+                                                                                    : 'M5 13l4 4L19 7'
+                                                                            }
+                                                                        />
+                                                                    </svg>
+                                                                    {category.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteClick(category.category_id)}
+                                                                    className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition w-full text-left"
+                                                                    disabled={isDeleting}
+                                                                >
+                                                                    <svg
+                                                                        className="w-4 h-4 mr-2"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={2}
+                                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                        />
+                                                                    </svg>
+                                                                    Hapus
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -590,117 +783,157 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                 {/* Grid View */}
                 {viewMode === 'grid' && categories.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {categories.map((category) => (
-                            <div
-                                key={category.category_id}
-                                className="bg-white rounded-lg shadow-lg p-4 border border-gray-100 hover:shadow-xl transition-shadow"
-                            >
-                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                    {category.category_name}
-                                </h3>
-                                <p className="text-sm text-gray-600 mb-1">
-                                    <span className="font-medium">ID:</span> {category.category_id}
-                                </p>
-                                <p className="text-sm text-gray-600 mb-1">
-                                    <span className="font-medium">Deskripsi:</span> {category.description || '-'}
-                                </p>
-                                <p className="text-sm text-gray-600 mb-1">
-                                    <span className="font-medium">Status:</span>{' '}
-                                    <span
-                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            category.is_active
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-red-100 text-red-800'
-                                        }`}
-                                    >
-                                        {category.status}
-                                    </span>
-                                </p>
-                                <p className="text-sm text-gray-600 mb-1">
-                                    <span className="font-medium">Dibuat Pada:</span>{' '}
-                                    {new Date(category.created_at).toLocaleDateString('id-ID', {
-                                        day: 'numeric',
-                                        month: 'long',
-                                        year: 'numeric',
-                                    })}
-                                </p>
-                                <p className="text-sm text-gray-600 mb-4">
-                                    <span className="font-medium">Dibuat Oleh:</span> {category.created_by || '-'}
-                                </p>
-                                <div className="flex space-x-2">
-                                    <Link
-                                        href={route('admin.scholarship-category.edit', category.category_id)}
-                                        className="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition flex items-center"
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
+                        {categories.map((category) => {
+                            const dropdownPosition = openDropdownId === category.category_id ? getGridDropdownPosition(category.category_id) : { top: 0, left: 0 };
+                            return (
+                                <div
+                                    key={category.category_id}
+                                    className="bg-white rounded-lg shadow-lg p-4 border border-gray-100 hover:shadow-xl transition-shadow relative"
+                                >
+                                    <div className="absolute top-4 right-4">
+                                        <div
+                                            className="relative"
+                                            ref={(el) => (dropdownRefs.current[category.category_id] = el)}
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                            />
-                                        </svg>
-                                        Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => handleToggleClick(category.category_id, category.is_active)}
-                                        className={`${
-                                            category.is_active
-                                                ? 'bg-yellow-600 hover:bg-yellow-700'
-                                                : 'bg-green-600 hover:bg-green-700'
-                                        } text-white px-4 py-1.5 rounded-lg transition flex items-center`}
-                                        disabled={isToggling}
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
+                                            <button
+                                                onClick={() => toggleDropdown(category.category_id)}
+                                                className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition focus:outline-none"
+                                                aria-label="More actions"
+                                                aria-expanded={openDropdownId === category.category_id}
+                                                disabled={isDeleting || isToggling}
+                                                data-category-id={category.category_id}
+                                            >
+                                                <svg
+                                                    className="w-5 h-5"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                                    />
+                                                </svg>
+                                            </button>
+                                            {openDropdownId === category.category_id && (
+                                                <div
+                                                    className="fixed w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
+                                                    style={{
+                                                        top: `${dropdownPosition.top}px`,
+                                                        left: `${dropdownPosition.left}px`,
+                                                    }}
+                                                >
+                                                    <div className="py-1">
+                                                        <Link
+                                                            href={route('admin.scholarship-category.edit', category.category_id)}
+                                                            className="flex items-center px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition"
+                                                            onClick={() => setOpenDropdownId(null)}
+                                                        >
+                                                            <svg
+                                                                className="w-4 h-4 mr-2"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                                />
+                                                            </svg>
+                                                            Edit
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleToggleClick(category.category_id, category.is_active)}
+                                                            className="flex items-center px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition w-full text-left"
+                                                            disabled={isToggling}
+                                                        >
+                                                            <svg
+                                                                className="w-4 h-4 mr-2"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d={
+                                                                        category.is_active
+                                                                            ? 'M6 18L18 6M6 6l12 12'
+                                                                            : 'M5 13l4 4L19 7'
+                                                                    }
+                                                                />
+                                                            </svg>
+                                                            {category.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteClick(category.category_id)}
+                                                            className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition w-full text-left"
+                                                            disabled={isDeleting}
+                                                        >
+                                                            <svg
+                                                                className="w-4 h-4 mr-2"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                />
+                                                            </svg>
+                                                            Hapus
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                        {category.category_name}
+                                    </h3>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                        <span className="font-medium">ID:</span> {category.category_id}
+                                    </p>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                        <span className="font-medium">Deskripsi:</span> {category.description || '-'}
+                                    </p>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                        <span className="font-medium">Status:</span>{' '}
+                                        <span
+                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                category.is_active
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d={
-                                                    category.is_active
-                                                        ? 'M6 18L18 6M6 6l12 12'
-                                                        : 'M5 13l4 4L19 7'
-                                                }
-                                            />
-                                        </svg>
-                                        {category.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(category.category_id)}
-                                        className="bg-red-600 text-white px-4 py-1.5 rounded-lg hover:bg-red-700 transition flex items-center"
-                                        disabled={isDeleting}
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
-                                        </svg>
-                                        Hapus
-                                    </button>
+                                            {category.status}
+                                        </span>
+                                    </p>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                        <span className="font-medium">Dibuat Pada:</span>{' '}
+                                        {new Date(category.created_at).toLocaleDateString('id-ID', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric',
+                                        })}
+                                    </p>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        <span className="font-medium">Dibuat Oleh:</span> {category.created_by || '-'}
+                                    </p>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 

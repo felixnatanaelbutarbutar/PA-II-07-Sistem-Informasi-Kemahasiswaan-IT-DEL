@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\NewsCategoryController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\SubmissionResponseController;
 use App\Http\Controllers\Api\AnnouncementCategoryController;
+use App\Http\Controllers\Api\FormSubmissionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +35,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Route untuk Director (Kata Sambutan)
 Route::get('/director/active', [DirectorController::class, 'getActiveWelcomeMessage'])->name('api.director.active');
+
+Route::middleware(['auth:sanctum', 'role:mahasiswa', 'throttle:30,1'])->group(function () {
+    Route::get('/forms/submissions', [FormSubmissionController::class, 'index'])->name('api.submissions.index');
+    Route::post('/forms/submissions', [FormSubmissionController::class, 'store'])->name('api.submissions.store');
+    Route::put('/forms/submissions/{submission_id}', [FormSubmissionController::class, 'update'])->name('api.submissions.update');
+});
+
 
 // Routes untuk News
 Route::get('/news', [NewsController::class, 'index']);

@@ -54,6 +54,8 @@ Route::get('/counseling', [CounselingController::class, 'index'])->name('counsel
 Route::post('/counseling', [CounselingController::class, 'store'])
     ->middleware(['auth', 'role:mahasiswa'])
     ->name('counseling.store');
+
+
 // Activity Calendar for Guests
 Route::get('/activities', [ActivityController::class, 'guestIndex'])->name('activities.guest.index');
 Route::get('/activities/export/pdf', [ActivityController::class, 'guestExportToPDF'])->name('activities.guest.export.pdf');
@@ -81,46 +83,82 @@ Route::get('/mpm', [MpmController::class, 'show'])->name('mpm.show');
 // Routes untuk unduhan di sisi guest
 Route::get('/downloads', [DownloadController::class, 'guestIndex'])->name('downloads.guest.index');
 
-Route::get('/beasiswa', [ScholarshipController::class, 'guestIndex'])->name('scholarship.guestIndex');
 
+// Guest Routes
+Route::middleware('throttle:100,1')->group(function () {
+    Route::get('/scholarships', [FormController::class, 'guestIndex'])->name('guest.scholarship.index');
+    Route::get('/scholarships/{scholarship_id}', [FormController::class, 'guestShow'])->name('guest.scholarship.show');
+    Route::get('/scholarships/form/{form_id}', [FormController::class, 'showForm'])->name('guest.form.show');
+});
 
-Route::get('/beasiswa', [ScholarshipController::class, 'guestIndex'])->name('guest.scholarship.index');
-Route::get('/beasiswa/{scholarship_id}', [ScholarshipController::class, 'guestShow'])->name('guest.scholarship.show');
-Route::get('/beasiswa/{form_id}/form', [FormController::class, 'showForm'])->name('guest.form.show');
-Route::post('/submit-form', [FormController::class, 'submit'])->name('form.submit');
+// Student Routes (Authenticated Mahasiswa)
+Route::middleware(['auth', 'role:mahasiswa', 'throttle:100,1'])->group(function () {
+    Route::get('/student/scholarships', [FormController::class, 'studentIndex'])->name('student.scholarship.index');
+    Route::get('/student/scholarships/{scholarship_id}', [FormController::class, 'studentShow'])->name('student.scholarship.show');
+    Route::get('/student/scholarships/form/{form_id}', [FormController::class, 'studentForm'])->name('student.form.show');
+});
 
-
-// Login Route
 Route::get('/login', function () {
     if (Auth::check()) {
         $user = Auth::user();
         $role = strtolower($user->role);
+        $intendedUrl = session('url.intended', route('counseling.index'));
 
-        // Redirect based on role using Inertia::location()
+        // Log the redirect attempt
+        Log::info('Login redirect attempt', [
+            'user_id' => $user->id,
+            'role' => $role,
+            'intended_url' => $intendedUrl,
+            'session_intended' => session('url.intended'),
+        ]);
+
+        // Prevent redirect loop
+        if (str_contains($intendedUrl, '/login') || $intendedUrl === url()->current()) {
+            $intendedUrl = route('counseling.index');
+        }
+
+        // Redirect based on role
         switch ($role) {
             case 'superadmin':
-                return Inertia::location(route('superadmin.dashboard'));
+                return redirect()->intended(route('superadmin.dashboard'));
             case 'kemahasiswaan':
             case 'adminbem':
             case 'adminmpm':
-                return Inertia::location(route('admin.dashboard'));
+                return redirect()->intended(route('admin.dashboard'));
             case 'mahasiswa':
-                return Inertia::location(route('counseling.index')); // Redirect mahasiswa ke halaman counseling
+                if (str_contains($intendedUrl, '/scholarships')) {
+                    $path = parse_url($intendedUrl, PHP_URL_PATH);
+                    if (preg_match('/\/scholarships\/form\/([^\/]+)/', $path, $matches)) {
+                        $redirectUrl = route('student.form.show', ['form_id' => $matches[1]]);
+                    } elseif (preg_match('/\/scholarships\/([^\/]+)/', $path, $matches)) {
+                        $redirectUrl = route('student.scholarship.show', ['scholarship_id' => $matches[1]]);
+                    } else {
+                        $redirectUrl = route('student.scholarship.index');
+                    }
+                } else {
+                    $redirectUrl = route('counseling.index');
+                }
+                Log::info('Redirecting mahasiswa', ['to' => $redirectUrl]);
+                return redirect($redirectUrl);
             default:
-                return Inertia::location('/');
+                return redirect()->intended('/');
         }
     }
+
+    // Log guest login page access
+    Log::info('Guest accessing login page', ['url' => url()->current()]);
     return Inertia::render('Auth/Login', [
         'canResetPassword' => Route::has('password.request'),
         'status' => session('status'),
     ]);
 })->middleware('guest')->name('login');
 
-// Tambahkan rute POST untuk menangani autentikasi
+// Keep the POST login route as is
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login');
 
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
+
     // Admin Routes (Kemahasiswaan, AdminBEM, AdminMPM)
     Route::prefix('admin')->name('admin.')->middleware(['role:kemahasiswaan,adminbem,adminmpm'])->group(function () {
 
@@ -225,12 +263,13 @@ Route::middleware(['auth'])->group(function () {
             Route::post('scholarship-category/{scholarship_category}/update', [ScholarshipCategoryController::class, 'update'])->name('scholarship-category.update');
             Route::post('scholarship-category/{scholarship_category}/delete', [ScholarshipCategoryController::class, 'destroy'])->name('scholarship-category.destroy');
             Route::patch('scholarship-category/{category_id}/toggle-active', [ScholarshipCategoryController::class, 'toggleActive'])->name('scholarship-category.toggle-active');
+
             // === SCHOLARSHIP ===
             Route::resource('scholarship', ScholarshipController::class)->except(['show', 'destroy', 'update']);
             Route::post('scholarship/{scholarship}/update', [ScholarshipController::class, 'update'])->name('scholarship.update');
             Route::post('scholarship/{scholarship}/delete', [ScholarshipController::class, 'destroy'])->name('scholarship.destroy');
             Route::patch('scholarship/{scholarship_id}/toggle-active', [ScholarshipController::class, 'toggleActive'])->name('scholarship.toggle-active');
-            Route::get('/scholarship/pdf', [ScholarshipController::class, 'exportPDF'])->name('scholarship.pdf');
+
 
             // Rute untuk Organization Admins menggunakan ApiProxyController
             Route::get('/organization-admins', [ApiProxyController::class, 'showStudents'])->name('organization-admins.index');
