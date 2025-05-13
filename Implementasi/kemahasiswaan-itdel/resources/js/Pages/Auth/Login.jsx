@@ -1,7 +1,7 @@
 import InputError from '@/Components/InputError';
 import TextInput from '@/Components/TextInput';
 import { Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Login({ status, error, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -11,9 +11,32 @@ export default function Login({ status, error, canResetPassword }) {
     });
 
     const [showPassword, setShowPassword] = useState(false);
+    const [clientErrors, setClientErrors] = useState({});
+
+    useEffect(() => {
+        // Reset client errors when data changes to avoid stale errors
+        setClientErrors({});
+    }, [data.username, data.password]);
 
     const submit = (e) => {
         e.preventDefault();
+
+        // Client-side validation
+        const newErrors = {};
+        if (!data.username.trim()) newErrors.username = 'Username wajib diisi.';
+        if (!data.password.trim()) newErrors.password = 'Password wajib diisi.';
+
+        if (Object.keys(newErrors).length > 0) {
+            setClientErrors(newErrors);
+            if (newErrors.username) {
+                document.getElementById('username').focus();
+            } else if (newErrors.password) {
+                document.getElementById('password').focus();
+            }
+            return;
+        }
+
+        setClientErrors({});
         post(route('login'), {
             onSuccess: () => {
                 reset('password');
@@ -91,7 +114,7 @@ export default function Login({ status, error, canResetPassword }) {
                                     name="username"
                                     value={data.username}
                                     className={`peer block h-[70px] w-full rounded-lg border bg-transparent px-4 pt-6 text-lg transition-colors ${
-                                        errors.username
+                                        (errors.username || clientErrors.username)
                                             ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                             : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500'
                                     }`}
@@ -105,7 +128,7 @@ export default function Login({ status, error, canResetPassword }) {
                                 >
                                     Username
                                 </label>
-                                <InputError message={errors.username} className="mt-1 text-xs" />
+                                <InputError message={errors.username || clientErrors.username} className="mt-1 text-xs" />
                             </div>
 
                             <div className="relative">
@@ -116,7 +139,7 @@ export default function Login({ status, error, canResetPassword }) {
                                         name="password"
                                         value={data.password}
                                         className={`peer block h-[70px] w-full rounded-lg border bg-transparent px-4 pt-6 text-lg transition-colors ${
-                                            errors.password
+                                            (errors.password || clientErrors.password)
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                 : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500'
                                         }`}
@@ -174,7 +197,7 @@ export default function Login({ status, error, canResetPassword }) {
                                         </svg>
                                     </button>
                                 </div>
-                                <InputError message={errors.password} className="mt-1 text-xs" />
+                                <InputError message={errors.password || clientErrors.password} className="mt-1 text-xs" />
                             </div>
 
                             <div className="flex items-center">
@@ -231,7 +254,7 @@ export default function Login({ status, error, canResetPassword }) {
 
                         <div className="mt-6 text-center">
                             <p className="text-sm font-medium text-gray-500">
-                                Portal Sistem Kemahasiswaan IT DEL &copy; {new Date().getFullYear()}
+                                Portal Sistem Kemahasiswaan IT DEL © {new Date().getFullYear()}
                             </p>
                         </div>
                     </div>

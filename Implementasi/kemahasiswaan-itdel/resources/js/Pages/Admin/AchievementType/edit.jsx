@@ -6,7 +6,7 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
     const { flash } = usePage().props ?? {};
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [data, setData] = useState({
-        type_name: achievementType.type_name,
+        type_name: achievementType.type_name || '',
         description: achievementType.description || '',
     });
     const [errors, setErrors] = useState({});
@@ -14,7 +14,6 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
 
     // Handle flash messages and notification state
     useEffect(() => {
-        console.log('Flash props:', flash); // Debugging
         if (flash) {
             if (flash.success) {
                 setNotification({
@@ -47,6 +46,7 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
         // Client-side validation
         const newErrors = {};
         if (!data.type_name.trim()) newErrors.type_name = 'Nama jenis prestasi wajib diisi.';
+        if (!data.description.trim()) newErrors.description = 'Deskripsi wajib diisi.';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -55,9 +55,9 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
         }
 
         router.post(route('admin.achievement-type.update', achievementType.type_id), data, {
-            onStart: () => console.log('Submission started'), // Debugging
+            onStart: () => console.log('Submission started'),
             onSuccess: (page) => {
-                console.log('Submission success, page:', page.props.flash); // Debugging
+                console.log('Submission success, page:', page.props.flash);
                 setErrors({});
                 setIsSubmitting(false);
                 setNotification({
@@ -65,9 +65,12 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
                     type: 'success',
                     message: page.props.flash?.success || 'Jenis prestasi berhasil diperbarui!',
                 });
+                setTimeout(() => {
+                    router.visit(route('admin.achievement-type.index'));
+                }, 1500);
             },
             onError: (errors) => {
-                console.log('Submission error, errors:', errors); // Debugging
+                console.log('Submission error, errors:', errors);
                 setErrors(errors);
                 setIsSubmitting(false);
                 setNotification({
@@ -76,7 +79,7 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
                     message: errors.error || 'Gagal memperbarui jenis prestasi. Periksa input Anda.',
                 });
             },
-            onFinish: () => console.log('Submission finished'), // Debugging
+            onFinish: () => console.log('Submission finished'),
             preserveScroll: true,
         });
     };
@@ -193,7 +196,9 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
                         </div>
 
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Deskripsi</label>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Deskripsi <span className="text-red-500">*</span>
+                            </label>
                             <textarea
                                 value={data.description}
                                 onChange={(e) => setData((prev) => ({ ...prev, description: e.target.value }))}
@@ -203,7 +208,7 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
                                         : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
                                 }`}
                                 rows="4"
-                                placeholder="Masukkan deskripsi (opsional)"
+                                placeholder="Masukkan deskripsi"
                             />
                             {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
                         </div>
@@ -234,24 +239,22 @@ export default function Edit({ auth, userRole, permissions, menu, achievementTyp
                 </div>
             </div>
 
-            {/* Animation Styles */}
-            <style>
-                {`
-                    @keyframes slide-in-right {
-                        0% {
-                            transform: translateX(100%);
-                            opacity: 0;
-                        }
-                        100% {
-                            transform: translateX(0);
-                            opacity: 1;
-                        }
+            <style jsx>{`
+                @keyframes slide-in-right {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
                     }
-                    .animate-slide-in-right {
-                        animation: slide-in-right 0.5s ease-out forwards;
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
                     }
-                `}
-            </style>
+                }
+
+                .animate-slide-in-right {
+                    animation: slide-in-right 0.5s ease-out;
+                }
+            `}</style>
         </AdminLayout>
     );
 }
