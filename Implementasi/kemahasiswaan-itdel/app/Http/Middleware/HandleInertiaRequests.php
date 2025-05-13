@@ -5,48 +5,44 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that is loaded on the first page visit.
-     *
-     * @var string
-     */
-    protected $rootView = 'app';
-
-    /**
-     * Determine the current asset version.
-     */
-    public function version(Request $request): ?string
+    public function share(Request $request): array
     {
-        return parent::version($request);
-    }
+        $user = $request->user();
+        $token = null;
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @return array<string, mixed>
-     */
-    public function share(Request $request)
-    {
+        if ($user) {
+            // Check for an existing token or create a new one
+            $existingToken = $user->tokens()->where('name', 'api')->first();
+            if ($existingToken) {
+                $token = $existingToken->plainTextToken;
+            } else {
+                $token = $user->createToken('api')->plainTextToken;
+            }
+        }
+
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => Auth::check() ? [
-                    'id' => Auth::user()->id,
-                    'name' => Auth::user()->name,
-                    'role' => Auth::user()->role, // Kirim role ke frontend
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'nim' => $user->nim,
+                    'role' => $user->role,
+                    'token' => $token, // Include Sanctum token
+                    'asrama' => $user->asrama,
+                    'prodi' => $user->prodi,
+                    'fakultas' => $user->fakultas,
+                    'angkatan' => $user->angkatan,
+                    'email' => $user->email,
                 ] : null,
             ],
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
             ],
-            'errors' => function () {
-            return session()->get('errors')
-                ? session()->get('errors')->getBag('default')->getMessages()
-                : (object) [];
-        },
         ]);
     }
 }

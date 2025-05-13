@@ -1,543 +1,612 @@
+import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
-import { useState, useEffect, useCallback } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import axios from 'axios';
-import debounce from 'lodash/debounce';
 
-export default function ScholarshipForm() {
-    const { form, scholarship, submission, auth = {}, userRole, flash } = usePage().props;
-    const isMahasiswa = userRole === 'mahasiswa';
-    const isAuthenticated = !!auth?.user;
-    const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-    const [formData, setFormData] = useState(() => {
-        const initialData = {};
-        form?.sections?.forEach((section, sectionIndex) => {
-            section.fields.forEach((field, fieldIndex) => {
-                const fieldKey = `sections.${sectionIndex}.fields.${fieldIndex}`;
-                initialData[fieldKey] = field.field_type === 'file' ? null : '';
-            });
-        });
-        if (submission?.data && form?.allow_edit) {
-            Object.keys(submission.data).forEach((key) => {
-                initialData[key] = submission.data[key];
-            });
-        }
-        return initialData;
+// Add Axios interceptor for debugging
+axios.interceptors.request.use((config) => {
+    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+        const [name, value] = cookie.split('=');
+        acc[name] = value;
+        return acc;
+    }, {});
+    console.log('Axios Request:', {
+        url: config.url,
+        method: config.method,
+        headers: config.headers,
+        cookies: cookies,
+        withCredentials: config.withCredentials,
     });
-    const [imagePreviews, setImagePreviews] = useState({});
+    return config;
+});
+
+export default function ScholarshipForm({ auth, form, scholarship, submission, flash: initialFlash, errors: serverErrors }) {
+    const { props } = usePage();
+    const isAuthenticated = !!auth.user;
+    const isMahasiswa = auth.user && auth.user.role?.toLowerCase() === 'mahasiswa';
+
+    // Initialize form data from submission (if exists) or empty
+    const initialFormData = submission?.data || {};
+    const [formData, setFormData] = useState(initialFormData);
     const [errors, setErrors] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
-    const [hasSubmitted, setHasSubmitted] = useState(!!submission);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showError, setShowError] = useState(false);
+    const [flash, setFlash] = useState(initialFlash || {});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Debounced function to check submission status
-    const checkSubmissionStatus = useCallback(
-        debounce(async () => {
-            if (isMahasiswa && form?.form_id && isAuthenticated && !submission) {
-                setIsLoading(true);
-                try {
-                    const response = await axios.get(`/api/forms/submissions?form_id=${form.form_id}`, {
-                        headers: {
-                            Authorization: `Bearer ${auth?.user?.token || ''}`,
-                        },
-                    });
-                    const submissions = response.data.submissions || [];
-                    setHasSubmitted(submissions.some((s) => s.form_id === form.form_id));
-                } catch (err) {
-                    setErrors({ api: 'Gagal memuat status pengiriman formulir' });
-                    console.error('Error fetching submissions:', err);
-                } finally {
-                    setIsLoading(false);
-                }
-            }
-        }, 500),
-        [isMahasiswa, form?.form_id, isAuthenticated, auth?.user?.token, submission]
-    );
-
-    // Check submission status only once on mount
+    // Handle flash messages and server errors
     useEffect(() => {
-        checkSubmissionStatus();
-        return () => checkSubmissionStatus.cancel(); // Cleanup debounce on unmount
-    }, [checkSubmissionStatus]);
+        const flashFromProps = props.flash || {};
+        setFlash(flashFromProps);
 
-    // Handle flash messages
-    useEffect(() => {
-        if (flash?.success) {
+        if (flashFromProps?.success) {
             setShowSuccess(true);
+            setErrors({});
             setTimeout(() => setShowSuccess(false), 3000);
         }
-        if (flash?.error || errors.api) {
+
+        if (flashFromProps?.error || serverErrors?.general || serverErrors?.auth) {
             setShowError(true);
             setTimeout(() => setShowError(false), 3000);
         }
-    }, [flash, errors.api]);
+    }, [props.flash, serverErrors]);
 
-    // Format date
-    const formatDate = (dateString) => {
-        if (!dateString || dateString === '-') return '-';
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-        });
+    // Handle form input changes
+    const handleChange = (e, fieldKey) => {
+        const { name, value, type, files } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: type === 'file' ? files[0] : value,
+        }));
+        setErrors((prev) => ({
+            ...prev,
+            [fieldKey]: '',
+        }));
     };
 
-    // Handle field input change
-    const handleFieldChange = (fieldKey, value, field) => {
-        setFormData((prev) => ({ ...prev, [fieldKey]: value }));
-        if (field?.is_required && !value) {
-            setErrors((prev) => ({
-                ...prev,
-                [fieldKey]: 'Kolom ini wajib diisi.',
-            }));
-        } else {
-            setErrors((prev) => {
-                const newErrors = { ...prev };
-                delete newErrors[fieldKey];
-                return newErrors;
-            });
-        }
-    };
-
-    // Handle file input change
-    const handleFileChange = (fieldKey, file, field) => {
-        if (file) {
-            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
-            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-            if (file.size > maxSizeInBytes) {
-                setErrors((prev) => ({
-                    ...prev,
-                    [fieldKey]: 'Ukuran file terlalu besar. Maksimal 2MB.',
-                }));
-                return;
-            }
-            if (!allowedTypes.includes(file.type)) {
-                setErrors((prev) => ({
-                    ...prev,
-                    [fieldKey]: 'File harus berupa PDF, JPG, atau PNG.',
-                }));
-                return;
-            }
-            setFormData((prev) => ({ ...prev, [fieldKey]: file }));
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    setImagePreviews((prev) => ({ ...prev, [fieldKey]: reader.result }));
-                };
-                reader.readAsDataURL(file);
-            } else {
-                setImagePreviews((prev) => {
-                    const newPreviews = { ...prev };
-                    delete newPreviews[fieldKey];
-                    return newPreviews;
-                });
-            }
-            if (field.is_required) {
-                setErrors((prev) => {
-                    const newErrors = { ...prev };
-                    delete newErrors[fieldKey];
-                    return newErrors;
-                });
-            }
-        }
-    };
-
-    // Handle Quill editor change
-    const handleQuillChange = (fieldKey, value, field) => {
-        setFormData((prev) => ({ ...prev, [fieldKey]: value }));
-        if (field.is_required && (!value || value === '<p><br></p>')) {
-            setErrors((prev) => ({
-                ...prev,
-                [fieldKey]: 'Kolom ini wajib diisi.',
-            }));
-        } else {
-            setErrors((prev) => {
-                const newErrors = { ...prev };
-                delete newErrors[fieldKey];
-                return newErrors;
-            });
-        }
-    };
-
-    // Validate form before submission
-    const validateForm = () => {
-        const newErrors = {};
-        form.sections.forEach((section, sectionIndex) => {
-            section.fields.forEach((field, fieldIndex) => {
-                const fieldKey = `sections.${sectionIndex}.fields.${fieldIndex}`;
-                const value = formData[fieldKey];
-                if (field.is_required) {
-                    if (!value || (field.field_type === 'quill' && value === '<p><br></p>')) {
-                        newErrors[fieldKey] = 'Kolom ini wajib diisi.';
-                    }
-                    if (field.field_type === 'file' && !value && !submission?.data?.[fieldKey]) {
-                        newErrors[fieldKey] = 'File wajib diunggah.';
-                    }
-                }
-            });
-        });
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    // Handle form submission or update
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validateForm()) {
-            setShowError(true);
-            setTimeout(() => setShowError(false), 3000);
-            return;
-        }
-
-        setIsLoading(true);
-        const formPayload = new FormData();
-        formPayload.append('form_id', form.form_id);
-        formPayload.append('scholarship_id', scholarship.scholarship_id);
-
-        const data = {};
-        Object.keys(formData).forEach((key) => {
-            if (formData[key] instanceof File) {
-                formPayload.append(`data[${key}]`, formData[key]);
-            } else {
-                data[key] = formData[key];
-            }
+    e.preventDefault();
+    if (!isMahasiswa || !auth.user?.token) {
+        console.error('Submission blocked: Not mahasiswa or missing token', {
+            isMahasiswa,
+            hasToken: !!auth.user?.token,
         });
-        formPayload.append('data', JSON.stringify(data));
+        setErrors({ general: 'Anda harus login sebagai mahasiswa untuk mengirim formulir.' });
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+        return;
+    }
 
-        try {
-            const url = submission && form.allow_edit
-                ? `/api/forms/submissions/${submission.submission_id}`
-                : '/api/forms/submissions';
-            const method = submission && form.allow_edit ? 'put' : 'post';
+    setIsSubmitting(true);
+    const submissionData = new FormData();
+    submissionData.append('form_id', form.form_id);
+    submissionData.append('scholarship_id', scholarship.scholarship_id);
 
-            const response = await axios({
-                method,
-                url,
-                data: formPayload,
-                headers: {
-                    Authorization: `Bearer ${auth.user.token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            setShowSuccess(true);
-            setHasSubmitted(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-                router.visit(`/student/scholarships/${scholarship.scholarship_id}`);
-            }, 2000);
-        } catch (error) {
-            setIsLoading(false);
-            const errorMessage = error.response?.data?.message || 'Gagal mengirim formulir';
-            const fieldErrors = error.response?.data?.errors || {};
-            setErrors({ api: errorMessage, ...fieldErrors });
-            setShowError(true);
-            setTimeout(() => setShowError(false), 3000);
-            console.error('Submission error:', error);
+    Object.entries(formData).forEach(([key, value]) => {
+        if (value instanceof File) {
+            submissionData.append(`data[${key}]`, value);
+        } else {
+            submissionData.append(`data[${key}]`, value || '');
         }
-    };
+    });
+
+    try {
+        // Fetch CSRF token
+        console.log('Fetching CSRF token...');
+        await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
+
+        console.log('Submitting form data...', {
+            form_id: form.form_id,
+            scholarship_id: scholarship.scholarship_id,
+        });
+        const response = await axios.post('/api/forms/submissions', submissionData, {
+            headers: {
+                'Authorization': `Bearer ${auth.user.token}`, // Add Sanctum token
+                'Content-Type': 'multipart/form-data',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            withCredentials: true,
+        });
+
+        console.log('Submission response:', response.data);
+        setFlash({ success: response.data.message });
+        setShowSuccess(true);
+        setErrors({});
+        setFormData({});
+        setTimeout(() => {
+            setShowSuccess(false);
+            router.visit(`/scholarships/${scholarship.scholarship_id}`);
+        }, 2000);
+    } catch (error) {
+        console.error('Submission error:', {
+            status: error.response?.status,
+            message: error.response?.data?.message,
+            errors: error.response?.data?.errors,
+            fullResponse: error.response?.data,
+        });
+        const errorMessage = error.response?.data?.message || 'Gagal mengirim formulir. Silakan coba lagi.';
+        const errorDetails = error.response?.data?.errors || {};
+        setErrors({ ...errorDetails, general: errorMessage });
+        setFlash({ error: errorMessage });
+        setShowError(true);
+        setTimeout(() => setShowError(false), 3000);
+    } finally {
+        setIsSubmitting(false);
+    }
+};
 
     // Handle logout
     const handleLogout = () => {
-        router.post('/logout');
+        router.post(route('logout'), {}, {
+            onSuccess: () => {
+                router.get(route('scholarships.index'));
+            },
+        });
     };
 
     // Render field based on type
-    const renderField = (field, sectionIndex, fieldIndex) => {
-        const fieldKey = `sections.${sectionIndex}.fields.${fieldIndex}`;
-        const isRequired = field.is_required ? <span className="text-red-500 ml-1">*</span> : null;
-        const isDisabled = hasSubmitted && !form?.allow_edit;
+   const renderField = (field, sectionIndex, fieldIndex) => {
+    const fieldKey = `sections.${sectionIndex}.fields.${fieldIndex}`;
+    const error = errors[fieldKey]; // Only field-specific errors
 
-        switch (field.field_type) {
-            case 'text':
-                return (
-                    <div>
-                        <input
-                            type="text"
-                            value={formData[fieldKey] || ''}
-                            onChange={(e) => handleFieldChange(fieldKey, e.target.value, field)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                errors[fieldKey] ? 'border-red-500' : 'border-gray-200'
-                            } bg-gray-50 disabled:bg-gray-100`}
-                            placeholder="Masukkan teks"
-                            disabled={isDisabled}
-                        />
-                        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
-                    </div>
-                );
-            case 'number':
-                return (
-                    <div>
-                        <input
-                            type="number"
-                            value={formData[fieldKey] || ''}
-                            onChange={(e) => handleFieldChange(fieldKey, e.target.value, field)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                errors[fieldKey] ? 'border-red-500' : 'border-gray-200'
-                            } bg-gray-50 disabled:bg-gray-100`}
-                            placeholder="Masukkan angka"
-                            disabled={isDisabled}
-                        />
-                        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
-                    </div>
-                );
-            case 'date':
-                return (
-                    <div>
-                        <input
-                            type="date"
-                            value={formData[fieldKey] || ''}
-                            onChange={(e) => handleFieldChange(fieldKey, e.target.value, field)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                errors[fieldKey] ? 'border-red-500' : 'border-gray-200'
-                            } bg-gray-50 disabled:bg-gray-100`}
-                            disabled={isDisabled}
-                        />
-                        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
-                    </div>
-                );
-            case 'dropdown':
-                return (
-                    <div>
-                        <select
-                            value={formData[fieldKey] || ''}
-                            onChange={(e) => handleFieldChange(fieldKey, e.target.value, field)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                errors[fieldKey] ? 'border-red-500' : 'border-gray-200'
-                            } bg-gray-50 disabled:bg-gray-100`}
-                            disabled={isDisabled}
-                        >
-                            <option value="">Pilih opsi</option>
-                            {field.options &&
-                                field.options.map((option, index) => (
-                                    <option key={`${fieldKey}.option.${index}`} value={option}>
-                                        {option}
-                                    </option>
-                                ))}
-                        </select>
-                        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
-                    </div>
-                );
-            case 'file':
-                return (
-                    <div>
-                        {submission?.data?.[fieldKey] && (
-                            <div className="mb-2">
-                                <p>File sebelumnya: <a href={submission.data[fieldKey]} target="_blank" className="text-blue-500 underline">Lihat file</a></p>
-                            </div>
-                        )}
-                        <input
-                            type="file"
-                            onChange={(e) => handleFileChange(fieldKey, e.target.files[0], field)}
-                            accept=".pdf,.jpg,.png"
-                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                errors[fieldKey] ? 'border-red-500' : 'border-gray-200'
-                            } bg-gray-50 disabled:bg-gray-100`}
-                            disabled={isDisabled}
-                        />
-                        {imagePreviews[fieldKey] && (
-                            <img src={imagePreviews[fieldKey]} alt="Preview" className="mt-2 max-w-xs" />
-                        )}
-                        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
-                    </div>
-                );
-            case 'quill':
-                return (
-                    <div>
-                        <ReactQuill
-                            value={formData[fieldKey] || ''}
-                            onChange={(value) => handleQuillChange(fieldKey, value, field)}
-                            className={`border rounded-lg ${errors[fieldKey] ? 'border-red-500' : 'border-gray-200'}`}
-                            readOnly={isDisabled}
-                            modules={{
-                                toolbar: [
-                                    [{ header: [1, 2, false] }],
-                                    ['bold', 'italic', 'underline'],
-                                    ['link'],
-                                    [{ list: 'ordered' }, { list: 'bullet' }],
-                                    ['clean'],
-                                ],
-                            }}
-                        />
-                        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
+    switch (field.field_type) {
+        case 'text':
+        case 'number':
+        case 'date':
+            return (
+                <div className="form-group">
+                    <label htmlFor={fieldKey}>
+                        {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                    </label>
+                    <input
+                        type={field.field_type}
+                        id={fieldKey}
+                        name={fieldKey}
+                        value={formData[fieldKey] || ''}
+                        onChange={(e) => handleChange(e, fieldKey)}
+                        required={field.is_required}
+                        className="w-full"
+                    />
+                    {error && <span className="error">{error}</span>}
+                </div>
+            );
+        case 'quill':
+            return (
+                <div className="form-group">
+                    <label htmlFor={fieldKey}>
+                        {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                    </label>
+                    <textarea
+                        id={fieldKey}
+                        name={fieldKey}
+                        value={formData[fieldKey] || ''}
+                        onChange={(e) => handleChange(e, fieldKey)}
+                        required={field.is_required}
+                        className="w-full"
+                        rows="6"
+                    />
+                    {error && <span className="error">{error}</span>}
+                </div>
+            );
+        case 'dropdown':
+            return (
+                <div className="form-group">
+                    <label htmlFor={fieldKey}>
+                        {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                    </label>
+                    <select
+                        id={fieldKey}
+                        name={fieldKey}
+                        value={formData[fieldKey] || ''}
+                        onChange={(e) => handleChange(e, fieldKey)}
+                        required={field.is_required}
+                        className="w-full"
+                    >
+                        <option value="">Pilih opsi</option>
+                        {field.options?.map((option, index) => (
+                            <option key={index} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
+                    {error && <span className="error">{error}</span>}
+                </div>
+            );
+        case 'file':
+            return (
+                <div className="form-group">
+                    <label htmlFor={fieldKey}>
+                        {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                    </label>
+                    <input
+                        type="file"
+                        id={fieldKey}
+                        name={fieldKey}
+                        onChange={(e) => handleChange(e, fieldKey)}
+                        required={field.is_required && !formData[fieldKey]}
+                        accept=".pdf,.jpeg,.png"
+                        className="w-full"
+                    />
+                    {formData[fieldKey] instanceof File && (
+                        <p className="text-sm text-gray-600">File: {formData[fieldKey].name}</p>
+                    )}
+                    {error && <span className="error">{error}</span>}
+                </div>
+            );
+        default:
+            return null;
+    }
+};
 
-    // Navigate to next section
-    const handleNextSection = () => {
-        if (currentSectionIndex < form.sections.length - 1) {
-            setCurrentSectionIndex(currentSectionIndex + 1);
-        }
-    };
-
-    // Navigate to previous section
-    const handlePreviousSection = () => {
-        if (currentSectionIndex > 0) {
-            setCurrentSectionIndex(currentSectionIndex - 1);
-        }
-    };
+    // Get the current URL for the intended redirect
+    const currentUrl = window.location.pathname + window.location.search;
 
     return (
         <GuestLayout>
-            <Head title={form?.form_name || 'Formulir Beasiswa'} />
-            <NavbarGuestLayoutPage />
+            <Navbar />
+            <Head title={form.form_name || 'Formulir Beasiswa'} />
 
-            <div className="min-h-screen bg-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    {/* User Info and Logout */}
-                    {isAuthenticated && (
-                        <div className="flex justify-between items-center mb-6">
+            <style>
+                {`
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-family: 'Inter', Arial, sans-serif;
+                        background: #f0f9ff;
+                        color: #1e293b;
+                    }
+                    .main-container {
+                        min-height: 100vh;
+                        padding: 40px 20px 80px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+                        width: 100%;
+                    }
+                    .content-section {
+                        max-width: 1400px;
+                        width: 100%;
+                        background: #ffffff;
+                        border-radius: 20px;
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+                        padding: 40px;
+                        margin-bottom: 40px;
+                        transition: all 0.3s ease;
+                        animation: fadeIn 0.5s ease;
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .form-section h2 {
+                        font-size: 28px;
+                        font-weight: 700;
+                        color: #0369a1;
+                        text-align: center;
+                        margin-bottom: 20px;
+                        position: relative;
+                        display: block;
+                        width: 100%;
+                    }
+                    .form-section h2:after {
+                        content: '';
+                        position: absolute;
+                        bottom: -10px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 80px;
+                        height: 4px;
+                        background: linear-gradient(90deg, #0ea5e9, #0284c7);
+                        border-radius: 2px;
+                    }
+                    .form-section .subheader {
+                        text-align: center;
+                        color: #64748b;
+                        font-size: 16px;
+                        margin-bottom: 30px;
+                    }
+                    .auth-message {
+                        text-align: center;
+                        background: #f0f9ff;
+                        padding: 20px;
+                        border-radius: 14px;
+                        margin-bottom: 30px;
+                    }
+                    .auth-message p {
+                        font-size: 16px;
+                        color: #475569;
+                        margin-bottom: 10px;
+                    }
+                    .auth-message .auth-name {
+                        font-weight: 600;
+                        color: #0284c7;
+                    }
+                    .auth-message .button-group {
+                        display: flex;
+                        justify-content: center;
+                        gap: 15px;
+                        margin-top: 15px;
+                    }
+                    .login-link, .logout-button {
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 12px 24px;
+                        background: #0ea5e9;
+                        color: #ffffff;
+                        border-radius: 10px;
+                        text-decoration: none;
+                        font-size: 16px;
+                        font-weight: 600;
+                        transition: all 0.3s ease;
+                        border: none;
+                        cursor: pointer;
+                    }
+                    .logout-button {
+                        background: #ef4444;
+                    }
+                    .login-link:hover, .logout-button:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 6px 15px rgba(14, 165, 233, 0.2);
+                    }
+                    .logout-button:hover {
+                        box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2);
+                    }
+                    .login-link img, .logout-button img {
+                        margin-right: 8px;
+                        width: 20px;
+                        height: 20px;
+                    }
+                    .form-grid {
+                        display: grid;
+                        grid-template-columns: 1fr;
+                        gap: 25px;
+                        width: 100%;
+                        max-width: 800px;
+                        margin: 0 auto;
+                    }
+                    .form-group {
+                        width: 100%;
+                    }
+                    .form-group label {
+                        font-weight: 600;
+                        color: #334155;
+                        display: block;
+                        margin-bottom: 10px;
+                        font-size: 16px;
+                    }
+                    .form-group input, .form-group select, .form-group textarea {
+                        border: 2px solid #e2e8f0;
+                        border-radius: 12px;
+                        padding: 14px;
+                        width: 100%;
+                        box-sizing: border-box;
+                        font-size: 16px;
+                        color: #334155;
+                        transition: all 0.3s ease;
+                        background: #f8fafc;
+                    }
+                    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+                        border-color: #0ea5e9;
+                        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+                        outline: none;
+                        background: #ffffff;
+                    }
+                    .form-group textarea {
+                        resize: vertical;
+                        min-height: 150px;
+                    }
+                    .form-group .error {
+                        color: #ef4444;
+                        font-size: 14px;
+                        margin-top: 6px;
+                        display: block;
+                    }
+                    .submit-button {
+                        background: linear-gradient(to right, #0ea5e9, #0284c7);
+                        color: #ffffff;
+                        padding: 14px 28px;
+                        border: none;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 10px;
+                        min-width: 220px;
+                        transition: all 0.3s ease;
+                        margin: 30px auto 0;
+                    }
+                    .submit-button:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+                    }
+                    .submit-button:disabled {
+                        background: #cbd5e1;
+                        cursor: not-allowed;
+                        transform: none;
+                        box-shadow: none;
+                    }
+                    .success-toast {
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #16a34a;
+                        color: #ffffff;
+                        padding: 16px 24px;
+                        border-radius: 12px;
+                        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        animation: toastFadeInOut 3s ease-in-out;
+                        z-index: 1000;
+                        font-size: 16px;
+                        font-weight: 500;
+                    }
+                    .error-toast {
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #ef4444;
+                        color: #ffffff;
+                        padding: 16px 24px;
+                        border-radius: 12px;
+                        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        animation: toastFadeInOut 3s ease-in-out;
+                        z-index: 1000;
+                        font-size: 16px;
+                        font-weight: 500;
+                    }
+                    @keyframes toastFadeInOut {
+                        0% { opacity: 0; transform: translateX(20px); }
+                        10% { opacity: 1; transform: translateX(0); }
+                        90% { opacity: 1; transform: translateX(0); }
+                        100% { opacity: 0; transform: translateX(20px); }
+                    }
+                    @media (max-width: 768px) {
+                        .main-container {
+                            padding: 30px 15px;
+                        }
+                        .content-section {
+                            padding: 20px;
+                        }
+                        .form-section h2 {
+                            font-size: 24px;
+                        }
+                        .form-grid {
+                            gap: 15px;
+                        }
+                        .form-group label {
+                            font-size: 14px;
+                        }
+                        .form-group input, .form-group select, .form-group textarea {
+                            padding: 12px;
+                            font-size: 14px;
+                        }
+                        .submit-button {
+                            min-width: 100%;
+                            padding: 12px 20px;
+                            font-size: 14px;
+                        }
+                    }
+                `}
+            </style>
+
+            <div className="main-container">
+                <div className="content-section form-section">
+                    <h2>Formulir Pengajuan Beasiswa</h2>
+                    <p className="subheader">
+                        Silakan isi formulir berikut dengan lengkap dan benar. Pastikan semua dokumen yang diperlukan telah diunggah.
+                    </p>
+                    <div className="auth-message">
+                        {isMahasiswa ? (
                             <div>
-                                <p className="text-lg font-semibold">Selamat datang, {auth.user.name}</p>
-                                <p className="text-sm text-gray-600">NIM: {auth.user.nim}</p>
-                            </div>
-                            <button
-                                onClick={handleLogout}
-                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
-                            >
-                                Logout
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Login Prompt for Guests */}
-                    {!isAuthenticated && (
-                        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
-                            <p className="text-yellow-700">
-                                Anda harus{' '}
-                                <Link href="/login" className="underline font-semibold">
-                                    login
-                                </Link>{' '}
-                                sebagai mahasiswa untuk mengisi formulir ini.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Scholarship and Form Info */}
-                    <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-                        <h1 className="text-2xl font-bold mb-2">{scholarship.name}</h1>
-                        <h2 className="text-xl font-semibold mb-4">{form.form_name}</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-gray-600">
-                                    <span className="font-medium">Tanggal Mulai:</span>{' '}
-                                    {formatDate(form.start_date)}
+                                <p>
+                                    Anda login sebagai: <span className="auth-name">{auth.user.name}</span> (NIM: {auth.user.nim})
                                 </p>
-                                <p className="text-gray-600">
-                                    <span className="font-medium">Tanggal Berakhir:</span>{' '}
-                                    {formatDate(form.close_date)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-gray-600">
-                                    <span className="font-medium">Status Pengisian:</span>{' '}
-                                    {form.accept_responses ? 'Menerima Tanggapan' : 'Ditutup'}
-                                </p>
-                                <p className="text-gray-600">
-                                    <span className="font-medium">Edit Diizinkan:</span>{' '}
-                                    {form.allow_edit ? 'Ya' : 'Tidak'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Form Rendering */}
-                    {isAuthenticated && isMahasiswa && form.accept_responses && (
-                        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6">
-                            {/* Section Navigation */}
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-semibold">
-                                    {form.sections[currentSectionIndex].title || `Bagian ${currentSectionIndex + 1}`}
-                                </h3>
-                                <div className="flex space-x-2">
-                                    <button
-                                        type="button"
-                                        onClick={handlePreviousSection}
-                                        disabled={currentSectionIndex === 0}
-                                        className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
-                                    >
-                                        Sebelumnya
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleNextSection}
-                                        disabled={currentSectionIndex === form.sections.length - 1}
-                                        className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
-                                    >
-                                        Selanjutnya
+                                <div className="button-group">
+                                    <button onClick={handleLogout} className="logout-button">
+                                        <img
+                                            src="https://img.icons8.com/ios-filled/50/ffffff/logout-rounded-left.png"
+                                            width="20"
+                                            height="20"
+                                            alt="Logout Icon"
+                                        />
+                                        Logout
                                     </button>
                                 </div>
                             </div>
-
-                            {/* Form Fields */}
-                            <div className="space-y-6">
-                                {form.sections[currentSectionIndex].fields.map((field, fieldIndex) => (
-                                    <div key={`field-${field.field_id}`} className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            {field.field_name}
-                                            {field.is_required && <span className="text-red-500 ml-1">*</span>}
-                                        </label>
-                                        {renderField(field, currentSectionIndex, fieldIndex)}
+                        ) : (
+                            <div>
+                                <p>
+                                    Untuk menampilkan dan mengisi formulir ini anda harus terlebih dahulu login.
+                                </p>
+                                <div className="button-group">
+                                    <Link
+                                        href={`${route('login')}?intended=${encodeURIComponent(currentUrl)}`}
+                                        className="login-link"
+                                    >
+                                        <img
+                                            src="https://img.icons8.com/ios-filled/50/ffffff/login-rounded-right.png"
+                                            width="20"
+                                            height="20"
+                                            alt="Login Icon"
+                                        />
+                                        Login Sekarang
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    {isMahasiswa && form.accept_responses ? (
+                        <form onSubmit={handleSubmit} encType="multipart/form-data">
+                            <div className="form-grid">
+                                {form.sections.map((section, sectionIndex) => (
+                                    <div key={sectionIndex} className="section">
+                                        {section.title && (
+                                            <h3 className="text-xl font-semibold text-gray-800 mb-4">{section.title}</h3>
+                                        )}
+                                        {section.fields.map((field, fieldIndex) => (
+                                            <div key={field.field_id}>
+                                                {renderField(field, sectionIndex, fieldIndex)}
+                                            </div>
+                                        ))}
                                     </div>
                                 ))}
                             </div>
-
-                            {/* Submit Button */}
-                            {currentSectionIndex === form.sections.length - 1 && (
-                                <div className="mt-6 flex justify-end">
-                                    <button
-                                        type="submit"
-                                        disabled={isLoading || (hasSubmitted && !form.allow_edit)}
-                                        className={`px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition ${
-                                            isLoading || (hasSubmitted && !form.allow_edit)
-                                                ? 'opacity-50 cursor-not-allowed'
-                                                : ''
-                                        }`}
-                                    >
-                                        {isLoading
-                                            ? 'Mengirim...'
-                                            : submission && form.allow_edit
-                                            ? 'Perbarui Pengajuan'
-                                            : 'Kirim Pengajuan'}
-                                    </button>
-                                </div>
-                            )}
+                            <button
+                                type="submit"
+                                disabled={!isMahasiswa || !form.accept_responses || isSubmitting}
+                                className="submit-button"
+                            >
+                                <img
+                                    src="https://img.icons8.com/ios-filled/50/ffffff/checkmark.png"
+                                    width="20"
+                                    height="20"
+                                    alt="Checkmark Icon"
+                                />
+                                {isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
+                            </button>
                         </form>
-                    )}
-
-                    {/* Submission Status */}
-                    {isAuthenticated && isMahasiswa && hasSubmitted && !form.accept_responses && (
-                        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mt-6">
-                            <p className="text-yellow-700">
-                                Anda telah mengirimkan formulir ini, tetapi pengisian saat ini ditutup.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Success Notification */}
-                    {showSuccess && (
-                        <div className="fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg">
-                            Pengajuan berhasil {submission && form.allow_edit ? 'diperbarui' : 'dikirim'}!
-                        </div>
-                    )}
-
-                    {/* Error Notification */}
-                    {showError && (
-                        <div className="fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg">
-                            {errors.api || 'Terjadi kesalahan. Silakan coba lagi.'}
-                        </div>
-                    )}
+                    ) : isMahasiswa && !form.accept_responses ? (
+                        <p className="text-center text-red-600">
+                            Formulir ini saat ini tidak menerima pengajuan. Silakan periksa periode pendaftaran.
+                        </p>
+                    ) : null}
                 </div>
             </div>
+
+            {showSuccess && flash?.success && (
+                <div className="success-toast">
+                    <img
+                        src="https://img.icons8.com/ios-filled/50/ffffff/checkmark.png"
+                        width="20"
+                        height="20"
+                        alt="Success Icon"
+                    />
+                    {flash.success}
+                </div>
+            )}
+
+            {showError && (flash?.error || errors.general) && (
+                <div className="error-toast">
+                    <img
+                        src="https://img.icons8.com/ios-filled/50/ffffff/error.png"
+                        width="20"
+                        height="20"
+                        alt="Error Icon"
+                    />
+                    {flash?.error || errors.general || 'Gagal mengirim pengajuan. Silakan coba lagi.'}
+                </div>
+            )}
 
             <FooterLayout />
         </GuestLayout>

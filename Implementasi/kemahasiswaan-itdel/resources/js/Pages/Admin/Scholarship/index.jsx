@@ -1074,3 +1074,4 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
     </AdminLayout>
   );
 }
+

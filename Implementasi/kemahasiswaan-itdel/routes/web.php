@@ -83,41 +83,36 @@ Route::get('/mpm', [MpmController::class, 'show'])->name('mpm.show');
 // Routes untuk unduhan di sisi guest
 Route::get('/downloads', [DownloadController::class, 'guestIndex'])->name('downloads.guest.index');
 
+Route::get('/scholarships', [FormController::class, 'guestIndex'])->name('scholarships.index');
+Route::get('/scholarships/{scholarship_id}', [FormController::class, 'guestShow'])->name('scholarships.show');
+Route::get('/scholarships/form/{form_id}', [FormController::class, 'showForm'])->name('scholarships.form.show');
 
-// Guest Routes
-Route::middleware('throttle:100,1')->group(function () {
-    Route::get('/scholarships', [FormController::class, 'guestIndex'])->name('guest.scholarship.index');
-    Route::get('/scholarships/{scholarship_id}', [FormController::class, 'guestShow'])->name('guest.scholarship.show');
-    Route::get('/scholarships/form/{form_id}', [FormController::class, 'showForm'])->name('guest.form.show');
-});
-
-// Student Routes (Authenticated Mahasiswa)
-Route::middleware(['auth', 'role:mahasiswa', 'throttle:100,1'])->group(function () {
-    Route::get('/student/scholarships', [FormController::class, 'studentIndex'])->name('student.scholarship.index');
-    Route::get('/student/scholarships/{scholarship_id}', [FormController::class, 'studentShow'])->name('student.scholarship.show');
-    Route::get('/student/scholarships/form/{form_id}', [FormController::class, 'studentForm'])->name('student.form.show');
-});
-
+// Login route
 Route::get('/login', function () {
+    // Store intended URL
+    if (request()->has('intended')) {
+        $intendedUrl = urldecode(request()->query('intended'));
+        session(['url.intended' => $intendedUrl]);
+        Log::info('Set intended URL', ['intended' => $intendedUrl]);
+    }
+
     if (Auth::check()) {
         $user = Auth::user();
         $role = strtolower($user->role);
-        $intendedUrl = session('url.intended', route('counseling.index'));
+        $intendedUrl = session('url.intended', route('scholarships.index'));
 
-        // Log the redirect attempt
-        Log::info('Login redirect attempt', [
+        // Prevent redirect loop
+        if (str_contains($intendedUrl, '/login')) {
+            $intendedUrl = route('scholarships.index');
+        }
+
+        Log::info('Authenticated user redirect', [
             'user_id' => $user->id,
             'role' => $role,
             'intended_url' => $intendedUrl,
-            'session_intended' => session('url.intended'),
         ]);
 
-        // Prevent redirect loop
-        if (str_contains($intendedUrl, '/login') || $intendedUrl === url()->current()) {
-            $intendedUrl = route('counseling.index');
-        }
-
-        // Redirect based on role
+        // Role-based redirection
         switch ($role) {
             case 'superadmin':
                 return redirect()->intended(route('superadmin.dashboard'));
@@ -126,32 +121,67 @@ Route::get('/login', function () {
             case 'adminmpm':
                 return redirect()->intended(route('admin.dashboard'));
             case 'mahasiswa':
-                if (str_contains($intendedUrl, '/scholarships')) {
-                    $path = parse_url($intendedUrl, PHP_URL_PATH);
-                    if (preg_match('/\/scholarships\/form\/([^\/]+)/', $path, $matches)) {
-                        $redirectUrl = route('student.form.show', ['form_id' => $matches[1]]);
-                    } elseif (preg_match('/\/scholarships\/([^\/]+)/', $path, $matches)) {
-                        $redirectUrl = route('student.scholarship.show', ['scholarship_id' => $matches[1]]);
-                    } else {
-                        $redirectUrl = route('student.scholarship.index');
-                    }
-                } else {
-                    $redirectUrl = route('counseling.index');
-                }
-                Log::info('Redirecting mahasiswa', ['to' => $redirectUrl]);
-                return redirect($redirectUrl);
+                return redirect()->to($intendedUrl);
             default:
-                return redirect()->intended('/');
+                return redirect()->intended(route('scholarships.index'));
         }
     }
 
-    // Log guest login page access
-    Log::info('Guest accessing login page', ['url' => url()->current()]);
     return Inertia::render('Auth/Login', [
         'canResetPassword' => Route::has('password.request'),
         'status' => session('status'),
+        'intended' => request()->query('intended'),
     ]);
-})->middleware('guest')->name('login');
+})->name('login');
+
+// POST login route
+Route::post('/login', function () {
+    $credentials = request()->only('email', 'password');
+
+    if (Auth::attempt($credentials)) {
+        request()->session()->regenerate();
+        $user = Auth::user();
+        $role = strtolower($user->role);
+        $intendedUrl = session('url.intended', route('scholarships.index'));
+
+        Log::info('Login successful', [
+            'user_id' => $user->id,
+            'role' => $role,
+            'intended_url' => $intendedUrl,
+        ]);
+
+        // Prevent redirect loop
+        if (str_contains($intendedUrl, '/login')) {
+            $intendedUrl = route('scholarships.index');
+        }
+
+        switch ($role) {
+            case 'mahasiswa':
+                return redirect()->to($intendedUrl);
+            case 'superadmin':
+                return redirect()->intended(route('superadmin.dashboard'));
+            case 'kemahasiswaan':
+            case 'adminbem':
+            case 'adminmpm':
+                return redirect()->intended(route('admin.dashboard'));
+            default:
+                return redirect()->intended(route('scholarships.index'));
+        }
+    }
+
+    Log::warning('Login failed', ['email' => request()->input('email')]);
+    return back()->withErrors([
+        'email' => 'The provided credentials do not match our records.',
+    ])->with('error', 'Login gagal. Periksa email dan kata sandi Anda.');
+})->name('login.post');
+
+// Logout route
+Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect()->route('scholarships.index');
+})->name('logout');
 
 // Keep the POST login route as is
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login');

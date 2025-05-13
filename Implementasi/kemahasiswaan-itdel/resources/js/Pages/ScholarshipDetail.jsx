@@ -15,12 +15,12 @@ export default function ScholarshipDetail() {
 
     // Fetch submission status for authenticated students
     useEffect(() => {
-        if (isMahasiswa && form?.form_id && isAuthenticated) {
+        if (isMahasiswa && form?.form_id && isAuthenticated && auth?.user?.token) {
             setIsLoading(true);
             axios
                 .get(`/api/forms/submissions?form_id=${form.form_id}`, {
                     headers: {
-                        Authorization: `Bearer ${auth?.user?.token || ''}`,
+                        Authorization: `Bearer ${auth.user.token}`,
                     },
                 })
                 .then((response) => {
@@ -45,9 +45,6 @@ export default function ScholarshipDetail() {
             year: 'numeric',
         });
     };
-
-    // Breadcrumb base path
-    const basePath = isMahasiswa ? '/student/scholarships' : '/scholarships';
 
     return (
         <GuestLayout>
@@ -103,7 +100,7 @@ export default function ScholarshipDetail() {
                                     Beranda
                                 </Link>
                                 <span className="mx-2">/</span>
-                                <Link href={basePath} className="text-blue-600 hover:underline">
+                                <Link href="/scholarships" className="text-blue-600 hover:underline">
                                     Beasiswa
                                 </Link>
                                 <span className="mx-2">/</span>
@@ -130,7 +127,7 @@ export default function ScholarshipDetail() {
                                         </p>
                                         <p className="text-sm">
                                             <span className="font-semibold text-blue-700">Pendaftaran:</span>{' '}
-                                            {formatDate(form.start_date)}
+                                            {formatDate(form.open_date)}
                                         </p>
                                         <p className="text-sm">
                                             <span className="font-semibold text-blue-700">Berakhir:</span>{' '}
@@ -149,7 +146,7 @@ export default function ScholarshipDetail() {
                             <div className="flex flex-wrap gap-4">
                                 {form?.is_active ? (
                                     <Link
-                                        href={`/forms/${form.form_id}`}
+                                        href={`/scholarships/form/${form.form_id}`}
                                         className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
                                             isMahasiswa && hasSubmitted && isAuthenticated
                                                 ? 'bg-gray-400 cursor-not-allowed'
@@ -166,7 +163,7 @@ export default function ScholarshipDetail() {
                                     </span>
                                 )}
                                 <Link
-                                    href={basePath}
+                                    href="/scholarships"
                                     className="px-4 py-2 bg-blue-800 text-white rounded-lg font-medium hover:bg-blue-900 hover:shadow-lg transition-all duration-200"
                                 >
                                     Kembali

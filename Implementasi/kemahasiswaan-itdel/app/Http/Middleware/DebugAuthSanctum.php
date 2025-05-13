@@ -3,45 +3,38 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
-Log::info('DebugAuthSanctum.php File Loaded'); // Log statis
-
 class DebugAuthSanctum
 {
-    public function __construct()
-    {
-        Log::info('DebugAuthSanctum Middleware Instantiated');
-    }
-
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();
-        $userData = null;
+        $userData = $user ? [
+            'id' => $user->id,
+            'username' => $user->username ?? null,
+            'email' => $user->email ?? null,
+            'role' => $user->role ?? null,
+            'class' => get_class($user),
+            'implements' => class_implements($user),
+        ] : null;
+
         $sessionData = null;
-
-        if ($user) {
-            $userData = [
-                'id' => $user->id ?? null,
-                'username' => $user->username ?? null,
-                'email' => $user->email ?? null,
-                'role' => $user->role ?? null,
-            ];
-
-            Log::info('DebugAuthSanctum User Class:', [
-                'class' => get_class($user),
-                'implements' => class_implements($user),
-            ]);
+        if ($request->hasSession()) {
+            try {
+                $sessionData = $request->session()->all();
+            } catch (\Exception $e) {
+                $sessionData = ['error' => 'Failed to access session: ' . $e->getMessage()];
+            }
+        } else {
+            $sessionData = ['error' => 'No session store set on request'];
         }
 
-        try {
-            $sessionData = $request->session()->all();
-        } catch (\Exception $e) {
-            $sessionData = ['error' => 'Session store not set on request'];
-        }
-
-        Log::info('DebugAuthSanctum Middleware:', [
+        Log::debug('DebugAuthSanctum Middleware:', [
+            'url' => $request->fullUrl(),
+            'method' => $request->method(),
             'authenticated' => Auth::check(),
             'user' => $userData,
             'session' => $sessionData,

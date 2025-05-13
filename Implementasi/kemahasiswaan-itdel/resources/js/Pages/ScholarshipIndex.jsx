@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayoutPage from '@/Layouts/NavbarGuestLayoutPage';
+import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -15,7 +15,7 @@ export default function ScholarshipIndex() {
 
     // Fetch submission status for students
     useEffect(() => {
-        if (isStudent) {
+        if (isStudent && auth.user?.token) {
             setIsLoading(true);
             axios
                 .get('/api/forms/submissions', {
@@ -24,7 +24,7 @@ export default function ScholarshipIndex() {
                     },
                 })
                 .then((response) => {
-                    const submissions = response.data.submissions;
+                    const submissions = response.data.submissions || [];
                     const statusMap = {};
                     submissions.forEach((submission) => {
                         statusMap[submission.form_id] = true;
@@ -38,7 +38,7 @@ export default function ScholarshipIndex() {
                     console.error(err);
                 });
         }
-    }, [isStudent, auth]);
+    }, [isStudent, auth.user?.token]);
 
     // Filter scholarships based on search term
     const filteredScholarships = scholarships.filter(
@@ -199,7 +199,7 @@ export default function ScholarshipIndex() {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayoutPage />
+            <Navbar />
             <Head title="Daftar Beasiswa" />
             <div style={styles.container}>
                 {flash?.success && (
@@ -279,24 +279,8 @@ export default function ScholarshipIndex() {
                                         <strong>Kategori:</strong>{' '}
                                         {scholarship.category?.name || '-'}
                                     </p>
-                                    {scholarship.form && (
-                                        <>
-                                            <p style={styles.cardDetail}>
-                                                <strong>Pendaftaran:</strong>{' '}
-                                                {formatDate(scholarship.form.start_date)}
-                                            </p>
-                                            <p style={styles.cardDetail}>
-                                                <strong>Berakhir:</strong>{' '}
-                                                {formatDate(scholarship.form.close_date)}
-                                            </p>
-                                        </>
-                                    )}
                                     <Link
-                                        href={
-                                            isStudent
-                                                ? `/student/scholarships/${scholarship.scholarship_id}`
-                                                : `/scholarships/${scholarship.scholarship_id}`
-                                        }
+                                        href={`/scholarships/${scholarship.scholarship_id}`}
                                         style={{ ...styles.button, ...styles.detailButton }}
                                         onMouseEnter={(e) => {
                                             e.currentTarget.style.background =
@@ -311,7 +295,7 @@ export default function ScholarshipIndex() {
                                     </Link>
                                     {isStudent && scholarship.form?.is_active && (
                                         <Link
-                                            href={`/student/forms/${scholarship.form.form_id}`}
+                                            href={`/scholarships/form/${scholarship.form.form_id}`}
                                             style={
                                                 submissionStatus[scholarship.form.form_id]
                                                     ? { ...styles.button, ...styles.disabledButton }
