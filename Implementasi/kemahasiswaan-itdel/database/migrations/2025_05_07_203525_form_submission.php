@@ -17,6 +17,13 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable();
             $table->json('data')->nullable(); // Stores form-specific field data
             $table->json('personal_data')->nullable(); // Optional snapshot of personal data at submission time
+            $table->enum('status', [
+                'MENUNGGU',
+                'TIDAK_LOLOS_ADMINISTRASI',
+                'LULUS_ADMINISTRASI',
+                'TIDAK_LULUS_TAHAP_AKHIR',
+                'LULUS_TAHAP_AKHIR'
+            ])->default('MENUNGGU'); // New status column with default 'MENUNGGU'
             $table->timestamp('submitted_at')->useCurrent();
             $table->timestamps();
 
@@ -28,6 +35,7 @@ return new class extends Migration
             $table->index('form_id');
             $table->index('user_id');
             $table->index('submitted_at');
+            $table->index('status'); // Index for status column
         });
     }
 

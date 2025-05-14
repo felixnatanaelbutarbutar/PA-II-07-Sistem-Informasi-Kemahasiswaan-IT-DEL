@@ -48,6 +48,7 @@ class FormSubmission extends Model
         'user_id',
         'data',
         'personal_data',
+        'status', // Add status to fillable
         'submitted_at',
     ];
 
@@ -62,6 +63,7 @@ class FormSubmission extends Model
         'submitted_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'status' => 'string', // Cast status as string
     ];
 
     /**

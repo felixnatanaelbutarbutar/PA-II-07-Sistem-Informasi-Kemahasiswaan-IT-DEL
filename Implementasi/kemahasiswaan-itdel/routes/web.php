@@ -267,6 +267,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
             Route::get('form/{form}/responses', [FormController::class, 'responses'])->name('form.responses');
             Route::get('form/{form}/responses/{submission}', [FormController::class, 'responseDetail'])->name('form.response.detail');
+            Route::post('form/{form}/responses/{submission}/update-status', [FormController::class, 'updateStatus'])->name('form.update.status');
 
             // Directors Routes
             Route::resource('directors', DirectorController::class)->except(['show', 'destroy', 'update']);

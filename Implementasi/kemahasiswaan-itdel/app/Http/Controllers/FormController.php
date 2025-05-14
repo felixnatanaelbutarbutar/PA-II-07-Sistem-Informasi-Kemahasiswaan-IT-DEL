@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Helpers\RoleHelper;
+use Illuminate\Database\QueryException;
 
 class FormController extends Controller
 {
@@ -836,6 +837,7 @@ class FormController extends Controller
                             'nim' => $submission->user->nim,
                         ],
                         'submitted_at' => $submission->submitted_at->toDateTimeString(),
+                        'status' => $submission->status, // Include status
                         'data' => $submission->data,
                     ];
                 });
@@ -911,7 +913,6 @@ class FormController extends Controller
                 $value = $submissionData[$fieldKey] ?? null;
 
                 if ($field['field_type'] === 'file' && $value) {
-                    // Tambahkan debugging untuk memastikan file ada
                     $fileExists = Storage::disk('public')->exists($value);
                     Log::info('Checking file existence', [
                         'file_path' => $value,
@@ -919,7 +920,7 @@ class FormController extends Controller
                     ]);
 
                     if ($fileExists) {
-                        $fileUrl = Storage::url($value); // Gunakan Storage::url() langsung
+                        $fileUrl = Storage::url($value);
                         Log::info('Generated file URL', [
                             'file_path' => $value,
                             'file_url' => $fileUrl,
@@ -929,7 +930,7 @@ class FormController extends Controller
                         Log::warning('File not found in storage', [
                             'file_path' => $value,
                         ]);
-                        $value = null; // Jika file tidak ada, set nilai ke null
+                        $value = null;
                     }
                 }
 
@@ -967,6 +968,7 @@ class FormController extends Controller
                         'nim' => $submission->user->nim,
                     ],
                     'submitted_at' => $submission->submitted_at->toDateTimeString(),
+                    'status' => $submission->status, // Include status
                     'data' => $organizedData,
                 ],
                 'menu' => $menu,
@@ -988,6 +990,70 @@ class FormController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             return redirect()->route('admin.form.responses', $form_id)->with('error', 'Gagal memuat detail respons: ' . $e->getMessage());
+        }
+    }
+    public function updateStatus(Request $request, $form_id, $submission_id)
+    {
+        try {
+            // Cari pengajuan berdasarkan form_id dan submission_id
+            $submission = FormSubmission::where('form_id', $form_id)
+                ->where('submission_id', $submission_id)
+                ->firstOrFail();
+
+            // Validasi status yang diizinkan
+            $validStatuses = ['MENUNGGU', 'TIDAK_LOLOS_ADMINISTRASI', 'LULUS_ADMINISTRASI', 'TIDAK_LOLOS_TAHAP_AKHIR', 'LULUS_TAHAP_AKHIR'];
+            $status = $request->input('status');
+
+            if (!in_array($status, $validStatuses)) {
+                Log::warning('Invalid status attempted', [
+                    'form_id' => $form_id,
+                    'submission_id' => $submission_id,
+                    'status' => $status,
+                ]);
+                return redirect()
+                    ->back()
+                    ->with('error', 'Status tidak valid.');
+            }
+
+            // Perbarui status
+            $submission->update(['status' => $status]);
+
+            Log::info('Status updated successfully', [
+                'form_id' => $form_id,
+                'submission_id' => $submission_id,
+                'new_status' => $status,
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('success', 'Status berhasil diperbarui.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Submission not found in FormController::updateStatus', [
+                'form_id' => $form_id,
+                'submission_id' => $submission_id,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()
+                ->back()
+                ->with('error', 'Pengajuan tidak ditemukan.');
+        } catch (QueryException $e) {
+            Log::error('Database error in FormController::updateStatus', [
+                'form_id' => $form_id,
+                'submission_id' => $submission_id,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal memperbarui status karena kesalahan database.');
+        } catch (\Exception $e) {
+            Log::error('Error in FormController::updateStatus: ' . $e->getMessage(), [
+                'form_id' => $form_id,
+                'submission_id' => $submission_id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal memperbarui status: ' . $e->getMessage());
         }
     }
 }

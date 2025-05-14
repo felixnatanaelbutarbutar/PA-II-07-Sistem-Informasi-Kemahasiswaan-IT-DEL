@@ -4,9 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import * as XLSX from 'xlsx';
 import moment from 'moment';
 
-// Main component for managing form responses
 export default function Responses({ auth, userRole, permissions, form, submissions = [], menu, flash }) {
-    // State for search, sorting, notifications, dropdown, and export options
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('name');
     const [sortDirection, setSortDirection] = useState('asc');
@@ -16,11 +14,9 @@ export default function Responses({ auth, userRole, permissions, form, submissio
     const [viewMode, setViewMode] = useState('table');
     const [openDropdownId, setOpenDropdownId] = useState(null);
     const [showExportOptions, setShowExportOptions] = useState(false);
-
-    // Create refs for each dropdown
+    const [selectedStatus, setSelectedStatus] = useState(null);
     const dropdownRefs = useRef({});
 
-    // Handle flash messages for success/error notifications
     useEffect(() => {
         if (flash?.success) {
             setNotificationMessage(flash.success);
@@ -38,14 +34,11 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         }
     }, [flash]);
 
-    // Handle click outside to close dropdown and Escape key press
     useEffect(() => {
         const handleClickOutside = (event) => {
             let isOutside = true;
             Object.values(dropdownRefs.current).forEach((ref) => {
-                if (ref && ref.contains(event.target)) {
-                    isOutside = false;
-                }
+                if (ref && ref.contains(event.target)) isOutside = false;
             });
             if (isOutside) {
                 setOpenDropdownId(null);
@@ -62,14 +55,12 @@ export default function Responses({ auth, userRole, permissions, form, submissio
 
         document.addEventListener('mousedown', handleClickOutside);
         document.addEventListener('keydown', handleKeyDown);
-
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, []);
 
-    // Debounce search updates to refresh the table
     useEffect(() => {
         const timer = setTimeout(() => {
             const queryParams = {
@@ -77,44 +68,30 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                 sort_by: sortBy || undefined,
                 sort_direction: sortDirection || undefined,
             };
-
             router.get(
                 route('admin.form.responses', form.form_id),
                 queryParams,
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                }
+                { preserveState: true, preserveScroll: true, replace: true }
             );
         }, 300);
-
         return () => clearTimeout(timer);
     }, [searchTerm, sortBy, sortDirection]);
 
-    // Fungsi untuk mengambil jawaban dari data
     const getFormAnswers = (data) => {
         const answers = {};
         for (const key in data) {
             const match = key.match(/sections\..+\.fields\.(\d+)/);
-            if (match) {
-                const order = match[1];
-                answers['Jawaban ' + order] = data[key];
-            }
+            if (match) answers['Jawaban ' + match[1]] = data[key];
         }
         return answers;
     };
 
-    // Fungsi untuk mengambil data CIS (placeholder, ganti dengan API nyata)
-    const getCISData = async (userId) => {
-        return {
-            address: 'Alamat ' + userId,
-            birth_date: '1990-01-01',
-            phone: '0812' + userId.toString().padStart(8, '0'),
-        };
-    };
+    const getCISData = async (userId) => ({
+        address: 'Alamat ' + userId,
+        birth_date: '1990-01-01',
+        phone: '0812' + userId.toString().padStart(8, '0'),
+    });
 
-    // Fungsi ekspor Excel untuk Opsi 1 (Nama, NIM, Jawaban)
     const exportToExcelOption1 = () => {
         if (!submissions || submissions.length === 0) {
             setNotificationMessage('Tidak ada data untuk diekspor.');
@@ -122,26 +99,14 @@ export default function Responses({ auth, userRole, permissions, form, submissio
             setShowNotification(true);
             return;
         }
-
         const wb = XLSX.utils.book_new();
         const firstSubmissionData = submissions[0]?.data || {};
         const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const wsData = [
-            ['No', 'Nama', 'NIM', 'Tanggal Pengajuan', ...answerHeaders],
-        ];
-
-        for (let i = 0; i < submissions.length; i++) {
-            const submission = submissions[i];
+        const wsData = [['No', 'Nama', 'NIM', 'Tanggal Pengajuan', ...answerHeaders]];
+        submissions.forEach((submission, i) => {
             const answers = getFormAnswers(submission.data);
-            wsData.push([
-                i + 1,
-                submission.user.name,
-                submission.user.nim,
-                submission.submitted_at,
-                ...Object.values(answers),
-            ]);
-        }
-
+            wsData.push([i + 1, submission.user.name, submission.user.nim, submission.submitted_at, ...Object.values(answers)]);
+        });
         const ws = XLSX.utils.aoa_to_sheet(wsData);
         XLSX.utils.book_append_sheet(wb, ws, 'Respons Formulir');
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
@@ -149,7 +114,6 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         openInGoogleSheets(dataUri, 'Respons Formulir');
     };
 
-    // Fungsi ekspor Excel untuk Opsi 2 (Full Data termasuk CIS)
     const exportToExcelOption2 = async () => {
         if (!submissions || submissions.length === 0) {
             setNotificationMessage('Tidak ada data untuk diekspor.');
@@ -157,31 +121,15 @@ export default function Responses({ auth, userRole, permissions, form, submissio
             setShowNotification(true);
             return;
         }
-
         const wb = XLSX.utils.book_new();
         const firstSubmissionData = submissions[0]?.data || {};
         const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const wsData = [
-            ['No', 'Nama', 'NIM', 'Email', 'Tanggal Pengajuan', 'Alamat', 'Tanggal Lahir', 'Telepon', ...answerHeaders],
-        ];
-
-        for (let i = 0; i < submissions.length; i++) {
-            const submission = submissions[i];
+        const wsData = [['No', 'Nama', 'NIM', 'Email', 'Tanggal Pengajuan', 'Alamat', 'Tanggal Lahir', 'Telepon', ...answerHeaders]];
+        for (const [i, submission] of submissions.entries()) {
             const answers = getFormAnswers(submission.data);
             const cisData = await getCISData(submission.user.id);
-            wsData.push([
-                i + 1,
-                submission.user.name,
-                submission.user.nim,
-                submission.user.email,
-                submission.submitted_at,
-                cisData.address,
-                cisData.birth_date,
-                cisData.phone,
-                ...Object.values(answers),
-            ]);
+            wsData.push([i + 1, submission.user.name, submission.user.nim, submission.user.email, submission.submitted_at, cisData.address, cisData.birth_date, cisData.phone, ...Object.values(answers)]);
         }
-
         const ws = XLSX.utils.aoa_to_sheet(wsData);
         XLSX.utils.book_append_sheet(wb, ws, 'Respons Formulir Full');
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
@@ -189,7 +137,6 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         openInGoogleSheets(dataUri, 'Respons Formulir Full');
     };
 
-    // Fungsi ekspor CSV untuk Opsi 1
     const exportToCSVOption1 = () => {
         if (!submissions || submissions.length === 0) {
             setNotificationMessage('Tidak ada data untuk diekspor.');
@@ -197,25 +144,13 @@ export default function Responses({ auth, userRole, permissions, form, submissio
             setShowNotification(true);
             return;
         }
-
         const firstSubmissionData = submissions[0]?.data || {};
         const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const csvData = [
-            ['No', 'Nama', 'NIM', 'Tanggal Pengajuan', ...answerHeaders].join(','),
-        ];
-
-        for (let i = 0; i < submissions.length; i++) {
-            const submission = submissions[i];
+        const csvData = [['No', 'Nama', 'NIM', 'Tanggal Pengajuan', ...answerHeaders].join(',')];
+        submissions.forEach((submission, i) => {
             const answers = getFormAnswers(submission.data);
-            csvData.push([
-                i + 1,
-                submission.user.name,
-                submission.user.nim,
-                submission.submitted_at,
-                ...Object.values(answers),
-            ].join(','));
-        }
-
+            csvData.push([i + 1, submission.user.name, submission.user.nim, submission.submitted_at, ...Object.values(answers)].join(','));
+        });
         const csvContent = csvData.join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -230,7 +165,6 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         }
     };
 
-    // Fungsi ekspor CSV untuk Opsi 2
     const exportToCSVOption2 = async () => {
         if (!submissions || submissions.length === 0) {
             setNotificationMessage('Tidak ada data untuk diekspor.');
@@ -238,30 +172,14 @@ export default function Responses({ auth, userRole, permissions, form, submissio
             setShowNotification(true);
             return;
         }
-
         const firstSubmissionData = submissions[0]?.data || {};
         const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const csvData = [
-            ['No', 'Nama', 'NIM', 'Email', 'Tanggal Pengajuan', 'Alamat', 'Tanggal Lahir', 'Telepon', ...answerHeaders].join(','),
-        ];
-
-        for (let i = 0; i < submissions.length; i++) {
-            const submission = submissions[i];
+        const csvData = [['No', 'Nama', 'NIM', 'Email', 'Tanggal Pengajuan', 'Alamat', 'Tanggal Lahir', 'Telepon', ...answerHeaders].join(',')];
+        for (const [i, submission] of submissions.entries()) {
             const answers = getFormAnswers(submission.data);
             const cisData = await getCISData(submission.user.id);
-            csvData.push([
-                i + 1,
-                submission.user.name,
-                submission.user.nim,
-                submission.user.email,
-                submission.submitted_at,
-                cisData.address,
-                cisData.birth_date,
-                cisData.phone,
-                ...Object.values(answers),
-            ].join(','));
-        }
-
+            csvData.push([i + 1, submission.user.name, submission.user.nim, submission.user.email, submission.submitted_at, cisData.address, cisData.birth_date, cisData.phone, ...Object.values(answers)].join(','));
+        };
         const csvContent = csvData.join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -276,24 +194,21 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         }
     };
 
-    // Fungsi untuk membuka di Google Sheets atau download
     const openInGoogleSheets = (dataUri, sheetName) => {
         const googleSheetsUrl = 'https://docs.google.com/spreadsheets/u/0/import?usp=importhtm&';
         const downloadLink = document.createElement('a');
         downloadLink.href = dataUri;
         downloadLink.download = `${form.form_name}_${sheetName}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-        
+
         const openInSheets = () => {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = googleSheetsUrl;
             form.target = '_blank';
-
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'data';
-            input.value = dataUri.split(',')[1]; // Base64 data
-
+            input.value = dataUri.split(',')[1];
             form.appendChild(input);
             document.body.appendChild(form);
             form.submit();
@@ -307,76 +222,86 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         }
     };
 
-    // Handle table sorting
     const handleSort = (column) => {
-        if (sortBy === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
+        if (sortBy === column) setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        else {
             setSortBy(column);
             setSortDirection('asc');
         }
     };
 
-    // Toggle dropdown visibility
     const toggleDropdown = (submissionId) => {
         setOpenDropdownId(openDropdownId === submissionId ? null : submissionId);
+        setSelectedStatus(null);
     };
 
-    // Calculate fixed position for table view dropdown
     const getTableDropdownPosition = (submissionId) => {
         const button = document.querySelector(`[data-submission-id="${submissionId}"]`);
         if (!button) return { top: 0, left: 0 };
-
         const rect = button.getBoundingClientRect();
-        const dropdownHeight = 100;
+        const dropdownHeight = 150;
         const dropdownWidth = 192;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const viewportWidth = window.innerWidth;
-
         let top = rect.bottom + 8;
         let left = rect.right - dropdownWidth;
-
-        if (top + dropdownHeight > window.innerHeight) {
-            top = rect.top - dropdownHeight - 8;
-        }
-
-        if (left < 0) {
-            left = 8;
-        } else if (left + dropdownWidth > viewportWidth) {
-            left = viewportWidth - dropdownWidth - 8;
-        }
-
+        if (top + dropdownHeight > window.innerHeight) top = rect.top - dropdownHeight - 8;
+        if (left < 0) left = 8;
+        else if (left + dropdownWidth > window.innerWidth) left = window.innerWidth - dropdownWidth - 8;
         return { top, left };
     };
 
-    // Calculate fixed position for grid view dropdown
     const getGridDropdownPosition = (submissionId) => {
         const button = document.querySelector(`[data-submission-id="${submissionId}"]`);
         if (!button) return { top: 0, left: 0 };
-
         const rect = button.getBoundingClientRect();
-        const dropdownHeight = 100;
+        const dropdownHeight = 150;
         const dropdownWidth = 192;
-        const spaceAbove = rect.top;
-        const viewportWidth = window.innerWidth;
-
         let top = rect.top - dropdownHeight - 8;
         let left = rect.right - dropdownWidth;
-
-        if (top < 0) {
-            top = rect.bottom + 8;
-        }
-
-        if (left < 0) {
-            left = 8;
-        } else if (left + dropdownWidth > viewportWidth) {
-            left = viewportWidth - dropdownWidth - 8;
-        }
-
+        if (top < 0) top = rect.bottom + 8;
+        if (left < 0) left = 8;
+        else if (left + dropdownWidth > window.innerWidth) left = window.innerWidth - dropdownWidth - 8;
         return { top, left };
     };
 
-    // Filter submissions based on search
+    const handleUpdateStatus = (submissionId) => {
+        if (!selectedStatus) {
+            setNotificationMessage('Pilih status terlebih dahulu.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+
+        router.post(
+            route('admin.form.update.status', { form: form.form_id, submission: submissionId }),
+            { status: selectedStatus },
+            {
+                onSuccess: () => {
+                    setNotificationMessage('Status berhasil diperbarui.');
+                    setNotificationType('success');
+                    setShowNotification(true);
+                    setOpenDropdownId(null);
+                    setSelectedStatus(null);
+                    router.reload({ only: ['submissions'] });
+                },
+                onError: (errors) => {
+                    setNotificationMessage(errors.status || 'Gagal memperbarui status.');
+                    setNotificationType('error');
+                    setShowNotification(true);
+                },
+            }
+        );
+    };
+
+    // Fungsi untuk menangani klik baris dan navigasi ke halaman detail
+    const handleRowClick = (formId, submissionId) => {
+        router.visit(route('admin.form.response.detail', { form: formId, submission: submissionId }));
+    };
+
+    // Fungsi untuk format status (hapus underscore dan ganti dengan spasi)
+    const formatStatus = (status) => {
+        return status ? status.replace(/_/g, ' ') : 'MENUNGGU';
+    };
+
     const filteredSubmissions = submissions.filter((submission) => {
         if (!submission) return false;
         return (
@@ -390,7 +315,6 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
             <Head title={'Respons Formulir - ' + form.form_name} />
 
-            {/* Notification */}
             {showNotification && (
                 <div
                     className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
@@ -400,62 +324,53 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                     }`}
                 >
                     <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                            <svg
-                                className={`h-5 w-5 ${notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                            >
-                                {notificationType === 'success' ? (
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                        clipRule="evenodd"
-                                    />
-                                ) : (
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
-                                        clipRule="evenodd"
-                                    />
-                                )}
-                            </svg>
-                        </div>
+                        <svg
+                            className={`h-5 w-5 ${notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            {notificationType === 'success' ? (
+                                <path
+                                    fillRule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clipRule="evenodd"
+                                />
+                            ) : (
+                                <path
+                                    fillRule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V5z"
+                                    clipRule="evenodd"
+                                />
+                            )}
+                        </svg>
                         <div className="ml-3">
-                            <p
-                                className={`text-sm font-medium ${
-                                    notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
-                                }`}
-                            >
+                            <p className={`text-sm font-medium ${notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'}`}>
                                 {notificationMessage}
                             </p>
                         </div>
-                        <div className="ml-auto pl-3">
-                            <button
-                                onClick={() => setShowNotification(false)}
-                                className={`inline-flex rounded-md p-1.5 ${
-                                    notificationType === 'success'
-                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
-                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
-                                } focus:outline-none focus:ring-2`}
-                            >
-                                <span className="sr-only">Dismiss</span>
-                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => setShowNotification(false)}
+                            className={`ml-auto pl-3 inline-flex rounded-md p-1.5 ${
+                                notificationType === 'success'
+                                    ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                    : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                            } focus:outline-none focus:ring-2`}
+                        >
+                            <span className="sr-only">Dismiss</span>
+                            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path
+                                    fillRule="evenodd"
+                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             )}
 
             <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
-                {/* Header */}
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
@@ -491,11 +406,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
                                     onClick={() => setViewMode('table')}
-                                    className={`p-2 rounded-md ${
-                                        viewMode === 'table'
-                                            ? 'bg-white shadow-sm text-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                    } transition-all duration-200`}
+                                    className={`p-2 rounded-md ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'} transition-all duration-200`}
                                     title="Tampilan Tabel"
                                 >
                                     <svg
@@ -515,11 +426,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                 </button>
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`p-2 rounded-md ${
-                                        viewMode === 'grid'
-                                            ? 'bg-white shadow-sm text-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                    } transition-all duration-200`}
+                                    className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'} transition-all duration-200`}
                                     title="Tampilan Grid"
                                 >
                                     <svg
@@ -539,7 +446,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                 </button>
                             </div>
                             <a
-                                href="https://docs.google.com/spreadsheets/d/your-spreadsheet-id-here/edit?usp=sharing" // Ganti dengan link Google Spreadsheet yang sesuai
+                                href="https://docs.google.com/spreadsheets/d/your-spreadsheet-id-here/edit?usp=sharing"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
@@ -705,7 +612,6 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                     </div>
                 </div>
 
-                {/* Table View */}
                 {viewMode === 'table' && filteredSubmissions.length > 0 && (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -715,36 +621,37 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                         onClick={() => handleSort('no')}
                                     >
-                                        No
-                                        {sortBy === 'no' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                        No {sortBy === 'no' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                                     </th>
                                     <th
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                         onClick={() => handleSort('name')}
                                     >
-                                        Nama
-                                        {sortBy === 'name' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                        Nama {sortBy === 'name' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                                     </th>
                                     <th
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                         onClick={() => handleSort('nim')}
                                     >
-                                        NIM
-                                        {sortBy === 'nim' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                        NIM {sortBy === 'nim' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                                     </th>
                                     <th
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                         onClick={() => handleSort('email')}
                                     >
-                                        Email
-                                        {sortBy === 'email' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                        Email {sortBy === 'email' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                                     </th>
                                     <th
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                         onClick={() => handleSort('submitted_at')}
                                     >
-                                        Tanggal Pengajuan
-                                        {sortBy === 'submitted_at' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                        Tanggal Pengajuan {sortBy === 'submitted_at' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </th>
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                        onClick={() => handleSort('status')}
+                                    >
+                                        Status {sortBy === 'status' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Aksi
@@ -755,7 +662,11 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                 {filteredSubmissions.map((submission, index) => {
                                     const dropdownPosition = openDropdownId === submission.submission_id ? getTableDropdownPosition(submission.submission_id) : { top: 0, left: 0 };
                                     return (
-                                        <tr key={submission.submission_id} className="hover:bg-gray-50 transition-colors">
+                                        <tr
+                                            key={submission.submission_id}
+                                            className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                            onClick={() => handleRowClick(form.form_id, submission.submission_id)}
+                                        >
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {index + 1}
                                             </td>
@@ -769,13 +680,16 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                 {submission.user?.email || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {submission.submitted_at !== '-' ? moment(submission.submitted_at).format('DD MMM YYYY HH:mm') : '-'}
+                                                {moment(submission.submitted_at).format('DD MMM YYYY HH:mm')}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <div
-                                                    className="relative"
-                                                    ref={(el) => (dropdownRefs.current[submission.submission_id] = el)}
-                                                >
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {formatStatus(submission.status)}
+                                            </td>
+                                            <td
+                                                className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                                                onClick={(e) => e.stopPropagation()} // Mencegah klik tombol memicu navigasi baris
+                                            >
+                                                <div className="relative" ref={(el) => (dropdownRefs.current[submission.submission_id] = el)}>
                                                     <button
                                                         onClick={() => toggleDropdown(submission.submission_id)}
                                                         className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition focus:outline-none"
@@ -801,17 +715,11 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                     {openDropdownId === submission.submission_id && (
                                                         <div
                                                             className="fixed w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
-                                                            style={{
-                                                                top: dropdownPosition.top + 'px',
-                                                                left: dropdownPosition.left + 'px',
-                                                            }}
+                                                            style={{ top: dropdownPosition.top + 'px', left: dropdownPosition.left + 'px' }}
                                                         >
                                                             <div className="py-1">
                                                                 <Link
-                                                                    href={route('admin.form.response.detail', {
-                                                                        form: form.form_id,
-                                                                        submission: submission.submission_id,
-                                                                    })}
+                                                                    href={route('admin.form.response.detail', { form: form.form_id, submission: submission.submission_id })}
                                                                     className="flex items-center px-4 py-2 text-sm text-indigo-700 hover:bg-indigo-50 transition"
                                                                     onClick={() => setOpenDropdownId(null)}
                                                                 >
@@ -837,6 +745,25 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                                     </svg>
                                                                     Lihat Detail
                                                                 </Link>
+                                                                <div className="px-4 py-2">
+                                                                    <select
+                                                                        value={selectedStatus || submission.status || 'MENUNGGU'}
+                                                                        onChange={(e) => setSelectedStatus(e.target.value)}
+                                                                        className="w-full px-2 py-1 border rounded-md focus:ring-2 focus:ring-indigo-500"
+                                                                    >
+                                                                        <option value="MENUNGGU">Menunggu</option>
+                                                                        <option value="TIDAK_LOLOS_ADMINISTRASI">Tidak Lolos Administrasi</option>
+                                                                        <option value="LULUS_ADMINISTRASI">Lulus Administrasi</option>
+                                                                        <option value="TIDAK_LOLOS_TAHAP_AKHIR">Tidak Lolos Tahap Akhir</option>
+                                                                        <option value="LULUS_TAHAP_AKHIR">Lulus Tahap Akhir</option>
+                                                                    </select>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(submission.submission_id)}
+                                                                    className="w-full px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition mt-2"
+                                                                >
+                                                                    Simpan Status
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     )}
@@ -850,7 +777,6 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                     </div>
                 )}
 
-                {/* Grid View */}
                 {viewMode === 'grid' && filteredSubmissions.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredSubmissions.map((submission, index) => {
@@ -858,13 +784,14 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                             return (
                                 <div
                                     key={submission.submission_id}
-                                    className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 relative hover:shadow-xl transition-shadow"
+                                    className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 relative hover:shadow-xl transition-shadow cursor-pointer"
+                                    onClick={() => handleRowClick(form.form_id, submission.submission_id)}
                                 >
-                                    <div className="absolute top-4 right-4">
-                                        <div
-                                            className="relative"
-                                            ref={(el) => (dropdownRefs.current[submission.submission_id] = el)}
-                                        >
+                                    <div
+                                        className="absolute top-4 right-4"
+                                        onClick={(e) => e.stopPropagation()} // Mencegah klik tombol memicu navigasi kartu
+                                    >
+                                        <div className="relative" ref={(el) => (dropdownRefs.current[submission.submission_id] = el)}>
                                             <button
                                                 onClick={() => toggleDropdown(submission.submission_id)}
                                                 className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition focus:outline-none"
@@ -890,17 +817,11 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                             {openDropdownId === submission.submission_id && (
                                                 <div
                                                     className="fixed w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
-                                                    style={{
-                                                        top: dropdownPosition.top + 'px',
-                                                        left: dropdownPosition.left + 'px',
-                                                    }}
+                                                    style={{ top: dropdownPosition.top + 'px', left: dropdownPosition.left + 'px' }}
                                                 >
                                                     <div className="py-1">
                                                         <Link
-                                                            href={route('admin.form.response.detail', {
-                                                                form: form.form_id,
-                                                                submission: submission.submission_id,
-                                                            })}
+                                                            href={route('admin.form.response.detail', { form: form.form_id, submission: submission.submission_id })}
                                                             className="flex items-center px-4 py-2 text-sm text-indigo-700 hover:bg-indigo-50 transition"
                                                             onClick={() => setOpenDropdownId(null)}
                                                         >
@@ -926,29 +847,41 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                             </svg>
                                                             Lihat Detail
                                                         </Link>
+                                                        <div className="px-4 py-2">
+                                                            <select
+                                                                value={selectedStatus || submission.status || 'MENUNGGU'}
+                                                                onChange={(e) => setSelectedStatus(e.target.value)}
+                                                                className="w-full px-2 py-1 border rounded-md focus:ring-2 focus:ring-indigo-500"
+                                                            >
+                                                                <option value="MENUNGGU">Menunggu</option>
+                                                                <option value="TIDAK_LOLOS_ADMINISTRASI">Tidak Lolos Administrasi</option>
+                                                                <option value="LULUS_ADMINISTRASI">Lulus Administrasi</option>
+                                                                <option value="TIDAK_LOLOS_TAHAP_AKHIR">Tidak Lolos Tahap Akhir</option>
+                                                                <option value="LULUS_TAHAP_AKHIR">Lulus Tahap Akhir</option>
+                                                            </select>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleUpdateStatus(submission.submission_id)}
+                                                            className="w-full px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition mt-2"
+                                                        >
+                                                            Simpan Status
+                                                        </button>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{submission.user?.name || '-'}</h3>
-                                    <p className="text-sm text-gray-600 mb-1">
-                                        <span className="font-medium">NIM:</span> {submission.user?.nim || '-'}
-                                    </p>
-                                    <p className="text-sm text-gray-600 mb-1">
-                                        <span className="font-medium">Email:</span> {submission.user?.email || '-'}
-                                    </p>
-                                    <p className="text-sm text-gray-600 mb-1">
-                                        <span className="font-medium">Tanggal Pengajuan:</span>{' '}
-                                        {submission.submitted_at !== '-' ? moment(submission.submitted_at).format('DD MMM YYYY HH:mm') : '-'}
-                                    </p>
+                                    <p className="text-sm text-gray-600 mb-1"><span className="font-medium">NIM:</span> {submission.user?.nim || '-'}</p>
+                                    <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Email:</span> {submission.user?.email || '-'}</p>
+                                    <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Tanggal Pengajuan:</span> {moment(submission.submitted_at).format('DD MMM YYYY HH:mm')}</p>
+                                    <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Status:</span> {formatStatus(submission.status)}</p>
                                 </div>
                             );
                         })}
                     </div>
                 )}
 
-                {/* Empty State */}
                 {filteredSubmissions.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
                         <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
