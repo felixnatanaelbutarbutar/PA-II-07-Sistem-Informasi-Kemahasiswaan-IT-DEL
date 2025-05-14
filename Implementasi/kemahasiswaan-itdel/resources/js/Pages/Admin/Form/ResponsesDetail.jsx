@@ -151,6 +151,14 @@ const ResponseDetail = () => {
                             <p className="text-sm text-gray-600">{submission.user?.nim || '-'}</p>
                         </div>
                         <div>
+                            <p className="text-sm font-medium text-gray-700">Prodi:</p>
+                            <p className="text-sm text-gray-600">{submission.user?.prodi || '-'}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-gray-700">Angkatan:</p>
+                            <p className="text-sm text-gray-600">{submission.user?.angkatan || '-'}</p>
+                        </div>
+                        <div>
                             <p className="text-sm font-medium text-gray-700">Email:</p>
                             <p className="text-sm text-gray-600">{submission.user?.email || '-'}</p>
                         </div>

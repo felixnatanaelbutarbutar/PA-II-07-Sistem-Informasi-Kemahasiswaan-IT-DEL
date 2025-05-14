@@ -266,6 +266,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('form/{form}/settings', [FormController::class, 'settings'])->name('form.settings');
             Route::post('form/{form}/settings', [FormController::class, 'updateSettings'])->name('form.settings.update');
             Route::get('form/{form}/responses', [FormController::class, 'responses'])->name('form.responses');
+            // Route untuk ekspor formulir dengan filter status
+            Route::get('/form/{form}/export/{type?}', [FormController::class, 'export'])->name('form.export');
             Route::get('form/{form}/responses/{submission}', [FormController::class, 'responseDetail'])->name('form.response.detail');
             Route::post('form/{form}/responses/{submission}/update-status', [FormController::class, 'updateStatus'])->name('form.update.status');
 

@@ -272,6 +272,15 @@ class RoleHelper
                     'visible' => true,
                 ];
             }
+            // Menu untuk Manajemen Form
+            if ($permissions['form'] ?? false) {
+                $scholarshipSubmenu[] = [
+                    'name' => 'Kelola Formulir Beasiswa',
+                    'route' => 'admin.form.index',
+                    'visible' => true,
+                ];
+            }
+
             $menuItems[] = [
                 'name' => 'Manajemen Beasiswa',
                 'icon' => 'scholarship',
@@ -305,15 +314,6 @@ class RoleHelper
             ];
         }
 
-        // Menu untuk Manajemen Form
-        if ($permissions['form'] ?? false) {
-            $menuItems[] = [
-                'name' => 'Manajemen Form',
-                'route' => 'admin.form.index',
-                'icon' => 'form',
-                'visible' => true,
-            ];
-        }
 
         // Menu untuk Konseling
         if ($permissions['counseling'] ?? false) {

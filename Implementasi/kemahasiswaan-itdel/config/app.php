@@ -193,6 +193,8 @@ return [
 
         // Perbaiki alias untuk DomPDF
         'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
+
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
     ],
 
 ];

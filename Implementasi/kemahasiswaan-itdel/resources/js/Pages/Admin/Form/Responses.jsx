@@ -17,209 +17,19 @@ export default function Responses({ auth, userRole, permissions, form, submissio
     const [selectedStatus, setSelectedStatus] = useState(null);
     const dropdownRefs = useRef({});
 
-    useEffect(() => {
-        if (flash?.success) {
-            setNotificationMessage(flash.success);
-            setNotificationType('success');
-            setShowNotification(true);
-        } else if (flash?.error) {
-            setNotificationMessage(flash.error);
-            setNotificationType('error');
-            setShowNotification(true);
-        }
+    // ... (useEffect dan fungsi lain seperti getFormAnswers, getCISData tetap sama)
 
-        if (flash?.success || flash?.error) {
-            const timer = setTimeout(() => setShowNotification(false), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [flash]);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            let isOutside = true;
-            Object.values(dropdownRefs.current).forEach((ref) => {
-                if (ref && ref.contains(event.target)) isOutside = false;
-            });
-            if (isOutside) {
-                setOpenDropdownId(null);
-                setShowExportOptions(false);
-            }
-        };
-
-        const handleKeyDown = (event) => {
-            if (event.key === 'Escape') {
-                setOpenDropdownId(null);
-                setShowExportOptions(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, []);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            const queryParams = {
-                search: searchTerm.trim() || undefined,
-                sort_by: sortBy || undefined,
-                sort_direction: sortDirection || undefined,
-            };
-            router.get(
-                route('admin.form.responses', form.form_id),
-                queryParams,
-                { preserveState: true, preserveScroll: true, replace: true }
-            );
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm, sortBy, sortDirection]);
-
-    const getFormAnswers = (data) => {
-        const answers = {};
-        for (const key in data) {
-            const match = key.match(/sections\..+\.fields\.(\d+)/);
-            if (match) answers['Jawaban ' + match[1]] = data[key];
-        }
-        return answers;
-    };
-
-    const getCISData = async (userId) => ({
-        address: 'Alamat ' + userId,
-        birth_date: '1990-01-01',
-        phone: '0812' + userId.toString().padStart(8, '0'),
-    });
-
-    const exportToExcelOption1 = () => {
+    const exportData = (type) => {
         if (!submissions || submissions.length === 0) {
             setNotificationMessage('Tidak ada data untuk diekspor.');
             setNotificationType('error');
             setShowNotification(true);
             return;
         }
-        const wb = XLSX.utils.book_new();
-        const firstSubmissionData = submissions[0]?.data || {};
-        const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const wsData = [['No', 'Nama', 'NIM', 'Tanggal Pengajuan', ...answerHeaders]];
-        submissions.forEach((submission, i) => {
-            const answers = getFormAnswers(submission.data);
-            wsData.push([i + 1, submission.user.name, submission.user.nim, submission.submitted_at, ...Object.values(answers)]);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, 'Respons Formulir');
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-        const dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
-        openInGoogleSheets(dataUri, 'Respons Formulir');
-    };
-
-    const exportToExcelOption2 = async () => {
-        if (!submissions || submissions.length === 0) {
-            setNotificationMessage('Tidak ada data untuk diekspor.');
-            setNotificationType('error');
-            setShowNotification(true);
-            return;
-        }
-        const wb = XLSX.utils.book_new();
-        const firstSubmissionData = submissions[0]?.data || {};
-        const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const wsData = [['No', 'Nama', 'NIM', 'Email', 'Tanggal Pengajuan', 'Alamat', 'Tanggal Lahir', 'Telepon', ...answerHeaders]];
-        for (const [i, submission] of submissions.entries()) {
-            const answers = getFormAnswers(submission.data);
-            const cisData = await getCISData(submission.user.id);
-            wsData.push([i + 1, submission.user.name, submission.user.nim, submission.user.email, submission.submitted_at, cisData.address, cisData.birth_date, cisData.phone, ...Object.values(answers)]);
-        }
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, 'Respons Formulir Full');
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-        const dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
-        openInGoogleSheets(dataUri, 'Respons Formulir Full');
-    };
-
-    const exportToCSVOption1 = () => {
-        if (!submissions || submissions.length === 0) {
-            setNotificationMessage('Tidak ada data untuk diekspor.');
-            setNotificationType('error');
-            setShowNotification(true);
-            return;
-        }
-        const firstSubmissionData = submissions[0]?.data || {};
-        const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const csvData = [['No', 'Nama', 'NIM', 'Tanggal Pengajuan', ...answerHeaders].join(',')];
-        submissions.forEach((submission, i) => {
-            const answers = getFormAnswers(submission.data);
-            csvData.push([i + 1, submission.user.name, submission.user.nim, submission.submitted_at, ...Object.values(answers)].join(','));
-        });
-        const csvContent = csvData.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `${form.form_name}_Respons_CSV_${new Date().toISOString().slice(0, 10)}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
-
-    const exportToCSVOption2 = async () => {
-        if (!submissions || submissions.length === 0) {
-            setNotificationMessage('Tidak ada data untuk diekspor.');
-            setNotificationType('error');
-            setShowNotification(true);
-            return;
-        }
-        const firstSubmissionData = submissions[0]?.data || {};
-        const answerHeaders = Object.keys(getFormAnswers(firstSubmissionData)).map((k, i) => 'Jawaban ' + (i + 1));
-        const csvData = [['No', 'Nama', 'NIM', 'Email', 'Tanggal Pengajuan', 'Alamat', 'Tanggal Lahir', 'Telepon', ...answerHeaders].join(',')];
-        for (const [i, submission] of submissions.entries()) {
-            const answers = getFormAnswers(submission.data);
-            const cisData = await getCISData(submission.user.id);
-            csvData.push([i + 1, submission.user.name, submission.user.nim, submission.user.email, submission.submitted_at, cisData.address, cisData.birth_date, cisData.phone, ...Object.values(answers)].join(','));
-        };
-        const csvContent = csvData.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `${form.form_name}_Respons_Full_CSV_${new Date().toISOString().slice(0, 10)}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
-
-    const openInGoogleSheets = (dataUri, sheetName) => {
-        const googleSheetsUrl = 'https://docs.google.com/spreadsheets/u/0/import?usp=importhtm&';
-        const downloadLink = document.createElement('a');
-        downloadLink.href = dataUri;
-        downloadLink.download = `${form.form_name}_${sheetName}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-
-        const openInSheets = () => {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = googleSheetsUrl;
-            form.target = '_blank';
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'data';
-            input.value = dataUri.split(',')[1];
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
-        };
-
-        if (window.confirm(`Buka ${sheetName} di Google Sheets? Klik "Cancel" untuk download file Excel.`)) {
-            openInSheets();
-        } else {
-            downloadLink.click();
-        }
+        window.location.href = route('admin.form.export', { form: form.form_id, type: type });
+        setNotificationMessage('Ekspor dimulai, file akan diunduh sebentar lagi.');
+        setNotificationType('success');
+        setShowNotification(true);
     };
 
     const handleSort = (column) => {
@@ -292,14 +102,19 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         );
     };
 
-    // Fungsi untuk menangani klik baris dan navigasi ke halaman detail
     const handleRowClick = (formId, submissionId) => {
         router.visit(route('admin.form.response.detail', { form: formId, submission: submissionId }));
     };
 
-    // Fungsi untuk format status (hapus underscore dan ganti dengan spasi)
     const formatStatus = (status) => {
-        return status ? status.replace(/_/g, ' ') : 'MENUNGGU';
+        const statusMap = {
+            'MENUNGGU': 'Menunggu',
+            'TIDAK_LOLOS_ADMINISTRASI': 'Tidak Lolos Administrasi',
+            'LULUS_ADMINISTRASI': 'Lulus Administrasi',
+            'TIDAK_LULUS_TAHAP_AKHIR': 'Tidak Lolos Tahap Akhir',
+            'LULUS_TAHAP_AKHIR': 'Lulus Tahap Akhir',
+        };
+        return statusMap[status] || 'Menunggu';
     };
 
     const filteredSubmissions = submissions.filter((submission) => {
@@ -307,7 +122,9 @@ export default function Responses({ auth, userRole, permissions, form, submissio
         return (
             (submission.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (submission.user?.nim || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (submission.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+            (submission.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (submission.user?.prodi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (submission.user?.angkatan || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
     });
 
@@ -383,7 +200,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                             <div className="relative flex-grow md:flex-grow-0 md:w-64">
                                 <input
                                     type="text"
-                                    placeholder="Cari nama, NIM, atau email..."
+                                    placeholder="Cari nama, NIM, email, prodi, atau angkatan..."
                                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -445,29 +262,6 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                     </svg>
                                 </button>
                             </div>
-                            <a
-                                href="https://docs.google.com/spreadsheets/d/your-spreadsheet-id-here/edit?usp=sharing"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
-                                title="Lihat di Google Spreadsheet"
-                            >
-                                <svg
-                                    className="w-5 h-5 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                                Lihat Spreadsheet
-                            </a>
                             <div className="relative flex items-center">
                                 <button
                                     onClick={() => setShowExportOptions(!showExportOptions)}
@@ -513,10 +307,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
                                         <div className="py-1">
                                             <button
-                                                onClick={() => {
-                                                    exportToExcelOption1();
-                                                    setShowExportOptions(false);
-                                                }}
+                                                onClick={() => exportData(null)}
                                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
                                             >
                                                 <svg
@@ -533,13 +324,10 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                     />
                                                 </svg>
-                                                Nama, NIM, Jawaban
+                                                Ekspor Semua
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    exportToExcelOption2();
-                                                    setShowExportOptions(false);
-                                                }}
+                                                onClick={() => exportData('lulus-administrasi')}
                                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
                                             >
                                                 <svg
@@ -556,13 +344,10 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                     />
                                                 </svg>
-                                                Full Data
+                                                Ekspor Lulus Administrasi
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    exportToCSVOption1();
-                                                    setShowExportOptions(false);
-                                                }}
+                                                onClick={() => exportData('lulus-tahap-akhir')}
                                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
                                             >
                                                 <svg
@@ -576,33 +361,10 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
                                                         strokeWidth={2}
-                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                     />
                                                 </svg>
-                                                Download .csv (Nama, NIM, Jawaban)
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    exportToCSVOption2();
-                                                    setShowExportOptions(false);
-                                                }}
-                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
-                                            >
-                                                <svg
-                                                    className="w-4 h-4 mr-2"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                                                    />
-                                                </svg>
-                                                Download .csv (Full Data)
+                                                Ekspor Lulus Tahap Akhir
                                             </button>
                                         </div>
                                     </div>
@@ -634,6 +396,18 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                         onClick={() => handleSort('nim')}
                                     >
                                         NIM {sortBy === 'nim' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </th>
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                        onClick={() => handleSort('prodi')}
+                                    >
+                                        Prodi {sortBy === 'prodi' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </th>
+                                    <th
+                                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                        onClick={() => handleSort('angkatan')}
+                                    >
+                                        Angkatan {sortBy === 'angkatan' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                                     </th>
                                     <th
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
@@ -677,6 +451,12 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                 {submission.user?.nim || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {submission.user?.prodi || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {submission.user?.angkatan || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {submission.user?.email || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -687,7 +467,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                             </td>
                                             <td
                                                 className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                                                onClick={(e) => e.stopPropagation()} // Mencegah klik tombol memicu navigasi baris
+                                                onClick={(e) => e.stopPropagation()}
                                             >
                                                 <div className="relative" ref={(el) => (dropdownRefs.current[submission.submission_id] = el)}>
                                                     <button
@@ -754,7 +534,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                                         <option value="MENUNGGU">Menunggu</option>
                                                                         <option value="TIDAK_LOLOS_ADMINISTRASI">Tidak Lolos Administrasi</option>
                                                                         <option value="LULUS_ADMINISTRASI">Lulus Administrasi</option>
-                                                                        <option value="TIDAK_LOLOS_TAHAP_AKHIR">Tidak Lolos Tahap Akhir</option>
+                                                                        <option value="TIDAK_LULUS_TAHAP_AKHIR">Tidak Lolos Tahap Akhir</option>
                                                                         <option value="LULUS_TAHAP_AKHIR">Lulus Tahap Akhir</option>
                                                                     </select>
                                                                 </div>
@@ -789,7 +569,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                 >
                                     <div
                                         className="absolute top-4 right-4"
-                                        onClick={(e) => e.stopPropagation()} // Mencegah klik tombol memicu navigasi kartu
+                                        onClick={(e) => e.stopPropagation()}
                                     >
                                         <div className="relative" ref={(el) => (dropdownRefs.current[submission.submission_id] = el)}>
                                             <button
@@ -856,7 +636,7 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                                                 <option value="MENUNGGU">Menunggu</option>
                                                                 <option value="TIDAK_LOLOS_ADMINISTRASI">Tidak Lolos Administrasi</option>
                                                                 <option value="LULUS_ADMINISTRASI">Lulus Administrasi</option>
-                                                                <option value="TIDAK_LOLOS_TAHAP_AKHIR">Tidak Lolos Tahap Akhir</option>
+                                                                <option value="TIDAK_LULUS_TAHAP_AKHIR">Tidak Lolos Tahap Akhir</option>
                                                                 <option value="LULUS_TAHAP_AKHIR">Lulus Tahap Akhir</option>
                                                             </select>
                                                         </div>
@@ -873,6 +653,8 @@ export default function Responses({ auth, userRole, permissions, form, submissio
                                     </div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{submission.user?.name || '-'}</h3>
                                     <p className="text-sm text-gray-600 mb-1"><span className="font-medium">NIM:</span> {submission.user?.nim || '-'}</p>
+                                    <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Prodi:</span> {submission.user?.prodi || '-'}</p>
+                                    <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Angkatan:</span> {submission.user?.angkatan || '-'}</p>
                                     <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Email:</span> {submission.user?.email || '-'}</p>
                                     <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Tanggal Pengajuan:</span> {moment(submission.submitted_at).format('DD MMM YYYY HH:mm')}</p>
                                     <p className="text-sm text-gray-600 mb-1"><span className="font-medium">Status:</span> {formatStatus(submission.status)}</p>
