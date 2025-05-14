@@ -75,12 +75,12 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
     const handlePosterChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
             const allowedTypes = ['image/jpeg', 'image/png'];
             if (file.size > maxSizeInBytes) {
                 setErrors((prev) => ({
                     ...prev,
-                    poster: 'Ukuran file terlalu besar. Maksimal 2MB.',
+                    poster: 'Ukuran file terlalu besar. Maksimal 5MB.',
                 }));
                 setData((prev) => ({ ...prev, poster: null }));
                 setPosterPreview(null);
@@ -116,12 +116,12 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         input.onchange = async () => {
             const file = input.files[0];
             if (file) {
-                const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+                const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
                 if (file.size > maxSizeInBytes) {
                     setNotification({
                         show: true,
                         type: 'error',
-                        message: 'Ukuran gambar di konten terlalu besar. Maksimal 2MB.',
+                        message: 'Ukuran gambar di konten terlalu besar. Maksimal 5MB.',
                     });
                     return;
                 }
@@ -165,10 +165,10 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         if (!data.description.replace(/<(.|\n)*?>/g, '').trim())
             newErrors.description = 'Deskripsi wajib diisi.';
         if (data.poster) {
-            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
             const allowedTypes = ['image/jpeg', 'image/png'];
             if (data.poster.size > maxSizeInBytes) {
-                newErrors.poster = 'Ukuran file terlalu besar. Maksimal 2MB.';
+                newErrors.poster = 'Ukuran file terlalu besar. Maksimal 5MB.';
             } else if (!allowedTypes.includes(data.poster.type)) {
                 newErrors.poster = 'File harus berupa JPG atau PNG.';
             }
@@ -398,7 +398,7 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                                         />
                                     </div>
                                     <p className="text-xs text-gray-500 mt-1">
-                                        Format yang didukung: JPG, PNG. Ukuran maksimal: 2MB
+                                        Format yang didukung: JPG, PNG. Ukuran maksimal: 5MB
                                     </p>
                                     {errors.poster && (
                                         <p className="text-red-500 text-xs mt-1">{errors.poster}</p>

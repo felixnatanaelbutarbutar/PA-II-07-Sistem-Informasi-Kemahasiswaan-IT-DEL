@@ -81,7 +81,7 @@ Route::get('/mpm', [MpmController::class, 'show'])->name('mpm.show');
 Route::get('/downloads', [DownloadController::class, 'guestIndex'])->name('downloads.guest.index');
 
 // Scholarship and Form Routes for Guests/Mahasiswa
-Route::get('/scholarships', [FormController::class, 'guestIndex'])->name('scholarships.index');
+Route::get('/scholarships', [ScholarshipController::class, 'guestIndex'])->name('scholarships.index');
 Route::get('/scholarships/{scholarship_id}', [ScholarshipController::class, 'guestShow'])->name('scholarships.show');
 Route::get('/scholarships/form/{form_id}', [FormController::class, 'showForm'])->name('scholarships.form.show');
 Route::post('/forms/submit', [FormController::class, 'storeSubmission'])

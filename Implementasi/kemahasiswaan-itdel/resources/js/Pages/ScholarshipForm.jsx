@@ -104,7 +104,6 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
     };
 
     const renderField = (field, section) => {
-        // Gunakan section.title dan field.order untuk membentuk key
         const fieldKey = `sections.${section.title}.fields.${field.order}`;
         const error = errors[fieldKey];
 
@@ -200,41 +199,40 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
     const currentUrl = window.location.pathname + window.location.search;
 
     return (
-        <GuestLayout>
-            <Navbar />
+        <GuestLayout>   
+            <Navbar showBreadcrumbAndHeader={false}/>
             <Head title={form.form_name || 'Formulir Beasiswa'} />
 
             <style>{`
-                body { margin: 0; padding: 0; font-family: 'Inter', Arial, sans-serif; background: #f0f9ff; color: #1e293b; }
-                .main-container { min-height: 100vh; padding: 40px 20px 80px; display: flex; flex-direction: column; align-items: center; background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); width: 100%; }
-                .content-section { max-width: 1400px; width: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); padding: 40px; margin-bottom: 40px; transition: all 0.3s ease; animation: fadeIn 0.5s ease; }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .form-section h2 { font-size: 28px; font-weight: 700; color: #0369a1; text-align: center; margin-bottom: 20px; position: relative; display: block; width: 100%; }
-                .form-section h2:after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 80px; height: 4px; background: linear-gradient(90deg, #0ea5e9, #0284c7); border-radius: 2px; }
-                .form-section .subheader { text-align: center; color: #64748b; font-size: 16px; margin-bottom: 30px; }
-                .auth-message { text-align: center; background: #f0f9ff; padding: 20px; border-radius: 14px; margin-bottom: 30px; }
-                .auth-message p { font-size: 16px; color: #475569; margin-bottom: 10px; }
-                .auth-message .auth-name { font-weight: 600; color: #0284c7; }
-                .auth-message .button-group { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
-                .login-link, .logout-button { display: inline-flex; align-items: center; padding: 12px 24px; background: #0ea5e9; color: #ffffff; border-radius: 10px; text-decoration: none; font-size: 16px; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; }
+                body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background: #f9fafb; color: #1e293b; }
+                .main-container { min-height: calc(100vh - 200px); padding: ${window.innerWidth <= 768 ? '16px' : '32px'}; display: flex; flex-direction: column; align-items: center; width: 100%; }
+                .content-section { max-width: 1500px; width: 100%; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: ${window.innerWidth <= 768 ? '20px' : '32px'}; margin-bottom: ${window.innerWidth <= 768 ? '16px' : '32px'}; transition: all 0.3s ease; }
+                .form-section h2 { font-size: ${window.innerWidth <= 768 ? '24px' : '36px'}; font-weight: 800; color: #1e40af; margin-bottom: ${window.innerWidth <= 768 ? '16px' : '24px'}; text-align: center; text-transform: uppercase; position: relative; }
+                .form-section h2:after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 80px; height: 4px; background: linear-gradient(90deg, #1e40af, #3b82f6); border-radius: 2px; }
+                .form-section .subheader { text-align: center; color: #6b7280; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; margin-bottom: ${window.innerWidth <= 768 ? '20px' : '30px'}; }
+                .auth-message { text-align: center; background: #f9fafb; padding: ${window.innerWidth <= 768 ? '15px' : '20px'}; border-radius: 8px; margin-bottom: ${window.innerWidth <= 768 ? '20px' : '30px'}; }
+                .auth-message p { font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; color: #6b7280; margin-bottom: ${window.innerWidth <= 768 ? '10px' : '15px'}; }
+                .auth-message .auth-name { font-weight: 600; color: #1e40af; }
+                .auth-message .button-group { display: flex; justify-content: center; gap: ${window.innerWidth <= 768 ? '10px' : '15px'}; margin-top: ${window.innerWidth <= 768 ? '10px' : '15px'}; }
+                .login-link, .logout-button { display: inline-flex; align-items: center; padding: ${window.innerWidth <= 768 ? '10px 20px' : '12px 24px'}; background: #1e40af; color: #ffffff; border-radius: 8px; text-decoration: none; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; }
                 .logout-button { background: #ef4444; }
-                .login-link:hover, .logout-button:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(14, 165, 233, 0.2); }
-                .logout-button:hover { box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2); }
-                .login-link img, .logout-button img { margin-right: 8px; width: 20px; height: 20px; }
-                .form-grid { display: grid; grid-template-columns: 1fr; gap: 25px; width: 100%; max-width: 800px; margin: 0 auto; }
+                .login-link:hover, .logout-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2); }
+                .logout-button:hover { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
+                .login-link img, .logout-button img { margin-right: 8px; width: ${window.innerWidth <= 768 ? '16px' : '20px'}; height: ${window.innerWidth <= 768 ? '16px' : '20px'}; }
+                .form-grid { display: grid; grid-template-columns: 1fr; gap: ${window.innerWidth <= 768 ? '16px' : '25px'}; width: 100%; max-width: 800px; margin: 0 auto; }
                 .form-group { width: 100%; }
-                .form-group label { font-weight: 600; color: #334155; display: block; margin-bottom: 10px; font-size: 16px; }
-                .form-group input, .form-group select, .form-group textarea { border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; width: 100%; box-sizing: border-box; font-size: 16px; color: #334155; transition: all 0.3s ease; background: #f8fafc; }
-                .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15); outline: none; background: #ffffff; }
-                .form-group textarea { resize: vertical; min-height: 150px; }
-                .form-group .error { color: #ef4444; font-size: 14px; margin-top: 6px; display: block; }
-                .submit-button { background: linear-gradient(to right, #0ea5e9, #0284c7); color: #ffffff; padding: 14px 28px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 220px; transition: all 0.3s ease; margin: 30px auto 0; }
-                .submit-button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3); }
-                .submit-button:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
-                .success-toast { position: fixed; top: 20px; right: 20px; background: #16a34a; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); display: flex; align-items: center; gap: 12px; animation: toastFadeInOut 3s ease-in-out; z-index: 1000; font-size: 16px; font-weight: 500; }
-                .error-toast { position: fixed; top: 20px; right: 20px; background: #ef4444; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); display: flex; align-items: center; gap: 12px; animation: toastFadeInOut 3s ease-in-out; z-index: 1000; font-size: 16px; font-weight: 500; }
+                .form-group label { font-weight: 600; color: #1f2937; display: block; margin-bottom: ${window.innerWidth <= 768 ? '8px' : '10px'}; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; }
+                .form-group input, .form-group select, .form-group textarea { border: 2px solid #e5e7eb; border-radius: 8px; padding: ${window.innerWidth <= 768 ? '12px' : '14px'}; width: 100%; box-sizing: border-box; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; color: #1f2937; transition: all 0.3s ease; background: #ffffff; }
+                .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #1e40af; box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15); outline: none; }
+                .form-group textarea { resize: vertical; min-height: ${window.innerWidth <= 768 ? '120px' : '150px'}; }
+                .form-group .error { color: #dc2626; font-size: ${window.innerWidth <= 768 ? '12px' : '14px'}; margin-top: ${window.innerWidth <= 768 ? '4px' : '6px'}; display: block; }
+                .submit-button { background: #1e40af; color: #ffffff; padding: ${window.innerWidth <= 768 ? '12px 20px' : '14px 28px'}; border: none; border-radius: 8px; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: ${window.innerWidth <= 768 ? '8px' : '10px'}; min-width: ${window.innerWidth <= 768 ? '100%' : '220px'}; transition: all 0.3s ease; margin: ${window.innerWidth <= 768 ? '20px' : '30px'} auto 0; }
+                .submit-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2); }
+                .submit-button:disabled { background: #d1d5db; cursor: not-allowed; transform: none; box-shadow: none; }
+                .success-toast { position: fixed; top: 20px; right: 20px; background: #16a34a; color: #ffffff; padding: ${window.innerWidth <= 768 ? '12px 18px' : '16px 24px'}; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: ${window.innerWidth <= 768 ? '8px' : '12px'}; animation: toastFadeInOut 3s ease-in-out; z-index: 1000; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; font-weight: 500; }
+                .error-toast { position: fixed; top: 20px; right: 20px; background: #ef4444; color: #ffffff; padding: ${window.innerWidth <= 768 ? '12px 18px' : '16px 24px'}; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: ${window.innerWidth <= 768 ? '8px' : '12px'}; animation: toastFadeInOut 3s ease-in-out; z-index: 1000; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; font-weight: 500; }
                 @keyframes toastFadeInOut { 0% { opacity: 0; transform: translateX(20px); } 10% { opacity: 1; transform: translateX(0); } 90% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; transform: translateX(20px); } }
-                @media (max-width: 768px) { .main-container { padding: 30px 15px; } .content-section { padding: 20px; } .form-section h2 { font-size: 24px; } .form-grid { gap: 15px; } .form-group label { font-size: 14px; } .form-group input, .form-group select, .form-group textarea { padding: 12px; font-size: 14px; } .submit-button { min-width: 100%; padding: 12px 20px; font-size: 14px; } }
+                @media (max-width: 768px) { .main-container { padding: 16px; } .content-section { padding: 20px; } .form-section h2 { font-size: 24px; margin-bottom: 16px; } .form-section h2:after { width: 60px; } .form-section .subheader { font-size: 14px; margin-bottom: 20px; } .auth-message { padding: 15px; margin-bottom: 20px; } .auth-message p { font-size: 14px; margin-bottom: 10px; } .auth-message .button-group { gap: 10px; margin-top: 10px; } .login-link, .logout-button { padding: 10px 20px; font-size: 14px; } .login-link img, .logout-button img { width: 16px; height: 16px; } .form-grid { gap: 16px; } .form-group label { font-size: 14px; margin-bottom: 8px; } .form-group input, .form-group select, .form-group textarea { padding: 12px; font-size: 14px; } .form-group textarea { min-height: 120px; } .form-group .error { font-size: 12px; margin-top: 4px; } .submit-button { min-width: 100%; padding: 12px 20px; font-size: 14px; margin: 20px auto 0; } .success-toast, .error-toast { padding: 12px 18px; font-size: 14px; gap: 8px; } }
             `}</style>
 
             <div className="main-container">
@@ -253,8 +251,8 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                                     <button onClick={handleLogout} className="logout-button">
                                         <img
                                             src="https://img.icons8.com/ios-filled/50/ffffff/logout-rounded-left.png"
-                                            width="20"
-                                            height="20"
+                                            width={window.innerWidth <= 768 ? '16px' : '20px'}
+                                            height={window.innerWidth <= 768 ? '16px' : '20px'}
                                             alt="Logout Icon"
                                         />
                                         Logout
@@ -273,8 +271,8 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                                     >
                                         <img
                                             src="https://img.icons8.com/ios-filled/50/ffffff/login-rounded-right.png"
-                                            width="20"
-                                            height="20"
+                                            width={window.innerWidth <= 768 ? '16px' : '20px'}
+                                            height={window.innerWidth <= 768 ? '16px' : '20px'}
                                             alt="Login Icon"
                                         />
                                         Login Sekarang
@@ -306,8 +304,8 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                             >
                                 <img
                                     src="https://img.icons8.com/ios-filled/50/ffffff/checkmark.png"
-                                    width="20"
-                                    height="20"
+                                    width={window.innerWidth <= 768 ? '16px' : '20px'}
+                                    height={window.innerWidth <= 768 ? '16px' : '20px'}
                                     alt="Checkmark Icon"
                                 />
                                 {isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
@@ -326,8 +324,8 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                 <div className="success-toast">
                     <img
                         src="https://img.icons8.com/ios-filled/50/ffffff/checkmark.png"
-                        width="20"
-                        height="20"
+                        width={window.innerWidth <= 768 ? '16px' : '20px'}
+                        height={window.innerWidth <= 768 ? '16px' : '20px'}
                         alt="Success Icon"
                     />
                     {flash.success}
@@ -338,8 +336,8 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                 <div className="error-toast">
                     <img
                         src="https://img.icons8.com/ios-filled/50/ffffff/error.png"
-                        width="20"
-                        height="20"
+                        width={window.innerWidth <= 768 ? '16px' : '20px'}
+                        height={window.innerWidth <= 768 ? '16px' : '20px'}
                         alt="Error Icon"
                     />
                     {flash?.error || errors.general || 'Gagal mengirim pengajuan. Silakan coba lagi.'}

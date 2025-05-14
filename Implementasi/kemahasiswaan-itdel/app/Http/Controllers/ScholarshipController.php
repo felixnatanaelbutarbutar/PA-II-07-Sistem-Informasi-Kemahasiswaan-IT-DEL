@@ -122,7 +122,7 @@ class ScholarshipController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:3048',
+            'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'category_id' => 'required|exists:scholarship_categories,category_id',
@@ -200,7 +200,7 @@ class ScholarshipController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'category_id' => 'required|exists:scholarship_categories,category_id',
@@ -342,29 +342,41 @@ class ScholarshipController extends Controller
 
     public function guestIndex()
     {
-        $scholarships = Scholarship::with('category')
-            ->where('is_active', true)
-            ->get()
-            ->map(function ($scholarship) {
-                return [
-                    'scholarship_id' => $scholarship->scholarship_id,
-                    'name' => $scholarship->name,
-                    'description' => $scholarship->description,
-                    'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
-                    'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateString() : null,
-                    'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
-                    'category_id' => $scholarship->category_id,
-                    'category' => $scholarship->category ? [
-                        'category_id' => $scholarship->category->category_id,
-                        'category_name' => $scholarship->category->category_name,
-                    ] : null,
-                    'is_active' => $scholarship->is_active,
-                ];
-            });
+        try {
+            $scholarships = Scholarship::with('category')
+                ->where('is_active', true)
+                ->get();
 
-        return Inertia::render('Scholarship', [
-            'scholarships' => $scholarships,
-        ]);
+            // Debugging: Log data scholarships untuk memastikan poster dan tanggal tersedia
+            Log::info('Scholarships fetched in guestIndex', [
+                'count' => $scholarships->count(),
+                'sample' => $scholarships->take(1)->toArray(),
+            ]);
+
+            return Inertia::render('ScholarshipIndex', [
+                'scholarships' => $scholarships->map(function ($scholarship) {
+                    return [
+                        'scholarship_id' => $scholarship->scholarship_id,
+                        'name' => $scholarship->name ?? '-',
+                        'description' => $scholarship->description ?? '-',
+                        'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null, // Konversi path ke URL
+                        'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-', // Tanggal mulai
+                        'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-', // Tanggal selesai
+                        'category_id' => $scholarship->category_id ?? '-', // ID kategori
+                    ];
+                }),
+                'auth' => ['user' => Auth::user()],
+                'userRole' => Auth::check() ? strtolower(Auth::user()->role) : 'guest',
+                'flash' => session()->only(['success', 'error']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in FormController::guestIndex: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Hindari redirect loop, gunakan redirect ke homepage
+            return redirect()->route('home')->with('error', 'Gagal memuat daftar beasiswa. Silakan coba lagi nanti.');
+        }
     }
 
         public function guestShow($scholarship_id)

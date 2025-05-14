@@ -52,6 +52,18 @@ export default function ScholarshipIndex() {
         });
     };
 
+    // Function to truncate description to a limited number of words
+    const truncateDescription = (html, maxWords = 10) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html || 'Tidak ada deskripsi.';
+        const text = tempDiv.textContent || tempDiv.innerText || '';
+        const words = text.split(/\s+/);
+        if (words.length > maxWords) {
+            return words.slice(0, maxWords).join(' ') + '...';
+        }
+        return text;
+    };
+
     // Responsive styles
     const getStyles = () => {
         const width = window.innerWidth;
@@ -181,6 +193,20 @@ export default function ScholarshipIndex() {
                 textOverflow: 'ellipsis',
                 display: '-webkit-box',
                 WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+            },
+            cardDescription: {
+                fontSize: '13px',
+                color: '#6b7280',
+                marginBottom: '12px',
+                flexGrow: '1',
+                textAlign: 'justify',
+                lineHeight: '1.5',
+                maxHeight: '60px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
             },
             cardDetail: {
@@ -337,9 +363,12 @@ export default function ScholarshipIndex() {
                                         </div>
                                     )}
                                     <h3 style={styles.cardTitle}>{scholarship.name || '-'}</h3>
-                                    <p style={styles.cardText}>
-                                        {scholarship.description || 'Tidak ada deskripsi.'}
-                                    </p>
+                                    <div
+                                        style={styles.cardDescription}
+                                        dangerouslySetInnerHTML={{
+                                            __html: truncateDescription(scholarship.description),
+                                        }}
+                                    />
                                     <p style={styles.cardDetail}>
                                         <strong>Kategori ID:</strong> {scholarship.category_id || '-'}
                                     </p>

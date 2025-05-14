@@ -97,7 +97,7 @@ export default function ScholarshipDetail() {
             poster: {
                 width: '100',
                 height: 0,
-                paddingBottom: '56.25%', // Rasio 16:9
+                paddingBottom: '160.78%', // Changed to 9:16 ratio to match ScholarshipIndex
                 maxHeight: width <= 768 ? '200px' : '300px',
                 objectFit: 'cover',
                 borderRadius: '8px',

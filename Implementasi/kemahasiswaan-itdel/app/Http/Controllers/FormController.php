@@ -584,45 +584,6 @@ class FormController extends Controller
         }
     }
 
-    public function guestIndex()
-    {
-        try {
-            $scholarships = Scholarship::with('category')
-                ->where('is_active', true)
-                ->get();
-
-            // Debugging: Log data scholarships untuk memastikan poster dan tanggal tersedia
-            Log::info('Scholarships fetched in guestIndex', [
-                'count' => $scholarships->count(),
-                'sample' => $scholarships->take(1)->toArray(),
-            ]);
-
-            return Inertia::render('ScholarshipIndex', [
-                'scholarships' => $scholarships->map(function ($scholarship) {
-                    return [
-                        'scholarship_id' => $scholarship->scholarship_id,
-                        'name' => $scholarship->name ?? '-',
-                        'description' => $scholarship->description ?? '-',
-                        'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null, // Konversi path ke URL
-                        'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-', // Tanggal mulai
-                        'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-', // Tanggal selesai
-                        'category_id' => $scholarship->category_id ?? '-', // ID kategori
-                    ];
-                }),
-                'auth' => ['user' => Auth::user()],
-                'userRole' => Auth::check() ? strtolower(Auth::user()->role) : 'guest',
-                'flash' => session()->only(['success', 'error']),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error in FormController::guestIndex: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Hindari redirect loop, gunakan redirect ke homepage
-            return redirect()->route('home')->with('error', 'Gagal memuat daftar beasiswa. Silakan coba lagi nanti.');
-        }
-    }
-
 
     public function showForm($form_id)
     {
