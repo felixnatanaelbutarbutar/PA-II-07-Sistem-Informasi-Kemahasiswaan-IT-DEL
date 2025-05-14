@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('field_type', 50);
             $table->boolean('is_required')->default(false); // Changed to boolean
             $table->text('options')->nullable();
-            $table->string('order', 3)->default('0');
+            $table->string('order', length: 3)->default('0');
             $table->string('file_path')->nullable();
             $table->boolean('is_active')->default(true);
             $table->unsignedBigInteger('created_by');

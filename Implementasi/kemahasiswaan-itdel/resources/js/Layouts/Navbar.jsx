@@ -80,7 +80,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                 return 'Aspirasi';
             default:
                 if (url.startsWith('/counseling')) return 'Konseling';
-                if (url.startsWith('/beasiswa')) return 'Beasiswa';
+                if (url.startsWith('/scholarships')) return 'Beasiswa';
                 if (url.startsWith('/downloads')) return 'Unduhan';
                 if (url.startsWith('/bem')) return 'BEM';
                 if (url.startsWith('/mpm')) return 'MPM';
@@ -108,7 +108,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                     {title}
                 </Link>
             );
-        } else if (url.startsWith('/counseling') || url.startsWith('/beasiswa') ||
+        } else if (url.startsWith('/counseling') || url.startsWith('/scholarships') ||
             url.startsWith('/downloads')) {
             breadcrumbItems.push(
                 <span key="separator-1" className="mx-2">/</span>,
@@ -219,7 +219,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     {layananDropdownOpen && (
                                         <div className="dropdown-menu absolute right-0 mt-1 w-60 overflow-hidden rounded-lg bg-white/95 py-1 shadow-lg ring-1 ring-black ring-opacity-5 backdrop-blur-sm">
                                             <Link
-                                                href="#"
+                                                href="/scholarships"
                                                 className="dropdown-item block border-l-4 border-transparent px-4 py-3 text-sm text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700"
                                                 onClick={() => setLayananDropdownOpen(false)}
                                             >
@@ -467,7 +467,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     {layananDropdownOpen && (
                                         <div className="pl-4 space-y-1">
                                             <Link
-                                                href="#"
+                                                href="/scholarships"
                                                 className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                                 onClick={() => {
                                                     setLayananDropdownOpen(false);

@@ -426,7 +426,7 @@ class RoleHelper
         // Menu untuk Kelola Chatbot Rules
         if ($permissions['chatbot'] ?? false) {
             $menuItems[] = [
-                'name' => 'Kelola Aturan Chatbot',
+                'name' => 'Kelola FAQ',
                 'route' => 'admin.chatbot-rules.index',
                 'icon' => 'chatbot',
                 'visible' => true,

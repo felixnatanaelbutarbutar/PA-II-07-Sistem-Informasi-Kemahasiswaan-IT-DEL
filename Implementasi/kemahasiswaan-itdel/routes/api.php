@@ -74,3 +74,6 @@ Route::get('/activities/nearest', [ActivityController::class, 'nearest']);
 //     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
 // });
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/forms/submissions', [FormController::class, 'submitForm'])->name('forms.submissions.store');
+});

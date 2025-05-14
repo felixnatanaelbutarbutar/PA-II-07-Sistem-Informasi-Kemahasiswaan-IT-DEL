@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Scholarship;
-use App\Models\ScholarshipCategory;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Helpers\RoleHelper;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Scholarship;
+use Illuminate\Http\Request;
+use App\Models\ScholarshipForm;
 use Barryvdh\DomPDF\Facade\PDF;
+use App\Models\ScholarshipCategory;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ScholarshipController extends Controller
 {
@@ -121,7 +122,7 @@ class ScholarshipController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:3048',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'category_id' => 'required|exists:scholarship_categories,category_id',
@@ -366,7 +367,7 @@ class ScholarshipController extends Controller
         ]);
     }
 
-    public function guestShow($scholarship_id)
+        public function guestShow($scholarship_id)
     {
         try {
             $scholarship = Scholarship::with('category')
@@ -374,26 +375,63 @@ class ScholarshipController extends Controller
                 ->where('is_active', true)
                 ->firstOrFail();
 
-            return Inertia::render('ScholarshipShow', [
+            $form = ScholarshipForm::with(['fields', 'settings'])
+                ->where('scholarship_id', $scholarship_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($form && $form->settings) {
+                $form->settings->checkAndActivateForm();
+            }
+
+            $formData = $form ? [
+                'form_id' => $form->form_id,
+                'form_name' => $form->form_name,
+                'description' => $form->description,
+                'is_active' => $form->is_active,
+                'open_date' => $form->settings?->submission_start ? $form->settings->submission_start->toDateTimeString() : '-',
+                'close_date' => $form->settings?->submission_deadline ? $form->settings->submission_deadline->toDateTimeString() : '-',
+                'sections' => $form->fields->groupBy('section_title')->map(function ($fields, $sectionTitle) {
+                    return [
+                        'title' => $sectionTitle ?? '',
+                        'fields' => $fields->map(function ($field) {
+                            return [
+                                'field_id' => $field->field_id,
+                                'field_name' => $field->field_name,
+                                'field_type' => $field->field_type,
+                                'is_required' => (bool) $field->is_required,
+                                'options' => $field->options ? explode(',', $field->options) : null,
+                                'order' => (int) $field->order,
+                                'file_path' => $field->file_path ? Storage::url($field->file_path) : null,
+                                'is_active' => $field->is_active,
+                            ];
+                        })->sortBy('order')->values()->toArray(),
+                    ];
+                })->values(),
+            ] : null;
+
+            return Inertia::render('ScholarshipDetail', [
+                'auth' => ['user' => Auth::user()],
+                'userRole' => Auth::check() ? strtolower(Auth::user()->role) : 'guest',
                 'scholarship' => [
                     'scholarship_id' => $scholarship->scholarship_id,
-                    'name' => $scholarship->name,
-                    'description' => $scholarship->description,
-                    'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
-                    'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateString() : null,
-                    'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
-                    'category_id' => $scholarship->category_id,
+                    'name' => $scholarship->name ?? '-',
+                    'description' => $scholarship->description ?? '-',
+                    'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null, // Tambahkan poster
+                    'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-', // Tambahkan start_date
+                    'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-', // Tambahkan end_date
                     'category' => $scholarship->category ? [
-                        'category_id' => $scholarship->category->category_id,
-                        'category_name' => $scholarship->category->category_name,
+                        'id' => $scholarship->category->id,
+                        'name' => $scholarship->category->name,
                     ] : null,
-                    'is_active' => $scholarship->is_active,
-                    'status' => $scholarship->is_active ? 'Aktif' : 'Non-Aktif',
+                    'category_id' => $scholarship->category_id ?? '-', // Tambahkan category_id untuk konsistensi
                 ],
+                'form' => $formData,
+                'flash' => session()->only(['success', 'error']),
             ]);
         } catch (\Exception $e) {
-            return redirect()->route('guest.scholarship.index')
-                ->with('error', 'Beasiswa tidak ditemukan.');
+            Log::error('Error in FormController::guestShow: ' . $e->getMessage());
+            return redirect()->route('scholarships.index')->with('error', 'Beasiswa tidak ditemukan.');
         }
     }
 

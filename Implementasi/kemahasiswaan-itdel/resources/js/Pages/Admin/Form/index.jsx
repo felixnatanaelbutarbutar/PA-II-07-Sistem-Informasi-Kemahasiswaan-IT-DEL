@@ -724,6 +724,27 @@ export default function Index({ auth, userRole, permissions, menu, forms = [], s
                                                                     </svg>
                                                                     Preview
                                                                 </Link>
+                                                                <Link
+                                                                    href={route('admin.form.responses', form.form_id)}
+                                                                    className="flex items-center px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition"
+                                                                    onClick={() => setOpenDropdownId(null)}
+                                                                >
+                                                                    <svg
+                                                                        className="w-4 h-4 mr-2"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={2}
+                                                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01"
+                                                                        />
+                                                                    </svg>
+                                                                    Lihat Respon
+                                                                </Link>
                                                                 <button
                                                                     onClick={() => handleDeleteClick(form)}
                                                                     className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition w-full text-left"
@@ -879,6 +900,27 @@ export default function Index({ auth, userRole, permissions, menu, forms = [], s
                                                                 />
                                                             </svg>
                                                             Preview
+                                                        </Link>
+                                                        <Link
+                                                            href={route('admin.form.responses', form.form_id)}
+                                                            className="flex items-center px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition"
+                                                            onClick={() => setOpenDropdownId(null)}
+                                                        >
+                                                            <svg
+                                                                className="w-4 h-4 mr-2"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01"
+                                                                />
+                                                            </svg>
+                                                            Lihat Respon
                                                         </Link>
                                                         <button
                                                             onClick={() => handleDeleteClick(form)}

@@ -3,49 +3,44 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 
 export default function ScholarshipIndex() {
     const { scholarships, auth, userRole, flash } = usePage().props;
     const isStudent = userRole === 'mahasiswa';
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('Semua');
     const [submissionStatus, setSubmissionStatus] = useState({});
 
     // Fetch submission status for students
     useEffect(() => {
         if (isStudent && auth.user?.token) {
-            setIsLoading(true);
-            axios
-                .get('/api/forms/submissions', {
-                    headers: {
-                        Authorization: `Bearer ${auth.user.token}`,
-                    },
-                })
-                .then((response) => {
-                    const submissions = response.data.submissions || [];
+            fetch('/api/forms/submissions', {
+                headers: {
+                    Authorization: `Bearer ${auth.user.token}`,
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
                     const statusMap = {};
-                    submissions.forEach((submission) => {
+                    (data.submissions || []).forEach((submission) => {
                         statusMap[submission.form_id] = true;
                     });
                     setSubmissionStatus(statusMap);
-                    setIsLoading(false);
                 })
-                .catch((err) => {
-                    setError('Gagal memuat status pengiriman formulir');
-                    setIsLoading(false);
-                    console.error(err);
-                });
+                .catch((err) => console.error('Gagal memuat status pengiriman:', err));
         }
     }, [isStudent, auth.user?.token]);
 
-    // Filter scholarships based on search term
-    const filteredScholarships = scholarships.filter(
-        (scholarship) =>
+    // Filter scholarships based on search term and category
+    const filteredScholarships = scholarships.filter((scholarship) => {
+        const matchesSearch =
             scholarship.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            scholarship.category?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+            scholarship.category_id?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory =
+            selectedCategory === 'Semua' ||
+            scholarship.category_id === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     // Format date
     const formatDate = (dateString) => {
@@ -62,81 +57,149 @@ export default function ScholarshipIndex() {
         const width = window.innerWidth;
         return {
             container: {
-                maxWidth: '1200px',
+                maxWidth: '1500px',
                 margin: '0 auto',
-                padding: width <= 768 ? '16px' : '24px',
+                padding: width <= 768 ? '16px' : '32px',
+                backgroundColor: '#f9fafb',
+                minHeight: 'calc(100vh - 200px)',
             },
             section: {
                 background: '#ffffff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
-                padding: width <= 768 ? '16px' : '24px',
-                marginBottom: '24px',
+                borderRadius: '16px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                padding: width <= 768 ? '20px' : '32px',
+                marginBottom: '32px',
+                transition: 'all 0.3s ease',
             },
             title: {
-                fontSize: width <= 768 ? '24px' : '32px',
-                fontWeight: '700',
+                fontSize: width <= 768 ? '24px' : '36px',
+                fontWeight: '800',
                 color: '#1e40af',
-                marginBottom: '16px',
+                marginBottom: '24px',
+                textAlign: 'center',
+                textTransform: 'uppercase',
             },
-            searchContainer: {
+            searchFilterContainer: {
                 display: 'flex',
                 justifyContent: 'center',
-                marginBottom: '24px',
+                gap: '20px',
+                marginBottom: '32px',
+                flexWrap: 'wrap', // Responsif untuk layar kecil
             },
             searchInput: {
-                width: width <= 768 ? '100%' : '50%',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: '1px solid #d1d5db',
+                width: width <= 768 ? '100%' : '60%',
+                padding: '14px 20px',
+                borderRadius: '50px',
+                border: '2px solid #d1d5db',
                 fontSize: '16px',
                 outline: 'none',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease',
+                '&:focus': {
+                    borderColor: '#1e40af',
+                    boxShadow: '0 4px 12px rgba(30, 64, 175, 0.2)',
+                },
+                minWidth: '200px', // Minimum width untuk konsistensi
+            },
+            filterSelect: {
+                padding: '14px 20px',
+                borderRadius: '50px',
+                border: '2px solid #d1d5db',
+                fontSize: '16px',
+                outline: 'none',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease',
+                '&:focus': {
+                    borderColor: '#1e40af',
+                    boxShadow: '0 4px 12px rgba(30, 64, 175, 0.2)',
+                },
+                minWidth: '150px',
             },
             grid: {
                 display: 'grid',
-                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '24px',
+                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: width <= 768 ? '16px' : '24px',
+                padding: '16px',
             },
             card: {
                 background: '#ffffff',
                 border: '1px solid #e5e7eb',
                 borderRadius: '12px',
                 padding: '16px',
-                transition: 'transform 0.2s, box-shadow 0.2s',
+                transition: 'all 0.3s ease',
                 display: 'flex',
                 flexDirection: 'column',
+                height: '100%',
+                overflow: 'hidden',
             },
             cardHover: {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                transform: 'translateY(-6px)',
+                boxShadow: '0 6px 24px rgba(0, 0, 0, 0.1)',
+                background: '#f8fafc',
+            },
+            cardImage: {
+                width: '100',
+                height: 0,
+                paddingBottom: '160.78%', // Tetap rasio 9:16
+                objectFit: 'cover',
+                borderRadius: '8px',
+                marginBottom: '12px',
+                transition: 'transform 0.3s ease',
+                backgroundColor: '#e5e7eb',
+                overflow: 'hidden',
+                position: 'relative',
+                '&:hover': {
+                    transform: 'scale(1.05)',
+                },
+            },
+            cardImageContent: {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100',
+                height: '100',
             },
             cardTitle: {
-                fontSize: '18px',
-                fontWeight: '600',
+                fontSize: width <= 768 ? '16px' : '20px',
+                fontWeight: '700',
                 color: '#1f2937',
-                marginBottom: '8px',
+                marginBottom: '10px',
+                textAlign: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
             },
             cardText: {
-                fontSize: '14px',
+                fontSize: '13px',
                 color: '#6b7280',
                 marginBottom: '12px',
-                flexGrow: 1,
+                flexGrow: '1',
+                textAlign: 'justify',
+                lineHeight: '1.5',
+                maxHeight: '80px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
             },
             cardDetail: {
-                fontSize: '14px',
+                fontSize: '13px',
                 color: '#6b7280',
-                marginBottom: '8px',
+                marginBottom: '10px',
+                textAlign: 'left',
             },
             button: {
                 padding: '8px 16px',
                 borderRadius: '8px',
                 fontSize: '14px',
-                fontWeight: '500',
+                fontWeight: '600',
                 textAlign: 'center',
                 textDecoration: 'none',
                 display: 'block',
-                marginTop: '8px',
+                marginTop: '10px',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
             },
             detailButton: {
                 background: '#1e40af',
@@ -144,6 +207,7 @@ export default function ScholarshipIndex() {
             },
             detailButtonHover: {
                 background: '#1e3a8a',
+                transform: 'translateY(-2px)',
             },
             applyButton: {
                 background: '#16a34a',
@@ -151,6 +215,7 @@ export default function ScholarshipIndex() {
             },
             applyButtonHover: {
                 background: '#15803d',
+                transform: 'translateY(-2px)',
             },
             disabledButton: {
                 background: '#d1d5db',
@@ -159,32 +224,37 @@ export default function ScholarshipIndex() {
             },
             emptyState: {
                 textAlign: 'center',
-                padding: '32px',
+                padding: '40px',
                 background: '#f9fafb',
                 borderRadius: '12px',
                 marginBottom: '24px',
+                color: '#6b7280',
             },
             error: {
                 color: '#dc2626',
                 textAlign: 'center',
-                padding: '16px',
+                padding: '20px',
                 background: '#fef2f2',
                 borderRadius: '8px',
                 marginBottom: '24px',
+                fontWeight: '500',
             },
             flash: {
                 padding: '16px',
                 borderRadius: '8px',
                 marginBottom: '24px',
                 textAlign: 'center',
+                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
             },
             flashSuccess: {
                 background: '#dcfce7',
                 color: '#166534',
+                borderLeft: '4px solid #166534',
             },
             flashError: {
                 background: '#fef2f2',
                 color: '#dc2626',
+                borderLeft: '4px solid #dc2626',
             },
         };
     };
@@ -200,7 +270,7 @@ export default function ScholarshipIndex() {
     return (
         <GuestLayout>
             <Navbar />
-            <Head title="Daftar Beasiswa" />
+            <Head title="Beasiswa" />
             <div style={styles.container}>
                 {flash?.success && (
                     <div style={{ ...styles.flash, ...styles.flashSuccess }}>
@@ -212,10 +282,9 @@ export default function ScholarshipIndex() {
                         {flash.error}
                     </div>
                 )}
-                {error && <div style={styles.error}>{error}</div>}
                 <div style={styles.section}>
-                    <h2 style={styles.title}>Daftar Beasiswa</h2>
-                    <div style={styles.searchContainer}>
+                    {/* <h2 style={styles.title}>Daftar Beasiswa</h2> */}
+                    <div style={styles.searchFilterContainer}>
                         <input
                             type="text"
                             placeholder="Cari beasiswa atau kategori..."
@@ -223,37 +292,26 @@ export default function ScholarshipIndex() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                        <select
+                            style={styles.filterSelect}
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        >
+                            <option value="Semua">Semua Kategori</option>
+                            {[...new Set(scholarships.map(scholarship => scholarship.category_id))].map((category) => (
+                                <option key={category} value={category}>
+                                    {category}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                    {isLoading ? (
-                        <div style={{ textAlign: 'center', padding: '32px' }}>
-                            <svg
-                                className="animate-spin h-8 w-8 text-blue-500 mx-auto"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                />
-                                <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                                />
-                            </svg>
-                        </div>
-                    ) : filteredScholarships.length === 0 ? (
+                    {filteredScholarships.length === 0 ? (
                         <div style={styles.emptyState}>
-                            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>
+                            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
                                 Tidak ada beasiswa yang tersedia
                             </h3>
                             <p style={{ color: '#6b7280' }}>
-                                Tidak ada beasiswa yang sesuai dengan pencarian Anda.
+                                Coba ubah kata kunci pencarian atau pilih kategori lain.
                             </p>
                         </div>
                     ) : (
@@ -263,67 +321,46 @@ export default function ScholarshipIndex() {
                                     key={scholarship.scholarship_id}
                                     style={styles.card}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = styles.cardHover.transform;
-                                        e.currentTarget.style.boxShadow = styles.cardHover.boxShadow;
+                                        Object.assign(e.currentTarget.style, styles.cardHover);
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'none';
-                                        e.currentTarget.style.boxShadow = 'none';
+                                        Object.assign(e.currentTarget.style, styles.card);
                                     }}
                                 >
+                                    {scholarship.poster && (
+                                        <div style={styles.cardImage}>
+                                            <img
+                                                src={scholarship.poster}
+                                                alt={`${scholarship.name} Poster`}
+                                                style={styles.cardImageContent}
+                                            />
+                                        </div>
+                                    )}
                                     <h3 style={styles.cardTitle}>{scholarship.name || '-'}</h3>
                                     <p style={styles.cardText}>
                                         {scholarship.description || 'Tidak ada deskripsi.'}
                                     </p>
                                     <p style={styles.cardDetail}>
-                                        <strong>Kategori:</strong>{' '}
-                                        {scholarship.category?.name || '-'}
+                                        <strong>Kategori ID:</strong> {scholarship.category_id || '-'}
+                                    </p>
+                                    <p style={styles.cardDetail}>
+                                        <strong>Tanggal Mulai:</strong> {formatDate(scholarship.start_date)}
+                                    </p>
+                                    <p style={styles.cardDetail}>
+                                        <strong>Tanggal Selesai:</strong> {formatDate(scholarship.end_date)}
                                     </p>
                                     <Link
                                         href={`/scholarships/${scholarship.scholarship_id}`}
                                         style={{ ...styles.button, ...styles.detailButton }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.background =
-                                                styles.detailButtonHover.background;
+                                            Object.assign(e.currentTarget.style, styles.detailButtonHover);
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.currentTarget.style.background =
-                                                styles.detailButton.background;
+                                            Object.assign(e.currentTarget.style, styles.detailButton);
                                         }}
                                     >
                                         Lihat Detail
                                     </Link>
-                                    {isStudent && scholarship.form?.is_active && (
-                                        <Link
-                                            href={`/scholarships/form/${scholarship.form.form_id}`}
-                                            style={
-                                                submissionStatus[scholarship.form.form_id]
-                                                    ? { ...styles.button, ...styles.disabledButton }
-                                                    : { ...styles.button, ...styles.applyButton }
-                                            }
-                                            onMouseEnter={(e) => {
-                                                if (!submissionStatus[scholarship.form.form_id]) {
-                                                    e.currentTarget.style.background =
-                                                        styles.applyButtonHover.background;
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!submissionStatus[scholarship.form.form_id]) {
-                                                    e.currentTarget.style.background =
-                                                        styles.applyButton.background;
-                                                }
-                                            }}
-                                            onClick={(e) => {
-                                                if (submissionStatus[scholarship.form.form_id]) {
-                                                    e.preventDefault();
-                                                }
-                                            }}
-                                        >
-                                            {submissionStatus[scholarship.form.form_id]
-                                                ? 'Sudah Diajukan'
-                                                : 'Ajukan Beasiswa'}
-                                        </Link>
-                                    )}
                                 </div>
                             ))}
                         </div>

@@ -55,13 +55,13 @@ class FormController extends Controller
             if (!empty($searchTerm)) {
                 $query->where(function ($q) use ($searchTerm) {
                     $q->whereRaw('LOWER(form_name) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
-                      ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
-                      ->orWhereHas('scholarship', function ($q) use ($searchTerm) {
-                          $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
-                      })
-                      ->orWhereHas('creator', function ($q) use ($searchTerm) {
-                          $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
-                      });
+                        ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                        ->orWhereHas('scholarship', function ($q) use ($searchTerm) {
+                            $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
+                        })
+                        ->orWhereHas('creator', function ($q) use ($searchTerm) {
+                            $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
+                        });
                 });
             }
 
@@ -69,13 +69,13 @@ class FormController extends Controller
                 $query->orderBy('form_name', $sortDirection);
             } elseif ($sortBy === 'scholarship_name') {
                 $query->join('scholarships', 'scholarship_forms.scholarship_id', '=', 'scholarships.scholarship_id')
-                      ->orderBy('scholarships.name', $sortDirection);
+                    ->orderBy('scholarships.name', $sortDirection);
             } elseif ($sortBy === 'open_date') {
                 $query->leftJoin('form_settings', 'scholarship_forms.form_id', '=', 'form_settings.form_id')
-                      ->orderBy('form_settings.submission_start', $sortDirection);
+                    ->orderBy('form_settings.submission_start', $sortDirection);
             } elseif ($sortBy === 'close_date') {
                 $query->leftJoin('form_settings', 'scholarship_forms.form_id', '=', 'form_settings.form_id')
-                      ->orderBy('form_settings.submission_deadline', $sortDirection);
+                    ->orderBy('form_settings.submission_deadline', $sortDirection);
             }
 
             $forms = $query->get()->map(function ($form) {
@@ -386,7 +386,7 @@ class FormController extends Controller
 
                 return redirect()->route('admin.form.index')->with('success', 'Formulir berhasil diperbarui.');
             });
-        } catch (\ValidationException $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation error in FormController::update: ' . json_encode($e->errors()), [
                 'form_id' => $form->form_id,
                 'request_data' => $request->except(['sections.*.fields.*.file']),
@@ -584,23 +584,29 @@ class FormController extends Controller
         }
     }
 
-    // Public method for ScholarshipIndex
     public function guestIndex()
     {
         try {
             $scholarships = Scholarship::with('category')
                 ->where('is_active', true)
                 ->get();
+
+            // Debugging: Log data scholarships untuk memastikan poster dan tanggal tersedia
+            Log::info('Scholarships fetched in guestIndex', [
+                'count' => $scholarships->count(),
+                'sample' => $scholarships->take(1)->toArray(),
+            ]);
+
             return Inertia::render('ScholarshipIndex', [
                 'scholarships' => $scholarships->map(function ($scholarship) {
                     return [
                         'scholarship_id' => $scholarship->scholarship_id,
-                        'name' => $scholarship->name,
-                        'description' => $scholarship->description,
-                        'category' => $scholarship->category ? [
-                            'id' => $scholarship->category->id,
-                            'name' => $scholarship->category->name,
-                        ] : null,
+                        'name' => $scholarship->name ?? '-',
+                        'description' => $scholarship->description ?? '-',
+                        'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null, // Konversi path ke URL
+                        'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-', // Tanggal mulai
+                        'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-', // Tanggal selesai
+                        'category_id' => $scholarship->category_id ?? '-', // ID kategori
                     ];
                 }),
                 'auth' => ['user' => Auth::user()],
@@ -608,77 +614,16 @@ class FormController extends Controller
                 'flash' => session()->only(['success', 'error']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error in FormController::guestIndex: ' . $e->getMessage());
-            return redirect()->route('scholarships.index')->with('error', 'Gagal memuat daftar beasiswa.');
-        }
-    }
-
-    // Public method for ScholarshipDetail
-    public function guestShow($scholarship_id)
-    {
-        try {
-            $scholarship = Scholarship::with('category')
-                ->where('scholarship_id', $scholarship_id)
-                ->where('is_active', true)
-                ->firstOrFail();
-
-            $form = ScholarshipForm::with(['fields', 'settings'])
-                ->where('scholarship_id', $scholarship_id)
-                ->where('is_active', true)
-                ->first();
-
-            if ($form && $form->settings) {
-                $form->settings->checkAndActivateForm();
-            }
-
-            $formData = $form ? [
-                'form_id' => $form->form_id,
-                'form_name' => $form->form_name,
-                'description' => $form->description,
-                'is_active' => $form->is_active,
-                'open_date' => $form->settings?->submission_start ? $form->settings->submission_start->toDateTimeString() : '-',
-                'close_date' => $form->settings?->submission_deadline ? $form->settings->submission_deadline->toDateTimeString() : '-',
-                'sections' => $form->fields->groupBy('section_title')->map(function ($fields, $sectionTitle) {
-                    return [
-                        'title' => $sectionTitle ?? '',
-                        'fields' => $fields->map(function ($field) {
-                            return [
-                                'field_id' => $field->field_id,
-                                'field_name' => $field->field_name,
-                                'field_type' => $field->field_type,
-                                'is_required' => (bool) $field->is_required,
-                                'options' => $field->options ? explode(',', $field->options) : null,
-                                'order' => (int) $field->order,
-                                'file_path' => $field->file_path ? Storage::url($field->file_path) : null,
-                                'is_active' => $field->is_active,
-                            ];
-                        })->sortBy('order')->values()->toArray(),
-                    ];
-                })->values(),
-            ] : null;
-
-            return Inertia::render('ScholarshipDetail', [
-                'auth' => ['user' => Auth::user()],
-                'userRole' => Auth::check() ? strtolower(Auth::user()->role) : 'guest',
-                'scholarship' => [
-                    'scholarship_id' => $scholarship->scholarship_id,
-                    'name' => $scholarship->name,
-                    'description' => $scholarship->description,
-                    'category' => $scholarship->category ? [
-                        'id' => $scholarship->category->id,
-                        'name' => $scholarship->category->name,
-                    ] : null,
-                ],
-                'form' => $formData,
-                'flash' => session()->only(['success', 'error']),
+            Log::error('Error in FormController::guestIndex: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error in FormController::guestShow: ' . $e->getMessage());
-            return redirect()->route('scholarships.index')->with('error', 'Beasiswa tidak ditemukan.');
+
+            // Hindari redirect loop, gunakan redirect ke homepage
+            return redirect()->route('home')->with('error', 'Gagal memuat daftar beasiswa. Silakan coba lagi nanti.');
         }
     }
 
-    // Public method for ScholarshipForm
+
     public function showForm($form_id)
     {
         try {
@@ -747,5 +692,341 @@ class FormController extends Controller
         }
     }
 
+    public function storeSubmission(Request $request)
+    {
+        Log::info('storeSubmission method called', [
+            'request_data' => $request->all(),
+            'files' => $request->allFiles(),
+            'user' => Auth::user(),
+        ]);
 
+        $user = Auth::user();
+
+        if (!$user || strtolower($user->role) !== 'mahasiswa') {
+            Log::warning('User not authenticated or not mahasiswa', [
+                'user' => $user,
+            ]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai mahasiswa untuk mengirimkan formulir.');
+        }
+
+        try {
+            $validatedData = $request->validate([
+                'form_id' => 'required|exists:scholarship_forms,form_id',
+                'scholarship_id' => 'required|exists:scholarships,scholarship_id',
+                'data' => 'required|array',
+            ]);
+
+            Log::info('Form submission received', [
+                'form_id' => $validatedData['form_id'],
+                'scholarship_id' => $validatedData['scholarship_id'],
+                'user_id' => $user->id,
+                'data' => $validatedData['data'],
+            ]);
+
+            $form = ScholarshipForm::with('settings')
+                ->where('form_id', $validatedData['form_id'])
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            if (!$form->settings || !$form->settings->accept_responses) {
+                Log::warning('Form submission rejected: Form not accepting responses', [
+                    'form_id' => $validatedData['form_id'],
+                ]);
+                return redirect()->back()->with('error', 'Formulir ini tidak menerima pengajuan saat ini.');
+            }
+
+            if ($form->settings->one_submission_per_email) {
+                $existingSubmission = FormSubmission::where('form_id', $validatedData['form_id'])
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if ($existingSubmission) {
+                    Log::warning('Form submission rejected: User already submitted', [
+                        'form_id' => $validatedData['form_id'],
+                        'user_id' => $user->id,
+                    ]);
+                    return redirect()->back()->with('error', 'Anda hanya dapat mengirimkan formulir ini satu kali.');
+                }
+            }
+
+            $submissionData = $validatedData['data'];
+            $processedData = [];
+
+            $fields = FormField::where('form_id', $validatedData['form_id'])->get();
+            foreach ($fields as $field) {
+                $fieldKey = "sections.{$field->section_title}.fields.{$field->order}";
+                $value = $submissionData[$fieldKey] ?? null;
+
+                if ($field->is_required && (is_null($value) || $value === '')) {
+                    Log::warning('Form submission rejected: Required field missing', [
+                        'form_id' => $validatedData['form_id'],
+                        'field' => $field->field_name,
+                    ]);
+                    return redirect()->back()->with('error', "Field {$field->field_name} wajib diisi.");
+                }
+
+                if ($field->field_type === 'file') {
+                    // Akses file menggunakan array notation
+                    $fileArray = $request->file('data') ?? [];
+                    $file = $fileArray[$fieldKey] ?? null;
+
+                    if ($file && $file instanceof \Illuminate\Http\UploadedFile) {
+                        Log::info('File detected for field', [
+                            'field_key' => $fieldKey,
+                            'file_name' => $file->getClientOriginalName(),
+                        ]);
+                        $path = $file->store('submissions', 'public');
+                        $processedData[$fieldKey] = $path;
+                    } else {
+                        Log::warning('No file detected for field', [
+                            'field_key' => $fieldKey,
+                        ]);
+                        $processedData[$fieldKey] = $value; // Simpan nilai asli jika bukan file
+                    }
+                } else {
+                    $processedData[$fieldKey] = $value;
+                }
+            }
+
+            DB::beginTransaction();
+
+            $submissionId = $this->generateId('FSUB', 'submission_id', 'form_submissions');
+            $submission = FormSubmission::create([
+                'submission_id' => $submissionId,
+                'form_id' => $validatedData['form_id'],
+                'user_id' => $user->id,
+                'data' => $processedData,
+                'personal_data' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'nim' => $user->nim,
+                ],
+                'submitted_at' => now(),
+            ]);
+
+            DB::commit();
+
+            Log::info('Form submission saved successfully', [
+                'submission_id' => $submission->submission_id,
+                'form_id' => $submission->form_id,
+                'user_id' => $submission->user_id,
+                'data' => $processedData,
+            ]);
+
+            return redirect()->route('scholarships.show', $validatedData['scholarship_id'])
+                ->with('success', 'Pengajuan berhasil dikirim.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed in storeSubmission', [
+                'user_id' => $user->id,
+                'errors' => $e->errors(),
+                'request_data' => $request->all(),
+            ]);
+            return redirect()->back()
+                ->with('error', 'Gagal memvalidasi data. Silakan periksa input Anda.')
+                ->withErrors($e->errors());
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            Log::error('Failed to save form submission', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'request_data' => $request->all(),
+            ]);
+            return redirect()->back()
+                ->with('error', 'Gagal menyimpan pengajuan. Silakan coba lagi.')
+                ->withErrors(['general' => 'Gagal menyimpan pengajuan: ' . $e->getMessage()]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Unexpected error while saving form submission', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'request_data' => $request->all(),
+            ]);
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan. Silakan coba lagi.')
+                ->withErrors(['general' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+        }
+    }
+    public function responses($form_id)
+    {
+        try {
+            $user = Auth::user();
+            $role = strtolower($user->role);
+
+            $form = ScholarshipForm::with(['settings', 'scholarship:name'])
+                ->where('form_id', $form_id)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            if ($form->settings) {
+                $form->settings->checkAndActivateForm();
+            }
+
+            $submissions = FormSubmission::with('user:id,name,email,nim')
+                ->where('form_id', $form_id)
+                ->orderBy('submitted_at', 'desc')
+                ->get()
+                ->map(function ($submission) {
+                    return [
+                        'submission_id' => $submission->submission_id,
+                        'user' => [
+                            'id' => $submission->user->id,
+                            'name' => $submission->user->name,
+                            'email' => $submission->user->email,
+                            'nim' => $submission->user->nim,
+                        ],
+                        'submitted_at' => $submission->submitted_at->toDateTimeString(),
+                        'data' => $submission->data,
+                    ];
+                });
+
+            return Inertia::render('Admin/Form/Responses', [
+                'auth' => ['user' => $user],
+                'userRole' => $role,
+                'permissions' => RoleHelper::getRolePermissions($role),
+                'form' => [
+                    'form_id' => $form->form_id,
+                    'form_name' => $form->form_name,
+                    'scholarship_name' => $form->scholarship->name ?? '-',
+                    'open_date' => $form->settings?->submission_start ? $form->settings->submission_start->toDateTimeString() : '-',
+                    'close_date' => $form->settings?->submission_deadline ? $form->settings->submission_deadline->toDateTimeString() : '-',
+                ],
+                'submissions' => $submissions,
+                'menu' => RoleHelper::getNavigationMenu($role),
+                'flash' => session()->only(['success', 'error']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in FormController::responses: ' . $e->getMessage(), [
+                'form_id' => $form_id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('admin.form.index')->with('error', 'Gagal memuat daftar respons formulir.');
+        }
+    }
+
+    public function responseDetail($form_id, $submission_id)
+    {
+        try {
+            $user = Auth::user();
+            $role = strtolower($user->role);
+
+            Log::info('FormController::responseDetail called', [
+                'form_id' => $form_id,
+                'submission_id' => $submission_id,
+                'user_role' => $role,
+            ]);
+
+            $form = ScholarshipForm::with(['settings', 'scholarship:name', 'fields'])
+                ->where('form_id', $form_id)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            if ($form->settings) {
+                $form->settings->checkAndActivateForm();
+            }
+
+            $submission = FormSubmission::with('user:id,name,email,nim')
+                ->where('submission_id', $submission_id)
+                ->where('form_id', $form_id)
+                ->firstOrFail();
+
+            $fields = $form->fields->map(function ($field) {
+                return [
+                    'field_id' => $field->field_id,
+                    'field_name' => $field->field_name,
+                    'field_type' => $field->field_type,
+                    'is_required' => (bool) $field->is_required,
+                    'order' => (int) $field->order,
+                    'section_title' => $field->section_title ?? 'default',
+                ];
+            })->sortBy('order')->values();
+
+            Log::info('Fields retrieved', ['fields' => $fields->toArray()]);
+
+            $submissionData = $submission->data;
+            $organizedData = [];
+            foreach ($fields as $field) {
+                $sectionTitle = $field['section_title'] ?? 'default';
+                $fieldKey = "sections.{$sectionTitle}.fields.{$field['order']}";
+                $value = $submissionData[$fieldKey] ?? null;
+
+                if ($field['field_type'] === 'file' && $value) {
+                    // Tambahkan debugging untuk memastikan file ada
+                    $fileExists = Storage::disk('public')->exists($value);
+                    Log::info('Checking file existence', [
+                        'file_path' => $value,
+                        'exists' => $fileExists,
+                    ]);
+
+                    if ($fileExists) {
+                        $fileUrl = Storage::url($value); // Gunakan Storage::url() langsung
+                        Log::info('Generated file URL', [
+                            'file_path' => $value,
+                            'file_url' => $fileUrl,
+                        ]);
+                        $value = $fileUrl;
+                    } else {
+                        Log::warning('File not found in storage', [
+                            'file_path' => $value,
+                        ]);
+                        $value = null; // Jika file tidak ada, set nilai ke null
+                    }
+                }
+
+                $organizedData[] = [
+                    'field_name' => $field['field_name'],
+                    'value' => $value,
+                    'field_type' => $field['field_type'],
+                ];
+            }
+
+            Log::info('Organized data', ['organizedData' => $organizedData]);
+
+            $menu = RoleHelper::getNavigationMenu($role);
+            if (empty($menu)) {
+                Log::warning('Menu is empty for role: ' . $role, ['method' => 'responseDetail']);
+            } else {
+                Log::info('Menu retrieved successfully', ['menu' => $menu]);
+            }
+
+            return Inertia::render('Admin/Form/ResponsesDetail', [
+                'auth' => ['user' => $user],
+                'userRole' => $role,
+                'permissions' => RoleHelper::getRolePermissions($role),
+                'form' => [
+                    'form_id' => $form->form_id,
+                    'form_name' => $form->form_name,
+                    'scholarship_name' => $form->scholarship->name ?? '-',
+                ],
+                'submission' => [
+                    'submission_id' => $submission->submission_id,
+                    'user' => [
+                        'id' => $submission->user->id,
+                        'name' => $submission->user->name,
+                        'email' => $submission->user->email,
+                        'nim' => $submission->user->nim,
+                    ],
+                    'submitted_at' => $submission->submitted_at->toDateTimeString(),
+                    'data' => $organizedData,
+                ],
+                'menu' => $menu,
+                'flash' => session()->only(['success', 'error']),
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Form or Submission not found in FormController::responseDetail', [
+                'form_id' => $form_id,
+                'submission_id' => $submission_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('admin.form.responses', $form_id)->with('error', 'Formulir atau pengajuan tidak ditemukan.');
+        } catch (\Exception $e) {
+            Log::error('Error in FormController::responseDetail: ' . $e->getMessage(), [
+                'form_id' => $form_id,
+                'submission_id' => $submission_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('admin.form.responses', $form_id)->with('error', 'Gagal memuat detail respons: ' . $e->getMessage());
+        }
+    }
 }
