@@ -1,16 +1,17 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, usePage, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 
-export default function Index({ auth, userRole, permissions, bem, navigation }) {
-    const { flash } = usePage().props ?? {};
+export default function Index({ auth, userRole, permissions, bems = [], navigation, flash = {} }) {
+    const [searchTerm, setSearchTerm] = useState("");
     const [showNotification, setShowNotification] = useState(false);
-    const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationMessage, setNotificationMessage] = useState("");
     const [notificationType, setNotificationType] = useState('success');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [bemIdToDelete, setBemIdToDelete] = useState(null);
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [showActivateModal, setShowActivateModal] = useState(false);
+    const [bemIdToActivate, setBemIdToActivate] = useState(null);
+    const [currentStatus, setCurrentStatus] = useState(null);
 
     useEffect(() => {
         if (flash) {
@@ -23,7 +24,6 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                 setNotificationType('error');
                 setShowNotification(true);
             }
-
             if (flash.success || flash.error) {
                 const timer = setTimeout(() => {
                     setShowNotification(false);
@@ -34,32 +34,41 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
     }, [flash]);
 
     const handleDeleteClick = (bemId) => {
+        if (!bemId) {
+            setNotificationMessage('ID data BEM tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
         setBemIdToDelete(bemId);
         setShowDeleteModal(true);
     };
 
-    const confirmDelete = async () => {
-        if (bemIdToDelete) {
-            setIsDeleting(true);
-            try {
-                await axios.delete(route('admin.bem.destroy', bemIdToDelete));
+    const confirmDelete = () => {
+        if (!bemIdToDelete) {
+            setNotificationMessage('Tidak ada data BEM yang dipilih untuk dihapus.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        const deleteRoute = route("admin.bem.delete", bemIdToDelete);
+        router.post(deleteRoute, {}, {
+            onSuccess: () => {
                 setNotificationMessage('Data BEM berhasil dihapus!');
                 setNotificationType('success');
                 setShowNotification(true);
-                router.reload({ preserveScroll: true });
-            } catch (error) {
-                console.error('Error deleting BEM:', error);
-                setNotificationMessage(
-                    'Gagal menghapus data BEM: ' + (error.response?.data?.message || 'Terjadi kesalahan.')
-                );
+            },
+            onError: (errors) => {
+                const errorMessage = errors.message || Object.values(errors).join(' ') || 'Terjadi kesalahan saat menghapus.';
+                setNotificationMessage(`Gagal menghapus data BEM: ${errorMessage}`);
                 setNotificationType('error');
                 setShowNotification(true);
-            } finally {
-                setIsDeleting(false);
+            },
+            onFinish: () => {
                 setShowDeleteModal(false);
                 setBemIdToDelete(null);
-            }
-        }
+            },
+        });
     };
 
     const cancelDelete = () => {
@@ -67,11 +76,78 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
         setBemIdToDelete(null);
     };
 
+    const handleToggleActiveClick = (bemId, currentStatus) => {
+        if (!bemId) {
+            setNotificationMessage('ID data BEM tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        if (!currentStatus) {
+            setBemIdToActivate(bemId);
+            setCurrentStatus(currentStatus);
+            setShowActivateModal(true);
+        } else {
+            handleToggleActive(bemId, currentStatus);
+        }
+    };
+
+    const confirmActivate = () => {
+        if (!bemIdToActivate) {
+            setNotificationMessage('Tidak ada data BEM yang dipilih untuk diaktifkan.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        handleToggleActive(bemIdToActivate, currentStatus);
+        setShowActivateModal(false);
+        setBemIdToActivate(null);
+        setCurrentStatus(null);
+    };
+
+    const cancelActivate = () => {
+        setShowActivateModal(false);
+        setBemIdToActivate(null);
+        setCurrentStatus(null);
+    };
+
+    const handleToggleActive = (bemId, currentStatus) => {
+        if (!bemId) {
+            setNotificationMessage('ID data BEM tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        const toggleRoute = route("admin.bem.toggle-active", bemId);
+        router.post(toggleRoute, {}, {
+            onSuccess: () => {
+                setNotificationMessage(`Data BEM berhasil ${currentStatus ? 'dinonaktifkan' : 'diaktifkan'}!`);
+                setNotificationType('success');
+                setShowNotification(true);
+            },
+            onError: (errors) => {
+                const errorMessage = errors.message || Object.values(errors).join(' ') || 'Terjadi kesalahan saat mengubah status.';
+                setNotificationMessage(`Gagal mengubah status BEM: ${errorMessage}`);
+                setNotificationType('error');
+                setShowNotification(true);
+            },
+        });
+    };
+
+    const filteredBems = bems.filter(item => {
+        const cabinetName = item?.cabinet_name || '';
+        return cabinetName.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
     return (
-        <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={navigation}>
+        <AdminLayout
+            user={auth?.user}
+            userRole={userRole}
+            permissions={permissions}
+            navigation={navigation}
+        >
             <Head title="Kelola Data BEM" />
 
-            {/* Notification */}
             {showNotification && (
                 <div
                     className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
@@ -115,31 +191,33 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                             </p>
                         </div>
                         <div className="ml-auto pl-3">
-                            <div className="-mx-1.5 -my-1.5">
-                                <button
-                                    onClick={() => setShowNotification(false)}
-                                    className={`inline-flex rounded-md p-1.5 ${
-                                        notificationType === 'success'
-                                            ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
-                                            : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
-                                    } focus:outline-none focus:ring-2`}
+                            <button
+                                onClick={() => setShowNotification(false)}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notificationType === 'success'
+                                        ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
+                                        : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
+                                } focus:outline-none focus:ring-2`}
+                            >
+                                <span className="sr-only">Tutup</span>
+                                <svg
+                                    className="h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
                                 >
-                                    <span className="sr-only">Dismiss</span>
-                                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Modal Konfirmasi Hapus */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
@@ -156,35 +234,16 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                             <button
                                 onClick={cancelDelete}
                                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-                                disabled={isDeleting}
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={confirmDelete}
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"
-                                disabled={isDeleting}
                             >
-                                {isDeleting ? (
-                                    <svg
-                                        className="w-4 h-4 mr-2 animate-spin"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M4 12a8 8 0 0116 0 8 8 0 01-16 0z"
-                                        />
-                                    </svg>
-                                ) : (
-                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                )}
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                                 Hapus
                             </button>
                         </div>
@@ -192,172 +251,176 @@ export default function Index({ auth, userRole, permissions, bem, navigation }) 
                 </div>
             )}
 
-            <div className="py-10">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    {/* Header */}
-                    <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
-                        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div>
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Kelola Data BEM</h1>
-                                <p className="text-gray-500 mt-1">Kelola data organisasi BEM</p>
+            {showActivateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-yellow-100 rounded-full p-3">
+                                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
-                            {!bem && (
-                                <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <Link
-                                        href={route('admin.bem.create')}
-                                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        Tambah Data BEM
-                                    </Link>
-                                </div>
-                            )}
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Aktivasi</h3>
+                        <p className="text-gray-600 text-center mb-6">Jika data BEM ini diaktifkan, data BEM lain yang sedang aktif akan otomatis dinonaktifkan. Apakah Anda yakin ingin melanjutkan?</p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={cancelActivate}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmActivate}
+                                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition flex items-center"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Aktifkan
+                            </button>
                         </div>
                     </div>
+                </div>
+            )}
 
-                    {/* BEM Data */}
-                    {bem ? (
-                        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
-                            {bem.logo && (
-                                <div className="mb-6 text-center">
-                                    <h2 className="text-xl font-semibold text-gray-700 mb-2">Logo BEM</h2>
-                                    <img
-                                        src={`/storage/${bem.logo}`}
-                                        alt="Logo BEM"
-                                        className="w-32 h-32 object-contain mx-auto"
-                                    />
-                                </div>
-                            )}
+            <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
+                <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Kelola Data BEM</h1>
+                            <p className="text-gray-500 mt-1">Kelola data organisasi BEM</p>
+                        </div>
 
-                            <div className="mb-6">
-                                <h2 className="text-xl font-semibold text-gray-700 mb-2">Perkenalan BEM</h2>
-                                <p className="text-gray-600">{bem.introduction}</p>
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                            <div className="relative flex-grow md:flex-grow-0 md:w-64">
+                                <input
+                                    type="text"
+                                    placeholder="Cari nama kabinet..."
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <svg className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
                             </div>
 
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Visi dan Misi</h2>
-                            <div className="mb-4">
-                                <h3 className="text-lg font-semibold text-gray-700">Visi</h3>
-                                <p className="text-gray-600">{bem.vision}</p>
-                            </div>
-                            <div className="mb-4">
-                                <h3 className="text-lg font-semibold text-gray-700">Misi</h3>
-                                <ul className="list-decimal pl-5 text-gray-600">
-                                    {bem.mission?.map((mission, index) => (
-                                        <li key={index} className="mb-2">{mission}</li>
-                                    ))}
-                                </ul>
-                            </div>
+                            <Link
+                                href={route("admin.bem.create")}
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Tambah Data BEM
+                            </Link>
+                        </div>
+                    </div>
+                </div>
 
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4 mt-6">Struktur Organisasi</h2>
+                <div className="grid grid-cols-1 gap-6">
+                    {filteredBems.length > 0 ? (
+                        filteredBems.map((item) => (
+                            <div key={item.id} className="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]">
+                                <Link href={route('admin.bem.show', item.id)} className="flex flex-col sm:flex-row">
+                                    <div className="w-full sm:w-48 h-48 overflow-hidden relative">
+                                        <img
+                                            src={`/storage/${item.logo || 'images/placeholder.png'}`}
+                                            alt={item.cabinet_name || 'BEM'}
+                                            className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                                            onError={(e) => {
+                                                console.error(`Failed to load image for ${item.cabinet_name || 'BEM'}`);
+                                                e.target.src = "/images/placeholder.png";
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    </div>
 
-                            <div className="mb-8">
-                                <h3 className="text-xl font-semibold text-gray-700 mb-4">Jabatan Utama (BPH)</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {bem.structure?.positions?.map((position, index) => (
-                                        <div key={index} className="border p-4 rounded-lg">
-                                            <h4 className="text-lg font-semibold text-gray-800">{position.title}</h4>
-                                            <p className="text-gray-600">{position.name}</p>
-                                            {position.photo ? (
-                                                <div className="mt-2 w-32 h-32">
-                                                    <img
-                                                        src={`/storage/${position.photo}`}
-                                                        alt={position.name}
-                                                        className="w-full h-full object-cover rounded-lg aspect-square"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="mt-2 w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-                                                    <span className="text-gray-500">Tidak ada foto</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="mb-8">
-                                <h3 className="text-xl font-semibold text-gray-700 mb-4">Departemen</h3>
-                                {bem.structure?.departments?.map((dept, deptIndex) => (
-                                    <div key={deptIndex} className="mb-6">
-                                        <h4 className="text-lg font-semibold text-gray-800 mb-2">{dept.name}</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {dept.members && dept.members.length > 0 ? (
-                                                dept.members.map((member, memberIndex) => (
-                                                    <div key={memberIndex} className="border p-4 rounded-lg">
-                                                        <p className="text-gray-600 font-semibold">{member.position}</p>
-                                                        <p className="text-gray-600">{member.name}</p>
-                                                        {member.photo ? (
-                                                            <div className="mt-2 w-32 h-32">
-                                                                <img
-                                                                    src={`/storage/${member.photo}`}
-                                                                    alt={member.name}
-                                                                    className="w-full h-full object-cover rounded-lg aspect-square"
-                                                                />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="mt-2 w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-                                                                <span className="text-gray-500">Tidak ada foto</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-gray-600">Belum ada anggota di departemen ini.</p>
-                                            )}
+                                    <div className="p-5 flex flex-col flex-grow sm:w-[calc(100%-12rem)]">
+                                        <h2 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition">
+                                            {item.cabinet_name || 'Nama Kabinet Tidak Diketahui'}
+                                        </h2>
+                                        <div className="mb-4">
+                                            <p className="text-gray-600 text-sm leading-relaxed">
+                                                Status: {item.is_active ? 'Aktif' : 'Tidak Aktif'}
+                                            </p>
+                                            <p className="text-gray-600 text-sm leading-relaxed">
+                                                Pengenalan: {item.introduction ? item.introduction.substring(0, 100) + (item.introduction.length > 100 ? '...' : '') : 'Tidak ada pengenalan'}
+                                            </p>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4 mt-6">Program Kerja</h2>
-                            <p className="text-gray-600 mb-2">{bem.work_programs?.description}</p>
-                            <ul className="list-decimal pl-5 text-gray-600">
-                                {bem.work_programs?.programs?.map((program, index) => (
-                                    <li key={index} className="mb-2">{program}</li>
-                                ))}
-                            </ul>
-
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4 mt-6">Status Rekrutmen</h2>
-                            <p className="text-gray-600">{bem.recruitment_status}</p>
-
-                            <div className="mt-6 flex space-x-4">
-                                <Link
-                                    href={route('admin.bem.edit', bem.id)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                                >
-                                    Edit
                                 </Link>
-                                <button
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                                    onClick={() => handleDeleteClick(bem.id)}
-                                    disabled={isDeleting}
-                                >
-                                    Hapus
-                                </button>
+
+                                <div className="flex justify-between items-center p-5 border-t border-gray-100">
+                                    <Link
+                                        href={route('admin.bem.edit', item.id)}
+                                        className="flex items-center text-blue-600 hover:text-blue-700 transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-blue-50"
+                                    >
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit
+                                    </Link>
+
+                                    <button
+                                        onClick={() => handleDeleteClick(item.id)}
+                                        className="flex items-center text-red-600 hover:text-red-700 transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-red-50"
+                                    >
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Hapus
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleToggleActiveClick(item.id, item.is_active)}
+                                        className={`flex items-center px-2 py-1 rounded-md transition ${item.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
+                                    >
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            {item.is_active ? (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11V7m0 5v4m-6-6h12m-6 6h6" />
+                                            ) : (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            )}
+                                        </svg>
+                                        {item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        ))
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-200">
+                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
                             <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                                 <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-medium text-gray-700 mb-2">Tidak ada data BEM yang tersedia</h3>
+                            <h3 className="text-xl font-medium text-gray-700 mb-2">Tidak ada data BEM tersedia</h3>
                             <p className="text-gray-500 text-center max-w-md mb-6">
-                                Silakan tambahkan data BEM baru untuk mulai mengisi konten website Anda.
+                                {searchTerm ? "Tidak ada hasil yang sesuai dengan pencarian" : "Silakan tambah data BEM baru untuk memulai mengisi konten website"}
                             </p>
-                            <Link
-                                href={route('admin.bem.create')}
-                                className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
-                            >
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                Tambah Data BEM Baru
-                            </Link>
+                            {searchTerm ? (
+                                <button
+                                    onClick={() => setSearchTerm("")}
+                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
+                                >
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Reset Pencarian
+                                </button>
+                            ) : (
+                                <Link
+                                    href={route("admin.bem.create")}
+                                    className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Tambah Data BEM Baru
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>

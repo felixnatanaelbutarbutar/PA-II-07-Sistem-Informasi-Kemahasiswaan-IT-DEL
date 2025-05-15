@@ -323,7 +323,7 @@ export default function Index({ auth, permissions, userRole, navigation, mpms = 
                     {filteredMpms.length > 0 ? (
                         filteredMpms.map((item) => (
                             <div key={item.id} className="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]">
-                                <Link href={route('admin.mpm.show', item.id)} className="flex flex-col sm:flex-row">
+                                <Link href={route('admin.mpm.showDetail', item.id)} className="flex flex-col sm:flex-row">
                                     <div className="w-full sm:w-48 h-48 overflow-hidden relative">
                                         <img
                                             src={`/storage/${item.logo || 'images/placeholder.png'}`}

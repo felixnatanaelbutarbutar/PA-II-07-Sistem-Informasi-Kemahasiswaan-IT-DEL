@@ -17,6 +17,8 @@ export default function Edit({ auth, userRole, permissions, bem, navigation }) {
         },
         logo: null,
         recruitment_status: bem.recruitment_status || 'CLOSED',
+        is_active: bem.is_active || false, // Tambah is_active
+        cabinet_name: bem.cabinet_name || '', // Tambah cabinet_name
     });
     const [positions, setPositions] = useState(data.structure.positions);
     const [departments, setDepartments] = useState(data.structure.departments);
@@ -143,6 +145,9 @@ export default function Edit({ auth, userRole, permissions, bem, navigation }) {
         // Client-side validation
         const newErrors = {};
 
+        // Validate cabinet_name
+        if (!data.cabinet_name.trim()) newErrors.cabinet_name = 'Nama kabinet wajib diisi.';
+
         // Validate introduction
         if (!data.introduction.trim()) newErrors.introduction = 'Perkenalan wajib diisi.';
 
@@ -221,6 +226,8 @@ export default function Edit({ auth, userRole, permissions, bem, navigation }) {
         formData.append('mission', JSON.stringify(data.mission));
         formData.append('work_programs', JSON.stringify(data.work_programs));
         formData.append('recruitment_status', data.recruitment_status);
+        formData.append('is_active', data.is_active ? '1' : '0'); // Kirim is_active
+        formData.append('cabinet_name', data.cabinet_name); // Kirim cabinet_name
 
         if (data.logo) {
             formData.append('logo', data.logo);
@@ -380,6 +387,25 @@ export default function Edit({ auth, userRole, permissions, bem, navigation }) {
 
                 <div className="bg-white rounded-xl shadow-md p-8 mb-8">
                     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                        {/* Nama Kabinet */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Nama Kabinet <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={data.cabinet_name}
+                                onChange={(e) => setData({ ...data, cabinet_name: e.target.value })}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.cabinet_name
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                                placeholder="Masukkan nama kabinet"
+                            />
+                            {errors.cabinet_name && <p className="text-red-500 text-xs mt-1">{errors.cabinet_name}</p>}
+                        </div>
+
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
                                 Perkenalan BEM <span className="text-red-500">*</span>
@@ -749,6 +775,25 @@ export default function Edit({ auth, userRole, permissions, bem, navigation }) {
                                 <option value="CLOSED">CLOSED</option>
                             </select>
                             {errors.recruitment_status && <p className="text-red-500 text-xs mt-1">{errors.recruitment_status}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Status Aktif <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={data.is_active ? 'true' : 'false'}
+                                onChange={(e) => setData({ ...data, is_active: e.target.value === 'true' })}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.is_active
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            >
+                                <option value="true">Aktif</option>
+                                <option value="false">Tidak Aktif</option>
+                            </select>
+                            {errors.is_active && <p className="text-red-500 text-xs mt-1">{errors.is_active}</p>}
                         </div>
 
                         <div className="flex justify-end space-x-4 pt-4 border-t">

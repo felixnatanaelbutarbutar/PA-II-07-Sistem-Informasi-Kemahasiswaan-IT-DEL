@@ -17,7 +17,7 @@ class BemController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $bem = BEM::with(['creator', 'updater'])->first();
+        $bems = BEM::with(['creator', 'updater'])->get(); // Ambil semua data BEM
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -25,12 +25,10 @@ class BemController extends Controller
         Log::info('Flash message in BEM index: ' . ($flashSuccess ?? 'No flash message'));
 
         return Inertia::render('Admin/Bem/index', [
-            'auth' => [
-                'user' => $user,
-            ],
+            'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
-            'bem' => $bem,
+            'bems' => $bems, // Ganti 'bem' dengan 'bems' untuk daftar
             'menu' => $menuItems,
             'navigation' => $menuItems,
             'flash' => [
@@ -50,9 +48,7 @@ class BemController extends Controller
         $permissions = RoleHelper::getRolePermissions($role);
 
         return Inertia::render('Admin/Bem/add', [
-            'auth' => [
-                'user' => $user,
-            ],
+            'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
@@ -79,11 +75,17 @@ class BemController extends Controller
                 'work_programs' => 'required|json',
                 'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
                 'recruitment_status' => 'required|in:OPEN,CLOSED',
+                'is_active' => 'required|boolean',
+                'cabinet_name' => 'required|string', // Validasi cabinet_name
                 'positions.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
                 'departments.*.members.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:5096',
             ]);
 
             Log::info('Validation passed');
+
+            if ($validated['is_active']) {
+                BEM::where('is_active', true)->update(['is_active' => false]); // Pastikan hanya satu yang aktif
+            }
 
             $structure = json_decode($request->input('structure'), true);
 
@@ -124,13 +126,15 @@ class BemController extends Controller
             Log::info('Structure data after processing:', $structure);
 
             BEM::create([
-                'introduction' => $request->introduction,
-                'vision' => $request->vision,
-                'mission' => json_decode($request->mission, true),
+                'introduction' => $validated['introduction'],
+                'vision' => $validated['vision'],
+                'mission' => json_decode($validated['mission'], true),
                 'structure' => $structure,
-                'work_programs' => json_decode($request->work_programs, true),
+                'work_programs' => json_decode($validated['work_programs'], true),
                 'logo' => $logoPath,
-                'recruitment_status' => $request->recruitment_status,
+                'recruitment_status' => $validated['recruitment_status'],
+                'is_active' => $validated['is_active'],
+                'cabinet_name' => $validated['cabinet_name'], // Simpan cabinet_name
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
             ]);
@@ -155,9 +159,7 @@ class BemController extends Controller
         $permissions = RoleHelper::getRolePermissions($role);
 
         return Inertia::render('Admin/Bem/edit', [
-            'auth' => [
-                'user' => $user,
-            ],
+            'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
             'bem' => $bem,
@@ -186,11 +188,17 @@ class BemController extends Controller
                 'work_programs' => 'required|json',
                 'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'recruitment_status' => 'required|in:OPEN,CLOSED',
+                'is_active' => 'required|boolean',
+                'cabinet_name' => 'required|string', // Validasi cabinet_name
                 'positions.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'departments.*.members.*' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
             Log::info('Validation passed');
+
+            if ($validated['is_active'] && !$bem->is_active) {
+                BEM::where('is_active', true)->update(['is_active' => false]); // Pastikan hanya satu yang aktif
+            }
 
             $structure = json_decode($request->input('structure'), true);
 
@@ -242,13 +250,15 @@ class BemController extends Controller
             Log::info('Structure data after processing:', $structure);
 
             $bem->update([
-                'introduction' => $request->introduction,
-                'vision' => $request->vision,
-                'mission' => json_decode($request->mission, true),
+                'introduction' => $validated['introduction'],
+                'vision' => $validated['vision'],
+                'mission' => json_decode($validated['mission'], true),
                 'structure' => $structure,
-                'work_programs' => json_decode($request->work_programs, true),
+                'work_programs' => json_decode($validated['work_programs'], true),
                 'logo' => $logoPath,
-                'recruitment_status' => $request->recruitment_status,
+                'recruitment_status' => $validated['recruitment_status'],
+                'is_active' => $validated['is_active'],
+                'cabinet_name' => $validated['cabinet_name'], // Update cabinet_name
                 'updated_by' => Auth::id(),
             ]);
 
@@ -298,16 +308,63 @@ class BemController extends Controller
             $bem->delete();
             Log::info('BEM deleted successfully');
 
-            return response()->json(['message' => 'Data BEM berhasil dihapus!'], 200);
+            return redirect()->route('admin.bem.index')->with('success', 'Data BEM berhasil dihapus.');
         } catch (\Exception $e) {
             Log::error('Error deleting BEM data: ' . $e->getMessage());
-            return response()->json(['message' => 'Gagal menghapus data BEM: ' . $e->getMessage()], 500);
+            return redirect()->route('admin.bem.index')->with('error', 'Gagal menghapus data BEM: ' . $e->getMessage());
+        }
+    }
+
+    public function showDetail($id)
+    {
+        $user = Auth::user();
+        $role = $user ? strtolower($user->role) : null;
+
+        $bem = BEM::with(['creator', 'updater'])->findOrFail($id);
+        $menuItems = $role ? RoleHelper::getNavigationMenu($role) : [];
+        $permissions = $role ? RoleHelper::getRolePermissions($role) : [];
+
+        return Inertia::render('Admin/Bem/detail', [
+            'auth' => ['user' => $user],
+            'userRole' => $role,
+            'permissions' => $permissions,
+            'bem' => $bem,
+            'menu' => $menuItems,
+            'navigation' => $menuItems,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
+        ]);
+    }
+
+    public function toggleActive($id)
+    {
+        try {
+            $bem = BEM::findOrFail($id);
+
+            if (!$bem->is_active) {
+                BEM::where('is_active', true)->update(['is_active' => false]);
+                $bem->is_active = true;
+                $message = 'Data BEM diaktifkan dengan sukses.';
+            } else {
+                $bem->is_active = false;
+                $message = 'Data BEM dinonaktifkan dengan sukses.';
+            }
+
+            $bem->update(['updated_by' => Auth::id()]);
+            Log::info('BEM toggled to ' . ($bem->is_active ? 'active' : 'inactive') . ' with ID: ' . $bem->id);
+
+            return redirect()->route('admin.bem.index')->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Error toggling BEM status: ' . $e->getMessage());
+            return redirect()->route('admin.bem.index')->with('error', 'Gagal mengubah status BEM: ' . $e->getMessage());
         }
     }
 
     public function show()
     {
-        $bem = BEM::first();
+        $bem = BEM::where('is_active', true)->first();
 
         return Inertia::render('BEM', [
             'bem' => $bem,

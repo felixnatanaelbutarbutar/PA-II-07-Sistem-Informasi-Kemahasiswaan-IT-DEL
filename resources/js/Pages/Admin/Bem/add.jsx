@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Head, router, Link } from '@inertiajs/react'; // Tambahkan Link dari @inertiajs/react
+import { Head, router, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function Add({ auth, userRole, permissions, navigation, bemExists }) {
+export default function Add({ auth, userRole, permissions, navigation, }) {
     const [data, setData] = useState({
         introduction: '',
         vision: '',
@@ -17,6 +17,8 @@ export default function Add({ auth, userRole, permissions, navigation, bemExists
         },
         logo: null,
         recruitment_status: 'CLOSED',
+        is_active: false, // Tambah is_active
+        cabinet_name: '', // Tambah cabinet_name
     });
     const [clientErrors, setClientErrors] = useState({});
     const [serverErrors, setServerErrors] = useState({});
@@ -146,6 +148,7 @@ export default function Add({ auth, userRole, permissions, navigation, bemExists
             newErrors.work_programs_programs = 'Setiap program kerja wajib diisi.';
         }
         if (!data.recruitment_status) newErrors.recruitment_status = 'Status rekrutmen wajib dipilih.';
+        if (!data.cabinet_name.trim()) newErrors.cabinet_name = 'Nama kabinet wajib diisi.'; // Validasi cabinet_name
 
         const positionErrors = positions.map((position, index) => {
             const errors = {};
@@ -188,6 +191,8 @@ export default function Add({ auth, userRole, permissions, navigation, bemExists
         formData.append('mission', JSON.stringify(data.mission));
         formData.append('work_programs', JSON.stringify(data.work_programs));
         formData.append('recruitment_status', data.recruitment_status);
+        formData.append('is_active', data.is_active ? '1' : '0'); // Kirim is_active
+        formData.append('cabinet_name', data.cabinet_name); // Kirim cabinet_name
 
         if (data.logo) {
             formData.append('logo', data.logo);
@@ -243,6 +248,8 @@ export default function Add({ auth, userRole, permissions, navigation, bemExists
                         work_programs: { description: '', programs: [''] },
                         logo: null,
                         recruitment_status: 'CLOSED',
+                        is_active: false, // Reset is_active
+                        cabinet_name: '', // Reset cabinet_name
                     });
                     setPositions([]);
                     setDepartments([]);
@@ -264,21 +271,21 @@ export default function Add({ auth, userRole, permissions, navigation, bemExists
         );
     };
 
-    if (bemExists) {
-        return (
-            <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={navigation}>
-                <Head title="Tambah Data BEM" />
-                <div className="py-10">
-                    <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                        <div className="bg-white rounded-2xl shadow-lg p-6">
-                            <h1 className="text-3xl font-bold mb-6">Data BEM Sudah Ada</h1>
-                            <p className="text-gray-600">Data BEM sudah ada. Silakan edit data yang sudah ada.</p>
-                        </div>
-                    </div>
-                </div>
-            </AdminLayout>
-        );
-    }
+    // if (bemExists) {
+    //     return (
+    //         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={navigation}>
+    //             <Head title="Tambah Data BEM" />
+    //             <div className="py-10">
+    //                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+    //                     <div className="bg-white rounded-2xl shadow-lg p-6">
+    //                         <h1 className="text-3xl font-bold mb-6">Data BEM Sudah Ada</h1>
+    //                         <p className="text-gray-600">Data BEM sudah ada. Silakan edit data yang sudah ada.</p>
+    //                     </div>
+    //                 </div>
+    //             </div>
+    //         </AdminLayout>
+    //     );
+    // }
 
     return (
         <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={navigation}>
@@ -374,6 +381,27 @@ export default function Add({ auth, userRole, permissions, navigation, bemExists
 
                     <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Nama Kabinet */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Nama Kabinet <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.cabinet_name}
+                                    onChange={(e) => setData({ ...data, cabinet_name: e.target.value })}
+                                    className={`mt-1 block w-full rounded-md border shadow-sm transition ${
+                                        serverErrors.cabinet_name || clientErrors.cabinet_name
+                                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                            : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                    }`}
+                                    placeholder="Masukkan nama kabinet"
+                                />
+                                {(serverErrors.cabinet_name || clientErrors.cabinet_name) && (
+                                    <p className="text-red-500 text-xs mt-1">{serverErrors.cabinet_name || clientErrors.cabinet_name}</p>
+                                )}
+                            </div>
+
                             {/* Perkenalan BEM */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">
@@ -725,6 +753,28 @@ export default function Add({ auth, userRole, permissions, navigation, bemExists
                                 </select>
                                 {(serverErrors.recruitment_status || clientErrors.recruitment_status) && (
                                     <p className="text-red-500 text-xs mt-1">{serverErrors.recruitment_status || clientErrors.recruitment_status}</p>
+                                )}
+                            </div>
+
+                            {/* Status Aktif */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Status Aktif <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={data.is_active ? 'true' : 'false'}
+                                    onChange={(e) => setData({ ...data, is_active: e.target.value === 'true' })}
+                                    className={`mt-1 block w-full rounded-md border shadow-sm transition ${
+                                        serverErrors.is_active || clientErrors.is_active
+                                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                            : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                    }`}
+                                >
+                                    <option value="true">Aktif</option>
+                                    <option value="false">Tidak Aktif</option>
+                                </select>
+                                {(serverErrors.is_active || clientErrors.is_active) && (
+                                    <p className="text-red-500 text-xs mt-1">{serverErrors.is_active || clientErrors.is_active}</p>
                                 )}
                             </div>
 

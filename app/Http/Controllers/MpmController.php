@@ -438,4 +438,28 @@ class MpmController extends Controller
             return redirect()->route('admin.mpm.index')->with('error', 'Gagal mengubah status MPM: ' . $e->getMessage());
         }
     }
+    public function showDetail($id)
+    {
+        $user = Auth::user();
+        $role = $user ? strtolower($user->role) : null;
+
+        $mpm = Mpm::with(['createdBy', 'updatedBy'])->findOrFail($id);
+        $menuItems = $role ? RoleHelper::getNavigationMenu($role) : [];
+        $permissions = $role ? RoleHelper::getRolePermissions($role) : [];
+
+        return Inertia::render('Admin/Mpm/detail', [
+            'auth' => [
+                'user' => $user,
+            ],
+            'userRole' => $role,
+            'permissions' => $permissions,
+            'mpm' => $mpm,
+            'menu' => $menuItems,
+            'navigation' => $menuItems,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
+        ]);
+    }
 }

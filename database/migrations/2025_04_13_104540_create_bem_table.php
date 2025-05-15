@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('bem', function (Blueprint $table) {
             $table->id();
+            $table->string('cabinet_name')->nullable(); // Tambah kolom cabinet_name
             $table->text('introduction')->nullable(); // Kolom untuk perkenalan tentang BEM
             $table->text('vision')->nullable();
             $table->json('mission')->nullable(); // Ubah mission menjadi JSON untuk menyimpan array
@@ -17,7 +18,7 @@ return new class extends Migration
             $table->json('work_programs')->nullable(); // Ubah work_programs menjadi JSON dengan description dan programs
             $table->string('logo')->nullable(); // Kolom untuk menyimpan path logo
             $table->string('recruitment_status')->default('CLOSED');
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(false); // Tambah kolom is_active
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();

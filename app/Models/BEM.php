@@ -12,21 +12,24 @@ class BEM extends Model
     protected $table = 'bem';
 
     protected $fillable = [
-        'introduction', // Tambahkan introduction ke fillable
+        'cabinet_name', // Tambah ke fillable
+        'introduction',
         'vision',
         'mission',
         'structure',
         'work_programs',
-        'logo', // Tambahkan logo ke fillable
+        'logo',
         'recruitment_status',
+        'is_active', // Tambah ke fillable
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'structure' => 'array', // Cast JSON ke array
+        'structure' => 'array',
         'work_programs' => 'array',
-        'mission' => 'array', // Cast mission ke array
+        'mission' => 'array',
+        'is_active' => 'boolean', // Cast is_active ke boolean
     ];
 
     public function creator()

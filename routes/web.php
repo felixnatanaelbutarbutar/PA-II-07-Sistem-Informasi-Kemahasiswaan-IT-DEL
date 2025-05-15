@@ -20,7 +20,6 @@ use App\Http\Controllers\AspirationController;
 use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\ChatbotRuleController;
-use App\Http\Controllers\KegiatanBEMController;
 use App\Http\Controllers\ScholarshipController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\FormSettingsController;
@@ -155,10 +154,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/activities/count', [DashboardController::class, 'getActiveActivitiesCount'])->name('activities.count');
         Route::get('/announcements/count', [DashboardController::class, 'getAnnouncementsCount'])->name('announcements.count');
 
-// Activity Routes
-Route::resource('activities', ActivityController::class)->except(['show', 'destroy']);
-Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.delete');
-Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
+        // Activity Routes
+        Route::resource('activities', ActivityController::class)->except(['show', 'destroy']);
+        Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.delete');
+        Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
 
         // News Category Routes
         Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
@@ -217,9 +216,13 @@ Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])-
 
         // News and Announcement Routes (Kemahasiswaan, AdminBEM)
         Route::middleware(['role:kemahasiswaan,adminbem'])->group(function () {
-            Route::resource('bem', BemController::class)->except(['destroy', 'update']);
+            // BEM Routes
+            Route::get('bem', [BemController::class, 'index'])->name('bem.index');
+            Route::resource('bem', BemController::class)->except(['show', 'destroy', 'update']);
             Route::put('bem/{bem}/update', [BemController::class, 'update'])->name('bem.update');
-            Route::delete('bem/{bem}', [BemController::class, 'destroy'])->name('bem.destroy');
+            Route::post('bem/{bem}/delete', [BemController::class, 'destroy'])->name('bem.delete');
+            Route::post('bem/{bem}/toggle-active', [BemController::class, 'toggleActive'])->name('bem.toggle-active');
+            Route::get('bem/{bem}', [BemController::class, 'showDetail'])->name('bem.show');
         });
 
         // Achievement, Counseling, and Scholarship Routes (Kemahasiswaan Only)
@@ -284,6 +287,7 @@ Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])-
             Route::post('mpm/{mpm}/update', [MpmController::class, 'update'])->name('mpm.update');
             Route::post('mpm/{mpm}/delete', [MpmController::class, 'destroy'])->name('mpm.destroy');
             Route::post('mpm/{mpm}/toggle-active', [MpmController::class, 'toggleActive'])->name('mpm.toggleActive');
+            Route::get('mpm/{mpm}/detail', [MpmController::class, 'showDetail'])->name('mpm.showDetail');
 
             // Aspiration Routes
             Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');
