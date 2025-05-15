@@ -1,10 +1,11 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use App\Http\Controllers\DirectorController;
+use Illuminate\Database\Migrations\Migration;
 
-class CreateMpmTable extends Migration
+class CreateMpmsTable extends Migration
 {
     public function up()
     {
@@ -16,7 +17,9 @@ class CreateMpmTable extends Migration
             $table->json('mission');
             $table->json('structure'); // Berisi chairman, secretary, dan commissions
             $table->enum('recruitment_status', ['OPEN', 'CLOSED'])->default('OPEN');
-            $table->enum('aspiration_status', ['OPEN', 'CLOSED'])->default('OPEN'); // Kolom baru untuk status aspirasi
+            $table->enum('aspiration_status', ['OPEN', 'CLOSED'])->default('OPEN');
+            $table->boolean('is_active')->default(true); // Kolom is_active
+            $table->string('management_period')->nullable()->after('is_active'); // Kolom management_period
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('updated_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();

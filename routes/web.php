@@ -283,6 +283,7 @@ Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])-
             Route::resource('mpm', MpmController::class)->except(['destroy', 'update']);
             Route::post('mpm/{mpm}/update', [MpmController::class, 'update'])->name('mpm.update');
             Route::post('mpm/{mpm}/delete', [MpmController::class, 'destroy'])->name('mpm.destroy');
+            Route::post('mpm/{mpm}/toggle-active', [MpmController::class, 'toggleActive'])->name('mpm.toggleActive');
 
             // Aspiration Routes
             Route::get('/aspiration', [AspirationController::class, 'indexAdmin'])->name('aspiration.index');

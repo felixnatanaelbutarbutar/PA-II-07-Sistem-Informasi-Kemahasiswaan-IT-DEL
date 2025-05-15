@@ -7,20 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Mpm extends Model
 {
     protected $fillable = [
-        'logo',
-        'introduction',
-        'vision',
-        'mission',
-        'structure',
-        'recruitment_status',
-        'aspiration_status',
-        'created_by',
-        'updated_by',
+        'logo', 'introduction', 'vision', 'mission', 'structure',
+        'recruitment_status', 'aspiration_status', 'is_active',
+        'management_period', 'created_by', 'updated_by'
     ];
 
     protected $casts = [
         'mission' => 'array',
         'structure' => 'array',
+        'is_active' => 'boolean',
     ];
 
     public function aspirations()

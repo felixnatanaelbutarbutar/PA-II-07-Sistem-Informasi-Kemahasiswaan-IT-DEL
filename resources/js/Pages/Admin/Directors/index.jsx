@@ -126,18 +126,16 @@ export default function Index({ auth, permissions, userRole, menu, directors = [
 
             {showNotification && (
                 <div
-                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
-                        notificationType === 'success'
+                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${notificationType === 'success'
                             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
                             : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
-                    }`}
+                        }`}
                 >
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
                             <svg
-                                className={`h-5 w-5 ${
-                                    notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'
-                                }`}
+                                className={`h-5 w-5 ${notificationType === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                    }`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
@@ -159,9 +157,8 @@ export default function Index({ auth, permissions, userRole, menu, directors = [
                         </div>
                         <div className="ml-3">
                             <p
-                                className={`text-sm font-medium ${
-                                    notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
-                                }`}
+                                className={`text-sm font-medium ${notificationType === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                                    }`}
                             >
                                 {notificationMessage}
                             </p>
@@ -169,11 +166,10 @@ export default function Index({ auth, permissions, userRole, menu, directors = [
                         <div className="ml-auto pl-3">
                             <button
                                 onClick={() => setShowNotification(false)}
-                                className={`inline-flex rounded-md p-1.5 ${
-                                    notificationType === 'success'
+                                className={`inline-flex rounded-md p-1.5 ${notificationType === 'success'
                                         ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
                                         : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
-                                } focus:outline-none focus:ring-2`}
+                                    } focus:outline-none focus:ring-2`}
                             >
                                 <span className="sr-only">Tutup</span>
                                 <svg
@@ -300,12 +296,23 @@ export default function Index({ auth, permissions, userRole, menu, directors = [
                         <div key={item.director_id} className="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]">
                             <div className="flex flex-col sm:flex-row">
                                 <div className="w-full sm:w-48 h-68 overflow-hidden relative">
-                                    <img
-                                        src={`/storage/${item.photo}`}
-                                        alt={item.name}
-                                        className="w-48 h-68 object-cover transition duration-700 group-hover:scale-110"
-                                        onError={(e) => e.target.src = "/images/placeholder.png"}
-                                    />
+                                    {item.photo ? (
+                                        <img
+                                            src={item.photo}
+                                            alt={item.name}
+                                            className="w-48 h-68 object-cover transition duration-700 group-hover:scale-110"
+                                            onError={(e) => {
+                                                console.error('Failed to load image:', item.photo);
+                                                e.target.src = "/images/placeholder.png";
+                                            }}
+                                        />
+                                    ) : (
+                                        <img
+                                            src="/images/placeholder.png"
+                                            alt="No Image"
+                                            className="w-48 h-68 object-cover transition duration-700 group-hover:scale-110"
+                                        />
+                                    )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 </div>
 

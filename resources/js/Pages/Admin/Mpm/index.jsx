@@ -1,21 +1,29 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, usePage, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
-export default function Index({ auth, userRole, permissions, mpm, navigation }) {
-    const { flash } = usePage().props ?? {};
-    const [showNotification, setShowNotification] = useState(!!flash?.success || !!flash?.error);
-    const [notificationMessage, setNotificationMessage] = useState(flash?.success || flash?.error || '');
-    const [notificationType, setNotificationType] = useState(flash?.success ? 'success' : 'error');
+export default function Index({ auth, permissions, userRole, navigation, mpms = [], flash = {} }) {
+    const [searchTerm, setSearchTerm] = useState("");
+    const [showNotification, setShowNotification] = useState(false);
+    const [notificationMessage, setNotificationMessage] = useState("");
+    const [notificationType, setNotificationType] = useState('success');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [mpmIdToDelete, setMpmIdToDelete] = useState(null);
+    const [showActivateModal, setShowActivateModal] = useState(false);
+    const [mpmIdToActivate, setMpmIdToActivate] = useState(null);
+    const [currentStatus, setCurrentStatus] = useState(null);
 
     useEffect(() => {
         if (flash) {
-            setShowNotification(!!flash.success || !!flash.error);
-            setNotificationMessage(flash.success || flash.error || '');
-            setNotificationType(flash.success ? 'success' : 'error');
-
+            if (flash.success) {
+                setNotificationMessage(flash.success);
+                setNotificationType('success');
+                setShowNotification(true);
+            } else if (flash.error) {
+                setNotificationMessage(flash.error);
+                setNotificationType('error');
+                setShowNotification(true);
+            }
             if (flash.success || flash.error) {
                 const timer = setTimeout(() => {
                     setShowNotification(false);
@@ -26,31 +34,41 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
     }, [flash]);
 
     const handleDeleteClick = (mpmId) => {
+        if (!mpmId) {
+            setNotificationMessage('ID data MPM tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
         setMpmIdToDelete(mpmId);
         setShowDeleteModal(true);
     };
 
     const confirmDelete = () => {
-        if (mpmIdToDelete) {
-            router.post(route('admin.mpm.delete', mpmIdToDelete), {}, {
-                onSuccess: () => {
-                    setShowDeleteModal(false);
-                    setMpmIdToDelete(null);
-                    setNotificationMessage('Data MPM berhasil dihapus.');
-                    setNotificationType('success');
-                    setShowNotification(true);
-                    setTimeout(() => setShowNotification(false), 5000);
-                },
-                onError: (errors) => {
-                    setShowDeleteModal(false);
-                    setMpmIdToDelete(null);
-                    setNotificationMessage('Gagal menghapus data MPM.');
-                    setNotificationType('error');
-                    setShowNotification(true);
-                    setTimeout(() => setShowNotification(false), 5000);
-                },
-            });
+        if (!mpmIdToDelete) {
+            setNotificationMessage('Tidak ada data MPM yang dipilih untuk dihapus.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
         }
+        const deleteRoute = route("admin.mpm.destroy", mpmIdToDelete);
+        router.post(deleteRoute, {}, {
+            onSuccess: () => {
+                setNotificationMessage('Data MPM berhasil dihapus!');
+                setNotificationType('success');
+                setShowNotification(true);
+            },
+            onError: (errors) => {
+                const errorMessage = errors.message || Object.values(errors).join(' ') || 'Terjadi kesalahan saat menghapus.';
+                setNotificationMessage(`Gagal menghapus data MPM: ${errorMessage}`);
+                setNotificationType('error');
+                setShowNotification(true);
+            },
+            onFinish: () => {
+                setShowDeleteModal(false);
+                setMpmIdToDelete(null);
+            },
+        });
     };
 
     const cancelDelete = () => {
@@ -58,11 +76,78 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
         setMpmIdToDelete(null);
     };
 
+    const handleToggleActiveClick = (mpmId, currentStatus) => {
+        if (!mpmId) {
+            setNotificationMessage('ID data MPM tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        if (!currentStatus) {
+            setMpmIdToActivate(mpmId);
+            setCurrentStatus(currentStatus);
+            setShowActivateModal(true);
+        } else {
+            handleToggleActive(mpmId, currentStatus);
+        }
+    };
+
+    const confirmActivate = () => {
+        if (!mpmIdToActivate) {
+            setNotificationMessage('Tidak ada data MPM yang dipilih untuk diaktifkan.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        handleToggleActive(mpmIdToActivate, currentStatus);
+        setShowActivateModal(false);
+        setMpmIdToActivate(null);
+        setCurrentStatus(null);
+    };
+
+    const cancelActivate = () => {
+        setShowActivateModal(false);
+        setMpmIdToActivate(null);
+        setCurrentStatus(null);
+    };
+
+    const handleToggleActive = (mpmId, currentStatus) => {
+        if (!mpmId) {
+            setNotificationMessage('ID data MPM tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            return;
+        }
+        const toggleRoute = route("admin.mpm.toggleActive", mpmId);
+        router.post(toggleRoute, {}, {
+            onSuccess: () => {
+                setNotificationMessage(`Data MPM berhasil ${currentStatus ? 'dinonaktifkan' : 'diaktifkan'}!`);
+                setNotificationType('success');
+                setShowNotification(true);
+            },
+            onError: (errors) => {
+                const errorMessage = errors.message || Object.values(errors).join(' ') || 'Terjadi kesalahan saat mengubah status.';
+                setNotificationMessage(`Gagal mengubah status MPM: ${errorMessage}`);
+                setNotificationType('error');
+                setShowNotification(true);
+            },
+        });
+    };
+
+    const filteredMpms = mpms.filter(item => {
+        const period = item?.management_period || '';
+        return period.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
     return (
-        <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={navigation}>
+        <AdminLayout
+            user={auth?.user}
+            userRole={userRole}
+            permissions={permissions}
+            navigation={navigation}
+        >
             <Head title="Kelola Data MPM" />
 
-            {/* Notification */}
             {showNotification && (
                 <div
                     className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
@@ -114,7 +199,7 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                                         : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
                                 } focus:outline-none focus:ring-2`}
                             >
-                                <span className="sr-only">Dismiss</span>
+                                <span className="sr-only">Tutup</span>
                                 <svg
                                     className="h-5 w-5"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -133,34 +218,18 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                 </div>
             )}
 
-            {/* Modal Konfirmasi Hapus */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
                         <div className="flex items-center justify-center mb-4">
                             <div className="bg-red-100 rounded-full p-3">
-                                <svg
-                                    className="w-8 h-8 text-red-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
+                                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">
-                            Konfirmasi Penghapusan
-                        </h3>
-                        <p className="text-gray-600 text-center mb-6">
-                            Apakah Anda yakin ingin menghapus data MPM ini? Tindakan ini tidak dapat dibatalkan.
-                        </p>
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
+                        <p className="text-gray-600 text-center mb-6">Apakah Anda yakin ingin menghapus data MPM ini? Tindakan ini tidak dapat dibatalkan.</p>
                         <div className="flex justify-center space-x-4">
                             <button
                                 onClick={cancelDelete}
@@ -172,19 +241,8 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                                 onClick={confirmDelete}
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"
                             >
-                                <svg
-                                    className="w-4 h-4 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                                 Hapus
                             </button>
@@ -193,326 +251,173 @@ export default function Index({ auth, userRole, permissions, mpm, navigation }) 
                 </div>
             )}
 
-            <div className="py-10">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    {/* Header */}
-                    <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
-                        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div>
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                    Kelola Data MPM
-                                </h1>
-                                <p className="text-gray-500 mt-1">Kelola data organisasi MPM</p>
+            {showActivateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-yellow-100 rounded-full p-3">
+                                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
-                            {!mpm && (
-                                <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <Link
-                                        href={route('admin.mpm.create')}
-                                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
-                                    >
-                                        <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                            />
-                                        </svg>
-                                        Tambah Data MPM
-                                    </Link>
-                                </div>
-                            )}
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Aktivasi</h3>
+                        <p className="text-gray-600 text-center mb-6">Jika data MPM ini diaktifkan, data MPM lain yang sedang aktif akan otomatis dinonaktifkan. Apakah Anda yakin ingin melanjutkan?</p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={cancelActivate}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmActivate}
+                                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition flex items-center"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Aktifkan
+                            </button>
                         </div>
                     </div>
+                </div>
+            )}
 
-                    {/* MPM Data */}
-                    {mpm ? (
-                        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
-                            {/* Logo MPM */}
-                            <div className="border-t-2 border-gray-200 pt-6">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Logo MPM</h2>
-                                {mpm.logo ? (
-                                    <div className="text-center">
+            <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6">
+                <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Kelola Data MPM</h1>
+                            <p className="text-gray-500 mt-1">Kelola data organisasi MPM</p>
+                        </div>
+
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                            <div className="relative flex-grow md:flex-grow-0 md:w-64">
+                                <input
+                                    type="text"
+                                    placeholder="Cari periode..."
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <svg className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+
+                            <Link
+                                href={route("admin.mpm.create")}
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-md"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Tambah Data MPM
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
+                    {filteredMpms.length > 0 ? (
+                        filteredMpms.map((item) => (
+                            <div key={item.id} className="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-blue-200 hover:translate-y-[-4px]">
+                                <Link href={route('admin.mpm.show', item.id)} className="flex flex-col sm:flex-row">
+                                    <div className="w-full sm:w-48 h-48 overflow-hidden relative">
                                         <img
-                                            src={`/storage/${mpm.logo}`}
-                                            alt="Logo MPM"
-                                            className="w-32 h-32 object-contain mx-auto rounded-full border-2 border-gray-200 shadow-sm"
+                                            src={`/storage/${item.logo || 'images/placeholder.png'}`}
+                                            alt={item.management_period || 'MPM'}
+                                            className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                                            onError={(e) => {
+                                                console.error(`Failed to load image for ${item.management_period || 'MPM'}`);
+                                                e.target.src = "/images/placeholder.png";
+                                            }}
                                         />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     </div>
-                                ) : (
-                                    <p className="text-gray-600 text-center">Tidak ada logo</p>
-                                )}
-                            </div>
 
-                            {/* Perkenalan MPM */}
-                            <div className="border-t-2 border-gray-200 pt-6 mt-8">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Perkenalan MPM</h2>
-                                <p className="text-gray-600 leading-relaxed">{mpm.introduction || 'Tidak ada'}</p>
-                            </div>
-
-                            {/* Struktur Organisasi */}
-                            {mpm.structure && (
-                                <div className="border-t-2 border-gray-200 pt-6 mt-8">
-                                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">Struktur Organisasi</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
-                                            <h3 className="text-lg font-semibold text-gray-700 mb-2">Ketua</h3>
-                                            <div className="flex items-center">
-                                                {mpm.structure.chairman?.photo && (
-                                                    <img
-                                                        src={`/storage/${mpm.structure.chairman.photo}`}
-                                                        alt="Foto Ketua"
-                                                        className="w-16 h-16 object-cover rounded-full mr-4 border-2 border-gray-200"
-                                                        onError={(e) => (e.target.style.display = 'none')}
-                                                    />
-                                                )}
-                                                <p className="text-gray-600">
-                                                    {mpm.structure.chairman?.name || 'Tidak ada'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
-                                            <h3 className="text-lg font-semibold text-gray-700 mb-2">Wakil Ketua</h3>
-                                            <div className="flex items-center">
-                                                {mpm.structure.vice_chairman?.photo && (
-                                                    <img
-                                                        src={`/storage/${mpm.structure.vice_chairman.photo}`}
-                                                        alt="Foto Wakil Ketua"
-                                                        className="w-16 h-16 object-cover rounded-full mr-4 border-2 border-gray-200"
-                                                        onError={(e) => (e.target.style.display = 'none')}
-                                                    />
-                                                )}
-                                                <p className="text-gray-600">
-                                                    {mpm.structure.vice_chairman?.name || 'Tidak ada'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
-                                            <h3 className="text-lg font-semibold text-gray-700 mb-2">Sekretaris</h3>
-                                            <div className="flex items-center">
-                                                {mpm.structure.secretary?.photo && (
-                                                    <img
-                                                        src={`/storage/${mpm.structure.secretary.photo}`}
-                                                        alt="Foto Sekretaris"
-                                                        className="w-16 h-16 object-cover rounded-full mr-4 border-2 border-gray-200"
-                                                        onError={(e) => (e.target.style.display = 'none')}
-                                                    />
-                                                )}
-                                                <p className="text-gray-600">
-                                                    {mpm.structure.secretary?.name || 'Tidak ada'}
-                                                </p>
-                                            </div>
+                                    <div className="p-5 flex flex-col flex-grow sm:w-[calc(100%-12rem)]">
+                                        <h2 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition">
+                                            {item.management_period || 'Periode Tidak Diketahui'}
+                                        </h2>
+                                        <div className="mb-4">
+                                            <p className="text-gray-600 text-sm leading-relaxed">
+                                                Status: {item.is_active ? 'Aktif' : 'Tidak Aktif'}
+                                            </p>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                </Link>
 
-                            {/* Struktur Komisi */}
-                            {mpm.structure && mpm.structure.commissions && mpm.structure.commissions.length > 0 && (
-                                <div className="border-t-2 border-gray-200 pt-6 mt-8">
-                                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">Struktur Komisi</h2>
-                                    {mpm.structure.commissions.map((commission, index) => (
-                                        <div
-                                            key={index}
-                                            className="border-2 border-gray-200 rounded-lg p-4 mb-4 shadow-sm bg-gray-50"
-                                        >
-                                            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                                                {commission.name || `Komisi ${index + 1}`}
-                                            </h3>
-                                            <div className="flex items-center mb-4">
-                                                {commission.chairman?.photo && (
-                                                    <img
-                                                        src={`/storage/${commission.chairman.photo}`}
-                                                        alt={`Foto Ketua ${commission.name || 'Komisi'}`}
-                                                        className="w-16 h-16 object-cover rounded-full mr-4 border-2 border-gray-200"
-                                                        onError={(e) => (e.target.style.display = 'none')}
-                                                    />
-                                                )}
-                                                <p className="text-gray-600">
-                                                    <strong>Ketua:</strong> {commission.chairman?.name || 'Tidak ada'}
-                                                </p>
-                                            </div>
-                                            {commission.members && commission.members.length > 0 && (
-                                                <div className="mb-4">
-                                                    <h4 className="text-md font-semibold text-gray-700 mb-2">
-                                                        Anggota:
-                                                    </h4>
-                                                    <ul className="list-decimal pl-5 text-gray-600">
-                                                        {commission.members.map((member, memberIndex) => (
-                                                            <li
-                                                                key={memberIndex}
-                                                                className="mb-2 flex items-center"
-                                                            >
-                                                                {member.photo && (
-                                                                    <img
-                                                                        src={`/storage/${member.photo}`}
-                                                                        alt={`Foto ${member.name || 'Anggota'}`}
-                                                                        className="w-12 h-12 object-cover rounded-full mr-2 border-2 border-gray-200"
-                                                                        onError={(e) =>
-                                                                            (e.target.style.display = 'none')
-                                                                        }
-                                                                    />
-                                                                )}
-                                                                {member.name || 'Anggota Tanpa Nama'}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                            {commission.work_programs && commission.work_programs.length > 0 && (
-                                                <div>
-                                                    <h4 className="text-md font-semibold text-gray-700 mb-2">
-                                                        Program Kerja:
-                                                    </h4>
-                                                    <ul className="list-decimal pl-5 text-gray-600">
-                                                        {commission.work_programs.map((program, programIndex) => (
-                                                            <li key={programIndex} className="mb-2">
-                                                                {program || 'Program Tanpa Nama'}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Visi dan Misi */}
-                            <div className="border-t-2 border-gray-200 pt-6 mt-8">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Visi dan Misi</h2>
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Visi</h3>
-                                    <p className="text-gray-600 leading-relaxed">{mpm.vision || 'Tidak ada'}</p>
-                                </div>
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Misi</h3>
-                                    {mpm.mission && mpm.mission.length > 0 ? (
-                                        <ul className="list-decimal pl-5 text-gray-600">
-                                            {mpm.mission.map((mission, index) => (
-                                                <li key={index} className="mb-2">
-                                                    {mission || 'Misi Tanpa Deskripsi'}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p className="text-gray-600">Tidak ada misi</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Status Rekrutmen */}
-                            <div className="border-t-2 border-gray-200 pt-6 mt-8">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Status Rekrutmen</h2>
-                                <p
-                                    className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                        mpm.recruitment_status === 'OPEN'
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800'
-                                    }`}
-                                >
-                                    {mpm.recruitment_status || 'Tidak ada'}
-                                </p>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="mt-8 flex justify-end space-x-4">
-                                {mpm && mpm.id && (
+                                <div className="flex justify-between items-center p-5 border-t border-gray-100">
                                     <Link
-                                        href={route('admin.mpm.edit', mpm.id)}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center shadow-md"
+                                        href={route('admin.mpm.edit', item.id)}
+                                        className="flex items-center text-blue-600 hover:text-blue-700 transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-blue-50"
                                     >
-                                        <svg
-                                            className="w-4 h-4 mr-2"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                            />
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                         Edit
                                     </Link>
-                                )}
-                                {mpm && mpm.id && (
+
                                     <button
-                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center shadow-md"
-                                        onClick={() => handleDeleteClick(mpm.id)}
+                                        onClick={() => handleDeleteClick(item.id)}
+                                        className="flex items-center text-red-600 hover:text-red-700 transition group-hover:scale-105 px-2 py-1 rounded-md hover:bg-red-50"
                                     >
-                                        <svg
-                                            className="w-4 h-4 mr-2"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                         Hapus
                                     </button>
-                                )}
+
+                                    <button
+                                        onClick={() => handleToggleActiveClick(item.id, item.is_active)}
+                                        className={`flex items-center px-2 py-1 rounded-md transition ${item.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
+                                    >
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            {item.is_active ? (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11V7m0 5v4m-6-6h12m-6 6h6" />
+                                            ) : (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            )}
+                                        </svg>
+                                        {item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        ))
                     ) : (
                         <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
                             <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                                <svg
-                                    className="w-12 h-12 text-blue-500"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                    />
+                                <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-medium text-gray-700 mb-2">
-                                Tidak ada data MPM yang tersedia
-                            </h3>
+                            <h3 className="text-xl font-medium text-gray-700 mb-2">Tidak ada data MPM tersedia</h3>
                             <p className="text-gray-500 text-center max-w-md mb-6">
-                                Silakan tambahkan data MPM baru untuk mulai mengisi konten website Anda.
+                                {searchTerm ? "Tidak ada hasil yang sesuai dengan pencarian" : "Silakan tambah data MPM baru untuk memulai mengisi konten website"}
                             </p>
-                            <Link
-                                href={route('admin.mpm.create')}
-                                className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
-                            >
-                                <svg
-                                    className="w-5 h-5 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
+                            {searchTerm ? (
+                                <button
+                                    onClick={() => setSearchTerm("")}
+                                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                    />
-                                </svg>
-                                Tambah Data MPM Baru
-                            </Link>
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Reset Pencarian
+                                </button>
+                            ) : (
+                                <Link
+                                    href={route("admin.mpm.create")}
+                                    className="mt-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition flex items-center shadow-md"
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Tambah Data MPM Baru
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>

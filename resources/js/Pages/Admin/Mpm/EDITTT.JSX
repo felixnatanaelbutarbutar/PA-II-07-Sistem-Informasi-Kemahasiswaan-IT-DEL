@@ -1,226 +1,169 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState, useEffect, useCallback, useReducer } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 
-const dataReducer = (state, action) => {
-    switch (action.type) {
-        case 'SET_FIELD':
-            return { ...state, [action.field]: action.value };
-        case 'SET_STRUCTURE_FIELD':
-            return {
-                ...state,
-                structure: { ...state.structure, [action.field]: { ...state.structure[action.field], [action.subField]: action.value } },
-            };
-        case 'SET_COMMISSION':
-            return {
-                ...state,
-                structure: { ...state.structure, commissions: action.value },
-            };
-        case 'SET_MISSION':
-            return { ...state, mission: action.value };
-        case 'RESET':
-            return {
-                management_period: '', // Tambah field periode
-                is_active: false, // Tambah field status aktif
-                introduction: '',
-                vision: '',
-                mission: [''],
-                structure: {
-                    chairman: { name: '', photo: null, preview: null },
-                    vice_chairman: { name: '', photo: null, preview: null },
-                    secretary: { name: '', photo: null, preview: null },
-                    commissions: [],
-                },
-                recruitment_status: 'OPEN',
-                logo: null,
-                logoPreview: null,
-            };
-        default:
-            return state;
-    }
-};
-
-export default function Add({ auth, userRole, permissions, navigation, mpmExists, flash }) {
-    const [data, dispatch] = useReducer(dataReducer, {
-        management_period: '', // Inisialisasi field periode
-        is_active: false, // Inisialisasi field status aktif
-        introduction: '',
-        vision: '',
-        mission: [''],
+export default function Edit({ auth, userRole, permissions, mpm, menu }) {
+    const [data, setData] = useState({
+        introduction: mpm.introduction || '',
+        vision: mpm.vision || '',
+        mission: Array.isArray(mpm.mission) ? mpm.mission : [''],
         structure: {
-            chairman: { name: '', photo: null, preview: null },
-            vice_chairman: { name: '', photo: null, preview: null },
-            secretary: { name: '', photo: null, preview: null },
-            commissions: [],
+            chairman: { name: mpm.structure?.chairman?.name || '', photo: mpm.structure?.chairman?.photo || null },
+            vice_chairman: { name: mpm.structure?.vice_chairman?.name || '', photo: mpm.structure?.vice_chairman?.photo || null },
+            secretary: { name: mpm.structure?.secretary?.name || '', photo: mpm.structure?.secretary?.photo || null },
+            commissions: mpm.structure?.commissions || [],
         },
-        recruitment_status: 'OPEN',
+        recruitment_status: mpm.recruitment_status || 'OPEN',
         logo: null,
-        logoPreview: null,
     });
-    const [missionFields, setMissionFields] = useState(['']);
-    const [commissions, setCommissions] = useState([]);
+    const [missionFields, setMissionFields] = useState(data.mission);
+    const [commissions, setCommissions] = useState(data.structure.commissions);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
 
     useEffect(() => {
-        if (flash) {
-            if (flash.success) {
-                setNotification({ show: true, type: 'success', message: flash.success });
-            } else if (flash.error) {
-                setNotification({ show: true, type: 'error', message: flash.error });
-            }
-        }
+        setMissionFields(data.mission);
+        setCommissions(data.structure.commissions);
 
         if (notification.show) {
-            const timer = setTimeout(() => {
-                setNotification({ show: false, type: '', message: '' });
-            }, 5000);
+            const timer = setTimeout(() => setNotification({ ...notification, show: false }), 5000);
             return () => clearTimeout(timer);
         }
-    }, [flash, notification.show]);
+    }, [data.mission, data.structure.commissions, notification]);
 
-    const validateFile = (file) => {
-        const maxSize = 2 * 1024 * 1024; // 2MB
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-        if (!file) return true;
-        if (!allowedTypes.includes(file.type)) return 'File harus berupa gambar (JPEG/PNG/JPG).';
-        if (file.size > maxSize) return 'Ukuran file maksimum adalah 2MB.';
-        return true;
+    const handleChange = (field, value) => {
+        setData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleFileChange = useCallback((field, file, subField = null) => {
-        const validationResult = validateFile(file);
-        if (typeof validationResult === 'string') {
-            setErrors((prev) => ({ ...prev, [field]: validationResult }));
-            return;
-        }
-
-        const preview = file ? URL.createObjectURL(file) : null;
-        if (subField) {
-            dispatch({ type: 'SET_STRUCTURE_FIELD', field, subField: 'photo', value: file });
-            dispatch({ type: 'SET_STRUCTURE_FIELD', field, subField: 'preview', value: preview });
-        } else {
-            dispatch({ type: 'SET_FIELD', field, value: file });
-            dispatch({ type: 'SET_FIELD', field: 'logoPreview', value: preview });
-        }
-    }, []);
-
-    const handleMissionChange = useCallback((index, value) => {
+    const handleMissionChange = (index, value) => {
         const updatedMissions = [...missionFields];
         updatedMissions[index] = value;
         setMissionFields(updatedMissions);
-        dispatch({ type: 'SET_MISSION', value: updatedMissions });
-    }, [missionFields]);
+        setData((prev) => ({ ...prev, mission: updatedMissions }));
+    };
 
-    const addMissionField = useCallback(() => {
-        setMissionFields((prev) => [...prev, '']);
-    }, []);
-
-    const removeMissionField = useCallback((index) => {
+    const addMissionField = () => setMissionFields([...missionFields, '']);
+    const removeMissionField = (index) => {
         const updatedMissions = missionFields.filter((_, i) => i !== index);
         setMissionFields(updatedMissions);
-        dispatch({ type: 'SET_MISSION', value: updatedMissions });
-    }, [missionFields]);
+        setData((prev) => ({ ...prev, mission: updatedMissions }));
+    };
 
-    const addCommission = useCallback(() => {
-        const newCommission = {
-            name: '',
-            chairman: { name: '', photo: null, preview: null },
-            members: [],
-            work_programs: [''],
-        };
-        const updatedCommissions = [...commissions, newCommission];
-        setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+    const addCommission = () => {
+        const newCommission = { name: '', chairman: { name: '', photo: null }, members: [], work_programs: [''] };
+        setCommissions([...commissions, newCommission]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: [...commissions, newCommission] },
+        }));
+    };
 
-    const removeCommission = useCallback((index) => {
+    const removeCommission = (index) => {
         const updatedCommissions = commissions.filter((_, i) => i !== index);
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const handleCommissionChange = useCallback((index, field, value) => {
+    const handleCommissionChange = (index, field, value) => {
         const updatedCommissions = [...commissions];
         updatedCommissions[index][field] = value;
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const handleChairmanChange = useCallback((index, field, value) => {
+    const handleChairmanChange = (index, field, value) => {
         const updatedCommissions = [...commissions];
         updatedCommissions[index].chairman[field] = value;
-        if (field === 'photo') {
-            const preview = value ? URL.createObjectURL(value) : null;
-            updatedCommissions[index].chairman.preview = preview;
-        }
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const handleViceChairmanChange = useCallback((subField, value) => {
-        if (subField === 'photo') {
-            handleFileChange('vice_chairman', value, subField);
-        } else {
-            dispatch({ type: 'SET_STRUCTURE_FIELD', field: 'vice_chairman', subField, value });
-        }
-    }, [handleFileChange]);
+    const handleViceChairmanChange = (field, value) => {
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, vice_chairman: { ...prev.structure.vice_chairman, [field]: value } },
+        }));
+    };
 
-    const addMember = useCallback((commissionIndex) => {
+    const addMember = (commissionIndex) => {
         const updatedCommissions = [...commissions];
-        updatedCommissions[commissionIndex].members.push({ name: '', photo: null, preview: null });
+        updatedCommissions[commissionIndex].members.push({ name: '', photo: null });
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const removeMember = useCallback((commissionIndex, memberIndex) => {
+    const removeMember = (commissionIndex, memberIndex) => {
         const updatedCommissions = [...commissions];
         updatedCommissions[commissionIndex].members = updatedCommissions[commissionIndex].members.filter((_, i) => i !== memberIndex);
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const handleMemberChange = useCallback((commissionIndex, memberIndex, field, value) => {
+    const handleMemberChange = (commissionIndex, memberIndex, field, value) => {
         const updatedCommissions = [...commissions];
         updatedCommissions[commissionIndex].members[memberIndex][field] = value;
-        if (field === 'photo') {
-            const preview = value ? URL.createObjectURL(value) : null;
-            updatedCommissions[commissionIndex].members[memberIndex].preview = preview;
-        }
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const addWorkProgram = useCallback((commissionIndex) => {
+    const addWorkProgram = (commissionIndex) => {
         const updatedCommissions = [...commissions];
         updatedCommissions[commissionIndex].work_programs.push('');
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const handleWorkProgramChange = useCallback((commissionIndex, programIndex, value) => {
+    const handleWorkProgramChange = (commissionIndex, programIndex, value) => {
         const updatedCommissions = [...commissions];
         updatedCommissions[commissionIndex].work_programs[programIndex] = value;
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const removeWorkProgram = useCallback((commissionIndex, programIndex) => {
+    const removeWorkProgram = (commissionIndex, programIndex) => {
         const updatedCommissions = [...commissions];
-        updatedCommissions[commissionIndex].work_programs = updatedCommissions[commissionIndex].work_programs.filter((_, i) => i !== programIndex);
+        updatedCommissions[commissionIndex].work_programs = updatedCommissions[commissionIndex].work_programs.filter(
+            (_, i) => i !== programIndex
+        );
         setCommissions(updatedCommissions);
-        dispatch({ type: 'SET_COMMISSION', value: updatedCommissions });
-    }, [commissions]);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         setErrors({});
 
+        // Client-side validation
         const newErrors = {};
-        if (!data.management_period.trim()) newErrors.management_period = 'Periode wajib diisi.';
         if (!data.introduction.trim()) newErrors.introduction = 'Perkenalan wajib diisi.';
         if (!data.vision.trim()) newErrors.vision = 'Visi wajib diisi.';
         if (!data.mission.every(m => m.trim())) newErrors.mission = 'Setiap misi wajib diisi.';
@@ -238,81 +181,107 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
             return;
         }
 
-        try {
-            const formDataToSend = new FormData();
-            console.log('Sending management_period:', data.management_period); // Tambah logging untuk debugging
-            console.log('Sending is_active:', data.is_active); // Tambah logging untuk debugging
-            formDataToSend.append('management_period', data.management_period);
-            formDataToSend.append('is_active', data.is_active ? 1 : 0);
-            formDataToSend.append('introduction', data.introduction);
-            formDataToSend.append('vision', data.vision);
-            formDataToSend.append('mission', JSON.stringify(data.mission));
-            formDataToSend.append('structure', JSON.stringify(data.structure));
-            formDataToSend.append('recruitment_status', data.recruitment_status);
+        const formData = new FormData();
+        formData.append('introduction', data.introduction);
+        formData.append('vision', data.vision);
+        formData.append('mission', JSON.stringify(data.mission));
+        formData.append('structure', JSON.stringify(data.structure));
+        formData.append('recruitment_status', data.recruitment_status);
 
-            if (data.logo) formDataToSend.append('logo', data.logo);
-            if (data.structure.chairman.photo) formDataToSend.append('chairman_photo', data.structure.chairman.photo);
-            if (data.structure.vice_chairman.photo) formDataToSend.append('vice_chairman_photo', data.structure.vice_chairman.photo);
-            if (data.structure.secretary.photo) formDataToSend.append('secretary_photo', data.structure.secretary.photo);
+        if (data.logo instanceof File) formData.append('logo', data.logo);
+        if (data.structure.chairman.photo instanceof File) formData.append('chairman_photo', data.structure.chairman.photo);
+        if (data.structure.vice_chairman.photo instanceof File) formData.append('vice_chairman_photo', data.structure.vice_chairman.photo);
+        if (data.structure.secretary.photo instanceof File) formData.append('secretary_photo', data.structure.secretary.photo);
 
-            data.structure.commissions.forEach((commission, commissionIndex) => {
-                if (commission.chairman.photo) {
-                    formDataToSend.append(`commissions[${commissionIndex}][chairman_photo]`, commission.chairman.photo);
-                }
-                commission.members.forEach((member, memberIndex) => {
-                    if (member.photo) {
-                        formDataToSend.append(`commissions[${commissionIndex}][members][${memberIndex}][photo]`, member.photo);
-                    }
-                });
+        data.structure.commissions.forEach((commission, commissionIndex) => {
+            if (commission.chairman.photo instanceof File)
+                formData.append(`commissions[${commissionIndex}][chairman_photo]`, commission.chairman.photo);
+            commission.members.forEach((member, memberIndex) => {
+                if (member.photo instanceof File)
+                    formData.append(
+                        `commissions[${commissionIndex}][members][${memberIndex}][photo]`,
+                        member.photo
+                    );
             });
+        });
 
-            const response = await axios.post(route('admin.mpm.store'), formDataToSend, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+        router.post(route('admin.mpm.update', mpm.id), formData, {
+            onSuccess: () => {
+                setNotification({ show: true, type: 'success', message: 'Data MPM berhasil diperbarui.' });
+                setTimeout(() => router.visit(route('admin.mpm.index')), 1500);
+            },
+            onError: (errors) => {
+                setErrors(errors);
+                setNotification({ show: true, type: 'error', message: 'Gagal memperbarui data MPM.' });
+                setIsSubmitting(false);
+            },
+        });
+    };
 
-            setNotification({
-                show: true,
-                type: 'success',
-                message: 'Data MPM berhasil ditambahkan!',
-            });
+    const handleFileChange = (field, file) => {
+        setData((prev) => ({ ...prev, [field]: file }));
+    };
 
-            dispatch({ type: 'RESET' });
-            setMissionFields(['']);
-            setCommissions([]);
+    const handleChairmanPhotoChange = (file) => {
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, chairman: { ...prev.structure.chairman, photo: file } },
+        }));
+    };
 
-            setTimeout(() => {
-                router.visit(route('admin.mpm.index'));
-            }, 1500);
-        } catch (error) {
-            console.error('Error submitting form:', error);
-            if (error.response?.status === 422) {
-                setErrors(error.response.data.errors);
-            } else {
-                setNotification({
-                    show: true,
-                    type: 'error',
-                    message: 'Gagal menambahkan data MPM: ' + (error.response?.data?.message || 'Terjadi kesalahan.'),
-                });
-            }
-            setIsSubmitting(false);
-        }
-    }
+    const handleViceChairmanPhotoChange = (file) => {
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, vice_chairman: { ...prev.structure.vice_chairman, photo: file } },
+        }));
+    };
+
+    const handleSecretaryPhotoChange = (file) => {
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, secretary: { ...prev.structure.secretary, photo: file } },
+        }));
+    };
+
+    const handleCommissionChairmanPhotoChange = (commissionIndex, file) => {
+        const updatedCommissions = [...commissions];
+        updatedCommissions[commissionIndex].chairman.photo = file;
+        setCommissions(updatedCommissions);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
+
+    const handleMemberPhotoChange = (commissionIndex, memberIndex, file) => {
+        const updatedCommissions = [...commissions];
+        updatedCommissions[commissionIndex].members[memberIndex].photo = file;
+        setCommissions(updatedCommissions);
+        setData((prev) => ({
+            ...prev,
+            structure: { ...prev.structure, commissions: updatedCommissions },
+        }));
+    };
 
     return (
-        <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={navigation}>
-            <Head title="Tambah Data MPM" />
+        <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
+            <Head title="Edit Data MPM" />
 
+            {/* Notification */}
             {notification.show && (
                 <div
-                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${notification.type === 'success'
+                    className={`fixed top-4 right-4 z-50 max-w-md border-l-4 px-6 py-4 rounded-lg shadow-xl transition-all transform animate-slide-in-right ${
+                        notification.type === 'success'
                             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-500'
                             : 'bg-gradient-to-r from-red-50 to-rose-50 border-rose-500'
-                        }`}
+                    }`}
                 >
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
                             <svg
-                                className={`h-5 w-5 ${notification.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`h-5 w-5 ${
+                                    notification.type === 'success' ? 'text-emerald-500' : 'text-rose-500'
+                                }`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
@@ -333,20 +302,30 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                             </svg>
                         </div>
                         <div className="ml-3">
-                            <p className={`text-sm font-medium ${notification.type === 'success' ? 'text-emerald-800' : 'text-rose-800'}`}>
+                            <p
+                                className={`text-sm font-medium ${
+                                    notification.type === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                                }`}
+                            >
                                 {notification.message}
                             </p>
                         </div>
                         <div className="ml-auto pl-3">
                             <button
-                                onClick={() => setNotification({ show: false, type: '', message: '' })}
-                                className={`inline-flex rounded-md p-1.5 ${notification.type === 'success'
+                                onClick={() => setNotification({ ...notification, show: false })}
+                                className={`inline-flex rounded-md p-1.5 ${
+                                    notification.type === 'success'
                                         ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
                                         : 'text-rose-500 hover:bg-rose-100 focus:ring-rose-500'
-                                    } focus:outline-none focus:ring-2`}
+                                } focus:outline-none focus:ring-2`}
                             >
                                 <span className="sr-only">Dismiss</span>
-                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <svg
+                                    className="h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
                                     <path
                                         fillRule="evenodd"
                                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -364,85 +343,47 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                     <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50 flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Tambah Data MPM
+                                Edit Data MPM
                             </h1>
-                            <p className="text-gray-500 mt-1">Tambah data baru untuk MPM</p>
+                            <p className="text-gray-500 mt-1">Perbarui data organisasi MPM</p>
                         </div>
                         <Link
                             href={route('admin.mpm.index')}
                             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center"
                         >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                            Kembali
+                            ← Kembali
                         </Link>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
-                        {/* {mpmExists && (
-                            <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                                <h3 className="font-bold">Peringatan:</h3>
-                                <p>Data MPM sudah ada. Menambahkan data baru akan menggantikan data sebelumnya.</p>
-                            </div>
-                        )} */}
                         {Object.keys(errors).length > 0 && (
                             <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
                                 <h3 className="font-bold">Terjadi Kesalahan:</h3>
                                 <ul className="list-disc pl-5">
                                     {Object.entries(errors).map(([key, value]) => (
-                                        <li key={key}>{value}</li>
+                                        <li key={key}>
+                                            {key}: {value}
+                                        </li>
                                     ))}
                                 </ul>
                             </div>
                         )}
-                        <form onSubmit={handleSubmit} className="space-y-8">
+                        <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6">
+                            {/* Section: Visi & Misi */}
                             <div className="border-t-2 border-gray-200 pt-6">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Informasi Dasar MPM</h2>
-                                {/* Field Periode */}
+                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Visi & Misi</h2>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Periode MPM <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={data.management_period}
-                                        onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'management_period', value: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.management_period
-                                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                            }`}
-                                        placeholder="Masukkan periode (contoh: 2023-2024)"
-                                    />
-                                    {errors.management_period && <p className="text-red-500 text-xs mt-1">{errors.management_period}</p>}
-                                </div>
-
-                                {/* Field Status Aktif */}
-                                <div className="mt-6">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Status Aktif <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={data.is_active ? '1' : '0'}
-                                        onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'is_active', value: e.target.value === '1' })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    >
-                                        <option value="1">Aktif</option>
-                                        <option value="0">Tidak Aktif</option>
-                                    </select>
-                                </div>
-
-                                <div className="mt-6">
                                     <label className="block text-sm font-medium text-gray-700">
                                         Perkenalan MPM <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         value={data.introduction}
-                                        onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'introduction', value: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.introduction
+                                        onChange={(e) => handleChange('introduction', e.target.value)}
+                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${
+                                            errors.introduction
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                            }`}
+                                        }`}
                                         rows="4"
                                         placeholder="Masukkan perkenalan MPM"
                                     />
@@ -451,15 +392,21 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
 
                                 <div className="mt-6">
                                     <label className="block text-sm font-medium text-gray-700">Logo MPM</label>
+                                    {mpm.logo && (
+                                        <div className="mb-2">
+                                            <img
+                                                src={`/storage/${mpm.logo}`}
+                                                alt="Logo MPM"
+                                                className="w-20 h-20 object-cover rounded-full border-2 border-gray-200 shadow-sm"
+                                            />
+                                        </div>
+                                    )}
                                     <input
                                         type="file"
                                         onChange={(e) => handleFileChange('logo', e.target.files[0])}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         accept="image/*"
                                     />
-                                    {data.logoPreview && (
-                                        <img src={data.logoPreview} alt="Logo Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                                    )}
                                     {errors.logo && <p className="text-red-500 text-xs mt-1">{errors.logo}</p>}
                                 </div>
 
@@ -470,22 +417,34 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                     <input
                                         type="text"
                                         value={data.structure.chairman.name}
-                                        onChange={(e) => dispatch({ type: 'SET_STRUCTURE_FIELD', field: 'chairman', subField: 'name', value: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.chairman_name
+                                        onChange={(e) =>
+                                            setData((prev) => ({
+                                                ...prev,
+                                                structure: { ...prev.structure, chairman: { ...prev.structure.chairman, name: e.target.value } },
+                                            }))
+                                        }
+                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${
+                                            errors.chairman_name
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                            }`}
+                                        }`}
                                         placeholder="Masukkan nama ketua"
                                     />
+                                    {data.structure.chairman.photo && typeof data.structure.chairman.photo === 'string' && (
+                                        <div className="mt-2">
+                                            <img
+                                                src={`/storage/${data.structure.chairman.photo}`}
+                                                alt="Foto Ketua"
+                                                className="w-16 h-16 object-cover rounded-full border-2 border-gray-200 shadow-sm"
+                                            />
+                                        </div>
+                                    )}
                                     <input
                                         type="file"
-                                        onChange={(e) => handleFileChange('chairman', e.target.files[0], 'photo')}
+                                        onChange={(e) => handleChairmanPhotoChange(e.target.files[0])}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         accept="image/*"
                                     />
-                                    {data.structure.chairman.preview && (
-                                        <img src={data.structure.chairman.preview} alt="Chairman Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                                    )}
                                     {errors.chairman_name && <p className="text-red-500 text-xs mt-1">{errors.chairman_name}</p>}
                                 </div>
 
@@ -497,21 +456,28 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                         type="text"
                                         value={data.structure.vice_chairman.name}
                                         onChange={(e) => handleViceChairmanChange('name', e.target.value)}
-                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.vice_chairman_name
+                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${
+                                            errors.vice_chairman_name
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                            }`}
+                                        }`}
                                         placeholder="Masukkan nama wakil ketua"
                                     />
+                                    {data.structure.vice_chairman.photo && typeof data.structure.vice_chairman.photo === 'string' && (
+                                        <div className="mt-2">
+                                            <img
+                                                src={`/storage/${data.structure.vice_chairman.photo}`}
+                                                alt="Foto Wakil Ketua"
+                                                className="w-16 h-16 object-cover rounded-full border-2 border-gray-200 shadow-sm"
+                                            />
+                                        </div>
+                                    )}
                                     <input
                                         type="file"
-                                        onChange={(e) => handleViceChairmanChange('photo', e.target.files[0])}
+                                        onChange={(e) => handleViceChairmanPhotoChange(e.target.files[0])}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         accept="image/*"
                                     />
-                                    {data.structure.vice_chairman.preview && (
-                                        <img src={data.structure.vice_chairman.preview} alt="Vice Chairman Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                                    )}
                                     {errors.vice_chairman_name && <p className="text-red-500 text-xs mt-1">{errors.vice_chairman_name}</p>}
                                 </div>
 
@@ -522,22 +488,34 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                     <input
                                         type="text"
                                         value={data.structure.secretary.name}
-                                        onChange={(e) => dispatch({ type: 'SET_STRUCTURE_FIELD', field: 'secretary', subField: 'name', value: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.secretary_name
+                                        onChange={(e) =>
+                                            setData((prev) => ({
+                                                ...prev,
+                                                structure: { ...prev.structure, secretary: { ...prev.structure.secretary, name: e.target.value } },
+                                            }))
+                                        }
+                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${
+                                            errors.secretary_name
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                            }`}
+                                        }`}
                                         placeholder="Masukkan nama sekretaris"
                                     />
+                                    {data.structure.secretary.photo && typeof data.structure.secretary.photo === 'string' && (
+                                        <div className="mt-2">
+                                            <img
+                                                src={`/storage/${data.structure.secretary.photo}`}
+                                                alt="Foto Sekretaris"
+                                                className="w-16 h-16 object-cover rounded-full border-2 border-gray-200 shadow-sm"
+                                            />
+                                        </div>
+                                    )}
                                     <input
                                         type="file"
-                                        onChange={(e) => handleFileChange('secretary', e.target.files[0], 'photo')}
+                                        onChange={(e) => handleSecretaryPhotoChange(e.target.files[0])}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         accept="image/*"
                                     />
-                                    {data.structure.secretary.preview && (
-                                        <img src={data.structure.secretary.preview} alt="Secretary Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                                    )}
                                     {errors.secretary_name && <p className="text-red-500 text-xs mt-1">{errors.secretary_name}</p>}
                                 </div>
 
@@ -547,11 +525,12 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                     </label>
                                     <textarea
                                         value={data.vision}
-                                        onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'vision', value: e.target.value })}
-                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.vision
+                                        onChange={(e) => handleChange('vision', e.target.value)}
+                                        className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${
+                                            errors.vision
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                            }`}
+                                        }`}
                                         rows="4"
                                         placeholder="Masukkan visi MPM"
                                     />
@@ -563,26 +542,25 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                         Misi <span className="text-red-500">*</span>
                                     </label>
                                     {missionFields.map((mission, index) => (
-                                        <div key={index} className="flex space-x-4 mt-2 items-center">
+                                        <div key={index} className="flex space-x-4 mt-2">
                                             <input
                                                 type="text"
                                                 value={mission}
                                                 onChange={(e) => handleMissionChange(index, e.target.value)}
                                                 placeholder={`Misi ${index + 1}`}
-                                                className={`block w-full rounded-md px-4 py-3 border transition ${errors.mission
+                                                className={`block w-full rounded-md px-4 py-3 border transition ${
+                                                    errors.mission
                                                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                         : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                                    }`}
+                                                }`}
                                             />
-                                            {missionFields.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeMissionField(index)}
-                                                    className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                                >
-                                                    Hapus
-                                                </button>
-                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeMissionField(index)}
+                                                className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                                            >
+                                                Hapus
+                                            </button>
                                         </div>
                                     ))}
                                     {errors.mission && <p className="text-red-500 text-xs mt-1">{errors.mission}</p>}
@@ -596,6 +574,7 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                 </div>
                             </div>
 
+                            {/* Section: Struktur Komisi MPM */}
                             <div className="border-t-2 border-gray-200 pt-6 mt-8">
                                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Struktur Komisi MPM</h2>
                                 <div>
@@ -611,10 +590,11 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                                     value={commission.name}
                                                     onChange={(e) => handleCommissionChange(commissionIndex, 'name', e.target.value)}
                                                     placeholder="Nama Komisi"
-                                                    className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.commissions_name
+                                                    className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${
+                                                        errors.commissions_name
                                                             ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                             : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                                        }`}
+                                                    }`}
                                                 />
                                                 <button
                                                     type="button"
@@ -627,56 +607,68 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                             {errors.commissions_name && <p className="text-red-500 text-xs mt-1">{errors.commissions_name}</p>}
                                             <div className="mt-4">
                                                 <label className="block text-sm font-medium text-gray-700">
-                                                    Ketua Komisi <span className="text-red-500">*</span>
+                                                    Ketua Komisi
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={commission.chairman.name}
                                                     onChange={(e) => handleChairmanChange(commissionIndex, 'name', e.target.value)}
                                                     placeholder="Nama Ketua Komisi"
-                                                    className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${errors.commissions_chairman
+                                                    className={`mt-1 block w-full rounded-md px-4 py-3 border transition ${
+                                                        errors.commissions_chairman
                                                             ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                             : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                                        }`}
+                                                    }`}
                                                 />
+                                                {commission.chairman.photo && typeof commission.chairman.photo === 'string' && (
+                                                    <div className="mt-2">
+                                                        <img
+                                                            src={`/storage/${commission.chairman.photo}`}
+                                                            alt="Foto Ketua Komisi"
+                                                            className="w-16 h-16 object-cover rounded-full border-2 border-gray-200 shadow-sm"
+                                                        />
+                                                    </div>
+                                                )}
                                                 <input
                                                     type="file"
-                                                    onChange={(e) => handleChairmanChange(commissionIndex, 'photo', e.target.files[0])}
+                                                    onChange={(e) => handleCommissionChairmanPhotoChange(commissionIndex, e.target.files[0])}
                                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                     accept="image/*"
                                                 />
-                                                {commission.chairman.preview && (
-                                                    <img src={commission.chairman.preview} alt="Chairman Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                                                )}
-                                                {errors.commissions_chairman && (
-                                                    <p className="text-red-500 text-xs mt-1">{errors.commissions_chairman}</p>
-                                                )}
+                                                {errors.commissions_chairman && <p className="text-red-500 text-xs mt-1">{errors.commissions_chairman}</p>}
                                             </div>
                                             <div className="mt-4">
                                                 <label className="block text-sm font-medium text-gray-700">
-                                                    Anggota <span className="text-red-500">*</span>
+                                                    Anggota
                                                 </label>
                                                 {commission.members.map((member, memberIndex) => (
-                                                    <div key={memberIndex} className="flex space-x-4 mt-2 items-center">
+                                                    <div key={memberIndex} className="flex space-x-4 mt-2">
                                                         <input
                                                             type="text"
                                                             value={member.name}
                                                             onChange={(e) => handleMemberChange(commissionIndex, memberIndex, 'name', e.target.value)}
                                                             placeholder={`Anggota ${memberIndex + 1}`}
-                                                            className={`block w-full rounded-md px-4 py-3 border transition ${errors.members_name
+                                                            className={`block w-full rounded-md px-4 py-3 border transition ${
+                                                                errors.members_name
                                                                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                                     : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                                                }`}
+                                                            }`}
                                                         />
+                                                        {member.photo && typeof member.photo === 'string' && (
+                                                            <div className="mt-2">
+                                                                <img
+                                                                    src={`/storage/${member.photo}`}
+                                                                    alt="Foto Anggota"
+                                                                    className="w-12 h-12 object-cover rounded-full border-2 border-gray-200 shadow-sm"
+                                                                />
+                                                            </div>
+                                                        )}
                                                         <input
                                                             type="file"
-                                                            onChange={(e) => handleMemberChange(commissionIndex, memberIndex, 'photo', e.target.files[0])}
+                                                            onChange={(e) => handleMemberPhotoChange(commissionIndex, memberIndex, e.target.files[0])}
                                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                             accept="image/*"
                                                         />
-                                                        {member.preview && (
-                                                            <img src={member.preview} alt="Member Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                                                        )}
                                                         <button
                                                             type="button"
                                                             onClick={() => removeMember(commissionIndex, memberIndex)}
@@ -697,29 +689,28 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                             </div>
                                             <div className="mt-4">
                                                 <label className="block text-sm font-medium text-gray-700">
-                                                    Program Kerja <span className="text-red-500">*</span>
+                                                    Program Kerja
                                                 </label>
                                                 {commission.work_programs.map((program, programIndex) => (
-                                                    <div key={programIndex} className="flex space-x-4 mt-2 items-center">
+                                                    <div key={programIndex} className="flex space-x-4 mt-2">
                                                         <input
                                                             type="text"
                                                             value={program}
                                                             onChange={(e) => handleWorkProgramChange(commissionIndex, programIndex, e.target.value)}
                                                             placeholder={`Program Kerja ${programIndex + 1}`}
-                                                            className={`block w-full rounded-md px-4 py-3 border transition ${errors.work_programs
+                                                            className={`block w-full rounded-md px-4 py-3 border transition ${
+                                                                errors.work_programs
                                                                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                                                     : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                                                }`}
+                                                            }`}
                                                         />
-                                                        {commission.work_programs.length > 1 && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeWorkProgram(commissionIndex, programIndex)}
-                                                                className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                                            >
-                                                                Hapus
-                                                            </button>
-                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeWorkProgram(commissionIndex, programIndex)}
+                                                            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                                                        >
+                                                            Hapus
+                                                        </button>
                                                     </div>
                                                 ))}
                                                 {errors.work_programs && <p className="text-red-500 text-xs mt-1">{errors.work_programs}</p>}
@@ -743,13 +734,13 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                 </div>
                             </div>
 
-                            <div className="mt-6">
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700">
                                     Status Rekrutmen <span className="text-red-500">*</span>
                                 </label>
                                 <select
                                     value={data.recruitment_status}
-                                    onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'recruitment_status', value: e.target.value })}
+                                    onChange={(e) => handleChange('recruitment_status', e.target.value)}
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 >
                                     <option value="OPEN">OPEN</option>
@@ -772,10 +763,7 @@ export default function Add({ auth, userRole, permissions, navigation, mpmExists
                                 >
                                     {isSubmitting ? (
                                         <>
-                                            <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
+                                            <span className="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full mr-2"></span>
                                             Menyimpan...
                                         </>
                                     ) : (

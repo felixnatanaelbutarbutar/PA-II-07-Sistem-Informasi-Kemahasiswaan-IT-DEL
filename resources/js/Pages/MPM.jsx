@@ -12,7 +12,7 @@ export default function MPM({ mpm }) {
         if (mpm) {
             setIsLoading(false);
         } else {
-            setError('Gagal memuat data MPM');
+            setError('Tidak ada data MPM aktif saat ini.');
             setIsLoading(false);
         }
     }, [mpm]);
@@ -72,8 +72,11 @@ export default function MPM({ mpm }) {
                                                 <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
                                                     Majelis Permusyawaratan Mahasiswa (MPM)
                                                 </h2>
-                                                <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                                <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-2">
                                                     {mpm.introduction || 'Tidak ada perkenalan.'}
+                                                </p>
+                                                <p className="text-gray-800 font-semibold text-sm sm:text-base">
+                                                    Periode: {mpm.management_period || 'Tidak ada periode.'}
                                                 </p>
                                             </div>
                                         </div>
@@ -304,8 +307,8 @@ export default function MPM({ mpm }) {
                                             d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                                         />
                                     </svg>
-                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Tidak ada data MPM</h3>
-                                    <p className="text-gray-600 text-sm">Belum ada data MPM yang tersedia saat ini.</p>
+                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Tidak ada data MPM aktif</h3>
+                                    <p className="text-gray-600 text-sm">Belum ada data MPM aktif yang tersedia saat ini.</p>
                                 </div>
                             )}
                         </>

@@ -18,7 +18,20 @@ class DirectorController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $directors = Director::with(['creator', 'updater'])->get();
+        $directors = Director::with(['creator', 'updater'])->get()->map(function ($director) {
+            return [
+                'id' => $director->id,
+                'director_id' => $director->director_id,
+                'name' => $director->name,
+                'welcome_message' => $director->welcome_message,
+                'photo' => $director->photo ? Storage::url($director->photo) : null,
+                'is_active' => $director->is_active,
+                'created_by' => $director->creator ? $director->creator->name : null,
+                'updated_by' => $director->updater ? $director->updater->name : null,
+                'created_at' => $director->created_at,
+                'updated_at' => $director->updated_at,
+            ];
+        });
 
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
@@ -85,7 +98,11 @@ class DirectorController extends Controller
         // Upload photo if provided
         $photoPath = null;
         if ($request->hasFile('photo')) {
+            Log::info('Photo received: ' . $request->file('photo')->getClientOriginalName());
             $photoPath = $request->file('photo')->store('director_photos', 'public');
+            Log::info('Photo stored at: ' . $photoPath);
+        } else {
+            Log::info('No photo uploaded');
         }
 
         // Create new director
@@ -111,6 +128,8 @@ class DirectorController extends Controller
 
         // Fetch the director by ID
         $director = Director::with(['creator', 'updater'])->where('director_id', $director_id)->firstOrFail();
+        $director->photo = $director->photo ? Storage::url($director->photo) : null;
+
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -141,7 +160,9 @@ class DirectorController extends Controller
             if ($director->photo) {
                 Storage::disk('public')->delete($director->photo);
             }
-            $director->photo = $request->file('photo')->store('director_photos', 'public');
+            $photoPath = $request->file('photo')->store('director_photos', 'public');
+            Log::info('Photo updated at: ' . $photoPath);
+            $director->photo = $photoPath;
         }
 
         $director->update([
