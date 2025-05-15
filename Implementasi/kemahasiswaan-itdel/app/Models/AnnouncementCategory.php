@@ -15,11 +15,13 @@ class AnnouncementCategory extends Model
         'category_id',
         'category_name',
         'description',
+        'is_active',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
+        'is_active' => 'boolean',
         'created_by' => 'integer', // Cast ke integer karena tipe data sekarang bigint
         'updated_by' => 'integer', // Cast ke integer karena tipe data sekarang bigint
     ];

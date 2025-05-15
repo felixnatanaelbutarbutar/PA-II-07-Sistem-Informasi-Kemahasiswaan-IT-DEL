@@ -20,6 +20,7 @@ class Announcement extends Model
         'file',
         'content',
         'category_id',
+        
         'created_by',
         'updated_by'
     ];

@@ -155,10 +155,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/activities/count', [DashboardController::class, 'getActiveActivitiesCount'])->name('activities.count');
         Route::get('/announcements/count', [DashboardController::class, 'getAnnouncementsCount'])->name('announcements.count');
 
-        // Activity Routes
-        Route::resource('activities', ActivityController::class)->except(['show']);
-        Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.destroy');
-        Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
+// Activity Routes
+Route::resource('activities', ActivityController::class)->except(['show', 'destroy']);
+Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.delete');
+Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
 
         // News Category Routes
         Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
@@ -191,10 +191,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('announcement/{announcement}/update', [AnnouncementController::class, 'update'])->name('announcement.update');
         Route::post('announcement/{announcement}/delete', [AnnouncementController::class, 'destroy'])->name('announcement.destroy');
 
-        // Announcement Category Routes
         Route::resource('announcement-category', AnnouncementCategoryController::class)->except(['show', 'destroy', 'update']);
         Route::post('announcement-category/{announcement_category}/update', [AnnouncementCategoryController::class, 'update'])->name('announcement-category.update');
         Route::post('announcement-category/{announcement_category}/delete', [AnnouncementCategoryController::class, 'destroy'])->name('announcement-category.destroy');
+        Route::post('announcement-category/{category_id}/toggle-active', [AnnouncementCategoryController::class, 'toggleActive'])->name('announcement-category.toggle-active');
 
         // Feature-based Routes
         Route::middleware(['feature:layanan'])->group(function () {
