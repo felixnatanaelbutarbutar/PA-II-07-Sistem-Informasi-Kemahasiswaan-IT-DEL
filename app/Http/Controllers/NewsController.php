@@ -20,13 +20,13 @@ class NewsController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $news = News::with('category')->get();
+        $news = News::with(['category', 'creator'])->get();
         $categories = NewsCategory::all();
 
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        // Debugging flash messagegu
+        // Debugging flash message
         $flashSuccess = session('success');
         Log::info('Flash message in index: ' . ($flashSuccess ?? 'No flash message'));
 
@@ -40,6 +40,15 @@ class NewsController extends Controller
             'categories' => $categories,
             'menu' => $menuItems,
         ]);
+    }
+
+    // API endpoint for news
+    public function apiNews()
+    {
+        return News::with(['category', 'creator'])
+            ->where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     // Generate ID otomatis "n001", "n002", "n003", ...
@@ -87,7 +96,7 @@ class NewsController extends Controller
             'content' => $request->content,
             'category_id' => $request->category_id,
             'image' => $imagePath,
-            'is_active' => $request->is_active ?? true, // Default true jika tidak diisi
+            'is_active' => $request->is_active ?? true,
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
@@ -123,7 +132,7 @@ class NewsController extends Controller
             'content' => $request->content,
             'category_id' => $request->category_id,
             'image' => $news->image,
-            'is_active' => $request->is_active ?? $news->is_active, // Pertahankan nilai lama jika tidak diubah
+            'is_active' => $request->is_active ?? $news->is_active,
             'updated_by' => Auth::id(),
         ]);
 
@@ -188,7 +197,7 @@ class NewsController extends Controller
         $role = strtolower($user->role);
 
         // Ambil berita berdasarkan ID
-        $news = News::with('category')->where('news_id', $news_id)->firstOrFail();
+        $news = News::with(['category', 'creator'])->where('news_id', $news_id)->firstOrFail();
         $categories = NewsCategory::all();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
@@ -203,21 +212,10 @@ class NewsController extends Controller
         ]);
     }
 
-    // public function guestIndex()
-    // {
-    //     $newsItems = News::with('category')->where('is_active', true)->orderBy('created_at', 'desc')->get();
-    //     $categories = NewsCategory::all();
-
-    //     return Inertia::render('News', [
-    //         'newsItems' => $newsItems,
-    //         'categories' => $categories,
-    //     ]);
-    // }
-
     public function show($news_id)
     {
-        $news = News::with('category')->where('news_id', $news_id)->where('is_active', true)->firstOrFail();
-        $newsItems = News::with('category')->where('is_active', true)->orderBy('created_at', 'desc')->get();
+        $news = News::with(['category', 'creator'])->where('news_id', $news_id)->where('is_active', true)->firstOrFail();
+        $newsItems = News::with(['category', 'creator'])->where('is_active', true)->orderBy('created_at', 'desc')->get();
         $categories = NewsCategory::all();
 
         return Inertia::render('NewsDetail', [

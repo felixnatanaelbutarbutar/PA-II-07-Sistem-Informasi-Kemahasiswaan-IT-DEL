@@ -1,5 +1,6 @@
 import GuestLayout from '@/Layouts/GuestLayout';
-import NavbarGuestLayout from '@/Layouts/NavbarGuestLayout';
+import Navbar from '@/Layouts/Navbar';
+import FooterLayout from '@/Layouts/FooterLayout';
 import { Head, usePage, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
@@ -241,7 +242,7 @@ export default function AnnouncementDetail() {
 
     return (
         <GuestLayout>
-            <NavbarGuestLayout />
+            <Navbar showBreadcrumbAndHeader={false} />
             <Head title={announcement?.title || "Detail Pengumuman"} />
             <div style={styles.body}>
                 <div style={styles.container}>
@@ -367,6 +368,8 @@ export default function AnnouncementDetail() {
                     )}
                 </div>
             </div>
+                        <FooterLayout />
+
         </GuestLayout>
     );
 }

@@ -35,26 +35,37 @@ const FooterLayout = () => {
                                     Beranda
                                 </Link>
                             </li>
-                            <li>
+                            {/* <li>
                                 <Link href="/about" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
                                     Tentang Kami
                                 </Link>
-                            </li>
+                            </li> */}
                             <li>
-                                <Link href="/news" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                <Link href="/newsguest" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
                                     Berita
                                 </Link>
                             </li>
+                            <li>
+                                <Link href="/announcement" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Pengumuman
+                                </Link>
+                            </li>
+
                             <li>
                                 <Link href="/achievements" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
                                     Prestasi
                                 </Link>
                             </li>
                             <li>
+                                <Link href="/scholarships" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Beasiswa
+                                </Link>
+                            </li>
+                            {/* <li>
                                 <Link href="/contact" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
                                     Kontak
                                 </Link>
-                            </li>
+                            </li> */}
                         </ul>
                     </div>
 

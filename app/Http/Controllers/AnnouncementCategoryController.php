@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 class AnnouncementCategoryController extends Controller
 {
@@ -238,6 +239,10 @@ class AnnouncementCategoryController extends Controller
 
     public function toggleActive(Request $request, $category_id)
     {
+        if ($request->method() !== 'POST') {
+            throw new MethodNotAllowedHttpException(['POST'], 'Only POST requests are allowed for this endpoint.');
+        }
+
         Log::debug('Received toggleActive request', [
             'category_id' => $category_id,
             'user_id' => Auth::id(),
@@ -279,24 +284,6 @@ class AnnouncementCategoryController extends Controller
             ]);
 
             $message = $newStatus ? 'Kategori berhasil diaktifkan.' : 'Kategori dan pengumuman terkait berhasil dinonaktifkan.';
-            $updatedCategory = [
-                'category_id' => $category->category_id,
-                'category_name' => $category->category_name,
-                'description' => $category->description,
-                'is_active' => $newStatus,
-                'status' => $newStatus ? 'Aktif' : 'Non-Aktif',
-                'created_by' => $category->creator ? $category->creator->name : null,
-                'updated_by' => $category->updater ? $category->updater->name : null,
-                'created_at' => $category->created_at->toDateTimeString(),
-                'updated_at' => $category->updated_at->toDateTimeString(),
-            ];
-
-            if ($request->header('X-Inertia')) {
-                return response()->json([
-                    'flash' => ['success' => $message],
-                    'category' => $updatedCategory,
-                ]);
-            }
 
             return redirect()->route('admin.announcement-category.index')->with('success', $message);
         } catch (\Exception $e) {
@@ -304,11 +291,7 @@ class AnnouncementCategoryController extends Controller
                 'category_id' => $category_id,
                 'user_id' => Auth::id(),
             ]);
-            if ($request->header('X-Inertia')) {
-                return response()->json([
-                    'flash' => ['error' => 'Gagal mengubah status kategori: ' . $e->getMessage()],
-                ], 422);
-            }
+
             return back()->withErrors(['error' => 'Gagal mengubah status kategori: ' . $e->getMessage()]);
         }
     }

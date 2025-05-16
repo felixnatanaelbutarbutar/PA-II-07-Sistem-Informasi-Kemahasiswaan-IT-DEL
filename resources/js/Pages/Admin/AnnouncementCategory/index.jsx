@@ -12,12 +12,12 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
     const [notificationMessage, setNotificationMessage] = useState('');
     const [notificationType, setNotificationType] = useState('success');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showToggleModal, setShowToggleModal] = useState(false);
     const [categoryIdToDelete, setCategoryIdToDelete] = useState(null);
-    const [categoryIdToToggle, setCategoryIdToToggle] = useState(null);
-    const [toggleAction, setToggleAction] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isToggling, setIsToggling] = useState(false);
+    const [showToggleModal, setShowToggleModal] = useState(false);
+    const [categoryIdToToggle, setCategoryIdToToggle] = useState(null);
+    const [toggleStatus, setToggleStatus] = useState(null);
     const [viewMode, setViewMode] = useState('table');
     const [openDropdownId, setOpenDropdownId] = useState(null);
 
@@ -85,6 +85,8 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                 sort_direction: sortDirection || undefined,
             };
 
+            console.log('Fetching categories with params:', queryParams);
+
             router.get(
                 route('admin.announcement-category.index'),
                 queryParams,
@@ -92,6 +94,9 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                     preserveState: true,
                     preserveScroll: true,
                     replace: true,
+                    onError: (errors) => {
+                        console.error('Error fetching categories:', errors);
+                    },
                 }
             );
         }, 300);
@@ -109,9 +114,60 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
     const handleToggleClick = (category_id, is_active) => {
         console.log('Handle toggle click:', { category_id, is_active, timestamp: new Date().toISOString() });
         setCategoryIdToToggle(category_id);
-        setToggleAction(is_active ? 'deactivate' : 'activate');
+        setToggleStatus(!is_active);
         setShowToggleModal(true);
         setOpenDropdownId(null);
+    };
+
+    const confirmToggle = () => {
+        if (!categoryIdToToggle) {
+            console.error('No category ID provided for toggle', { timestamp: new Date().toISOString() });
+            setNotificationMessage('Gagal mengubah status kategori: ID kategori tidak valid.');
+            setNotificationType('error');
+            setShowNotification(true);
+            setShowToggleModal(false);
+            return;
+        }
+
+        setIsToggling(true);
+        const routeUrl = route('admin.announcement-category.toggle-active', categoryIdToToggle);
+        console.log('Sending POST request to toggle category:', {
+            categoryIdToToggle,
+            routeUrl,
+            method: 'POST',
+            timestamp: new Date().toISOString(),
+        });
+
+        router.post(routeUrl, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                console.log('Toggle successful:', { categoryIdToToggle, timestamp: new Date().toISOString() });
+            },
+            onError: (errors) => {
+                console.error('Toggle error:', {
+                    errors,
+                    categoryIdToToggle,
+                    routeUrl,
+                    timestamp: new Date().toISOString(),
+                });
+                setNotificationMessage('Gagal mengubah status kategori: ' + (errors.error || 'Kesalahan server, silakan coba lagi.'));
+                setNotificationType('error');
+                setShowNotification(true);
+            },
+            onFinish: () => {
+                console.log('Toggle finished:', { categoryIdToToggle, timestamp: new Date().toISOString() });
+                setIsToggling(false);
+                setShowToggleModal(false);
+                setCategoryIdToToggle(null);
+            },
+        });
+    };
+
+    const cancelToggle = () => {
+        setShowToggleModal(false);
+        setCategoryIdToToggle(null);
+        setToggleStatus(null);
     };
 
     const confirmDelete = () => {
@@ -150,91 +206,9 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
         });
     };
 
-    const confirmToggle = () => {
-        if (!categoryIdToToggle) {
-            console.error('No category ID provided for toggle', { timestamp: new Date().toISOString() });
-            setNotificationMessage('Gagal mengubah status: ID kategori tidak valid.');
-            setNotificationType('error');
-            setShowNotification(true);
-            setShowToggleModal(false);
-            setToggleAction(null);
-            setCategoryIdToToggle(null);
-            return;
-        }
-
-        const routeUrl = route('admin.announcement-category.toggle-active', categoryIdToToggle);
-        console.log('Toggling category:', {
-            categoryIdToToggle,
-            toggleAction,
-            routeUrl,
-            timestamp: new Date().toISOString(),
-        });
-
-        setIsToggling(true);
-        // Optimistically update local state
-        const originalCategories = [...localCategories];
-        setLocalCategories((prev) =>
-            prev.map((cat) =>
-                cat.category_id === categoryIdToToggle
-                    ? { ...cat, is_active: toggleAction === 'activate', status: toggleAction === 'activate' ? 'Aktif' : 'Non-Aktif' }
-                    : cat
-            )
-        );
-
-        router.post(route('admin.announcement-category.toggle-active', categoryIdToToggle), {}, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                console.log('Toggle success:', { categoryIdToToggle, toggleAction, timestamp: new Date().toISOString() });
-                setNotificationMessage(
-                    toggleAction === 'activate'
-                        ? 'Kategori berhasil diaktifkan.'
-                        : 'Kategori dan pengumuman terkait berhasil dinonaktifkan.'
-                );
-                setNotificationType('success');
-                setShowNotification(true);
-                setIsToggling(false);
-                setShowToggleModal(false);
-                setCategoryIdToToggle(null);
-                setToggleAction(null);
-                // Clear status filter if deactivating to ensure Non-Aktif category is visible
-                if (toggleAction === 'deactivate' && statusFilter === 'active') {
-                    setStatusFilter('');
-                    router.get(
-                        route('admin.announcement-category.index'),
-                        { status: '', search: searchTerm, sort_by: sortBy, sort_direction: sortDirection },
-                        { preserveState: true, preserveScroll: true, replace: true }
-                    );
-                }
-            },
-            onError: (errors) => {
-                console.error('Toggle error:', { errors, categoryIdToToggle, routeUrl, timestamp: new Date().toISOString() });
-                // Revert optimistic update
-                setLocalCategories(originalCategories);
-                setNotificationMessage('Gagal mengubah status kategori: ' + (errors.error || 'Kesalahan server, silakan coba lagi.'));
-                setNotificationType('error');
-                setShowNotification(true);
-                setIsToggling(false);
-                setShowToggleModal(false);
-                setCategoryIdToToggle(null);
-                setToggleAction(null);
-            },
-            onFinish: () => {
-                console.log('Toggle finished:', { categoryIdToToggle, timestamp: new Date().toISOString() });
-                setIsToggling(false);
-            },
-        });
-    };
-
     const cancelDelete = () => {
         setShowDeleteModal(false);
         setCategoryIdToDelete(null);
-    };
-
-    const cancelToggle = () => {
-        setShowToggleModal(false);
-        setCategoryIdToToggle(null);
-        setToggleAction(null);
     };
 
     const handleSort = (column) => {
@@ -453,14 +427,16 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">
-                            Konfirmasi Perubahan Status
+                            Konfirmasi {toggleStatus ? 'Aktivasi' : 'Deaktivasi'} Kategori
                         </h3>
-                        <p className="text-gray-600 text-center mb-6">
-                            Apakah Anda yakin ingin {toggleAction === 'activate' ? 'mengaktifkan' : 'menonaktifkan'} kategori ini?
+                        <p className="text-gray-600 text-center mb-4">
+                            Apakah Anda yakin ingin {toggleStatus ? 'mengaktifkan' : 'menonaktifkan'} kategori pengumuman ini?
                         </p>
-                        <p className="text-red-600 font-semibold text-center mb-6 flex items-center justify-center">
-                            Seluruh pengumuman yang terkait dengan kategori ini juga akan di{toggleAction === 'activate' ? 'aktifkan' : 'nonaktifkan'}.
-                        </p>
+                        {!toggleStatus && (
+                            <p className="text-yellow-600 font-semibold text-center mb-6 flex items-center justify-center">
+                                Seluruh pengumuman yang terkait dengan kategori ini juga akan dinonaktifkan.
+                            </p>
+                        )}
                         <div className="flex justify-center space-x-4">
                             <button
                                 onClick={cancelToggle}
@@ -471,11 +447,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                             </button>
                             <button
                                 onClick={confirmToggle}
-                                className={`px-4 py-2 ${
-                                    toggleAction === 'activate'
-                                        ? 'bg-green-600 hover:bg-green-700'
-                                        : 'bg-red-600 hover:bg-red-700'
-                                } text-white rounded-lg transition flex items-center`}
+                                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition flex items-center"
                                 disabled={isToggling}
                             >
                                 <svg
@@ -489,20 +461,10 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                         strokeWidth={2}
-                                        d={
-                                            toggleAction === 'activate'
-                                                ? 'M5 13l4 4L19 7'
-                                                : 'M6 18L18 6M6 6l12 12'
-                                        }
+                                        d={toggleStatus ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'}
                                     />
                                 </svg>
-                                {isToggling
-                                    ? toggleAction === 'activate'
-                                        ? 'Mengaktifkan...'
-                                        : 'Menonaktifkan...'
-                                    : toggleAction === 'activate'
-                                    ? 'Aktifkan'
-                                    : 'Nonaktifkan'}
+                                {isToggling ? (toggleStatus ? 'Mengaktifkan...' : 'Menonaktifkan...') : (toggleStatus ? 'Aktifkan' : 'Nonaktifkan')}
                             </button>
                         </div>
                     </div>
