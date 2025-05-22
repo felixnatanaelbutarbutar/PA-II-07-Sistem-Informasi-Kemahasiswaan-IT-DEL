@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import '../../css/home.css';
+import { LogOut, ChevronDown } from 'lucide-react'; // Tambahkan ikon yang diperlukan
 
 const Navbar = ({ showBreadcrumbAndHeader = true }) => {
     const [layananDropdownOpen, setLayananDropdownOpen] = useState(false);
     const [organisasiDropdownOpen, setOrganisasiDropdownOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userDropdownOpen, setUserDropdownOpen] = useState(false);
     const layananDropdownRef = useRef(null);
     const organisasiDropdownRef = useRef(null);
-    const { url } = usePage();
+    const userDropdownRef = useRef(null);
+    const { url, props } = usePage(); // Ambil props untuk mengakses user
+    const user = props.auth?.user; // Ambil data user dari auth
 
     const isActive = (path) => url === path;
 
@@ -20,11 +24,14 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
             if (organisasiDropdownRef.current && !organisasiDropdownRef.current.contains(event.target)) {
                 setOrganisasiDropdownOpen(false);
             }
+            if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+                setUserDropdownOpen(false);
+            }
         }
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [layananDropdownRef, organisasiDropdownRef]);
+    }, [layananDropdownRef, organisasiDropdownRef, userDropdownRef]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -55,7 +62,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                     if (element) {
                         element.scrollIntoView({ behavior: 'smooth' });
                     }
-                }, 100); // Delay kecil untuk memastikan DOM sudah diperbarui
+                }, 100);
             },
         });
         setOrganisasiDropdownOpen(false);
@@ -355,6 +362,49 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Tombol Login atau Nama Pengguna */}
+                                <div className="relative" ref={userDropdownRef}>
+                                    {user ? (
+                                        <button
+                                            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                                            className="nav-item flex items-center px-2 md:px-3 font-medium transition-colors hover:text-white"
+                                        >
+                                            <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm mr-2">
+                                                {user.name.charAt(0)}
+                                            </div>
+                                            <span className="hidden md:inline text-white drop-shadow-md">{user.name}</span>
+                                            <ChevronDown
+                                                className={`ml-1 h-4 w-4 text-white transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}
+                                            />
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href={route('login')}
+                                            className="login-button flex items-center px-4 py-2 bg-blue-300 text-white rounded-full hover:bg-blue-400 transition-colors duration-200"
+                                        >
+                                            Login
+                                        </Link>
+                                    )}
+
+                                    {user && userDropdownOpen && (
+                                        <div className="dropdown-menu absolute right-0 mt-1 w-48 overflow-hidden rounded-lg bg-white/95 py-1 shadow-lg ring-1 ring-black ring-opacity-5 backdrop-blur-sm">
+                                            <div className="p-2 border-b border-gray-100">
+                                                <p className="text-sm font-medium text-gray-700">{user.name}</p>
+                                                <p className="text-xs text-gray-500">{user.email}</p>
+                                            </div>
+                                            <Link
+                                                href={route('logout')}
+                                                method="post"
+                                                className="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center"
+                                                onClick={() => setUserDropdownOpen(false)}
+                                            >
+                                                <LogOut className="mr-2 h-4 w-4" />
+                                                Logout
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -416,7 +466,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                 </Link>
                                 <Link
                                     href="/newsguest"
-                                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-300 hover:text-white"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     Berita
@@ -592,6 +642,52 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Tombol Login atau Nama Pengguna di Mobile Menu */}
+                                {user ? (
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                                            className="w-full text-left px-3 py-2 text-base font-medium text-white hover:bg-blue-50 hover:text-blue-700 flex items-center justify-between"
+                                        >
+                                            <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm mr-2">
+                                                {user.name.charAt(0)}
+                                            </div>
+                                            <span className="text-white drop-shadow-md">{user.name}</span>
+                                            <ChevronDown
+                                                className={`h-5 w-5 text-white transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}
+                                            />
+                                        </button>
+                                        {userDropdownOpen && (
+                                            <div className="pl-4 space-y-1">
+                                                <div className="p-2 border-b border-gray-100">
+                                                    <p className="text-sm font-medium text-gray-700">{user.name}</p>
+                                                    <p className="text-xs text-gray-500">{user.email}</p>
+                                                </div>
+                                                <Link
+                                                    href={route('logout')}
+                                                    method="post"
+                                                    className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 flex items-center"
+                                                    onClick={() => {
+                                                        setUserDropdownOpen(false);
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                >
+                                                    <LogOut className="mr-2 h-4 w-4" />
+                                                    Logout
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <Link
+                                        href={route('login')}
+                                        className="block px-4 py-2 bg-blue-300 text-white rounded-full hover:bg-blue-400 transition-colors duration-200 w-full text-center"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        Login
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     )}

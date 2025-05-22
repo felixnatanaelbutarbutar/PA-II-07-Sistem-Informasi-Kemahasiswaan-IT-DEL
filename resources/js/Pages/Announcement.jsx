@@ -11,7 +11,7 @@ export default function Announcement() {
     const [selectedCategory, setSelectedCategory] = useState('Semua');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+    const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list'
 
     // Fetch data from API when component mounts
     useEffect(() => {

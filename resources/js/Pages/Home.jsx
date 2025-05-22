@@ -376,7 +376,8 @@ export default function Home() {
             borderRadius: '12px',
             boxShadow: '0 6px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)',
             padding: '16px',
-            height: 'fit-content',
+            // height: 'fit-content',
+            height: '400px',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
@@ -556,7 +557,7 @@ export default function Home() {
             },
         },
         newsImgContainer: {
-            height: '160px',
+            height: '250px',
             overflow: 'hidden',
             position: 'relative',
         },

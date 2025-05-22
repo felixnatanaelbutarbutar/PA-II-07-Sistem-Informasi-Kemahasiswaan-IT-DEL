@@ -123,15 +123,17 @@ export default function News() {
         }
     };
 
-    // Format role helper
+
     const formatRole = (role) => {
-        if (!role) console.warn('Role is null or undefined');
+        if (!role) {
+            console.warn('Role is null or undefined, checking creator relation');
+            return 'Penulis'; // Default jika role tidak ada
+        }
         const roleMap = {
-            superadmin: 'Super Admin',
             kemahasiswaan: 'Staf Kemahasiswaan',
-            adminbem: 'Admin BEM',
-            adminmpm: 'Admin MPM',
-            mahasiswa: 'Mahasiswa',
+            adminbem: 'BEM',
+            adminmpm: 'MPM',
+            // mahasiswa: 'Mahasiswa',
         };
         return roleMap[role?.toLowerCase()] || role || 'Penulis';
     };
@@ -144,53 +146,53 @@ export default function News() {
             background: 'linear-gradient(to bottom, #f8fafc, #e5e7eb)',
         },
         container: {
-            maxWidth: '1200px',
+            maxWidth: '1500px', // Disamakan dengan file kedua
             margin: '0 auto',
-            padding: '16px 0',
+            padding: '20px', // Disamakan dengan file kedua
         },
         heroSection: {
             display: 'flex',
-            gap: '24px',
-            marginBottom: '32px',
+            gap: '20px', // Disamakan dengan file kedua
+            marginBottom: '20px', // Disamakan dengan file kedua
             alignItems: 'flex-start',
             width: '100%',
         },
         heroMain: {
-            flex: 1,
+            flex: 2,
             background: '#fff',
-            borderRadius: '12px',
+            borderRadius: '10px', // Disamakan dengan file kedua
             overflow: 'hidden',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)', // Disamakan dengan file kedua
             transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            height: '524px',
+            height: '567px', // Disamakan dengan file kedua
         },
         heroMainImg: {
-            width: '100%',
-            height: '480px',
+            width: '100',
+            height: '567px', // Disamakan dengan file kedua
             objectFit: 'cover',
             display: 'block',
         },
         heroMainCategory: {
             position: 'absolute',
-            top: '0',
-            right: '0',
+            top: '20px', // Disamakan dengan file kedua
+            left: '20px', // Disamakan dengan file kedua
             background: 'linear-gradient(135deg, #fef9c3, #fef08a)',
-            padding: '4px 8px',
-            borderRadius: '0 0 12px 12px',
+            padding: '5px 10px', // Disamakan dengan file kedua
+            borderRadius: '5px', // Disamakan dengan file kedua
             fontSize: '12px',
             fontWeight: '600',
             textTransform: 'uppercase',
         },
         heroMainTitle: {
             position: 'absolute',
-            bottom: '20px',
-            left: '20px',
+            bottom: '20px', // Disamakan dengan file kedua
+            left: '20px', // Disamakan dengan file kedua
             color: '#000',
-            fontSize: '28px',
-            fontWeight: '700',
-            background: 'rgba(255, 255, 255, 0.85)',
-            padding: '12px 16px',
-            borderRadius: '8px',
+            fontSize: '24px', // Disamakan dengan file kedua
+            fontWeight: 'bold',
+            background: 'rgba(255, 255, 255, 0.8)',
+            padding: '10px', // Disamakan dengan file kedua
+            borderRadius: '5px', // Disamakan dengan file kedua
             transition: 'transform 0.2s ease',
         },
         heroMainContent: {
@@ -210,25 +212,25 @@ export default function News() {
             textOverflow: 'ellipsis',
         },
         heroSidebar: {
-            flex: '0 0 300px',
+            flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '20px', // Disamakan dengan file kedua
             height: '420px',
         },
         heroSidebarNewsCard: {
             background: '#fff',
-            borderRadius: '12px',
+            borderRadius: '10px', // Disamakan dengan file kedua
             overflow: 'hidden',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)', // Disamakan dengan file kedua
             transition: 'transform 0.3s ease',
             position: 'relative',
             flex: 1,
-            maxHeight: '224px',
+            maxHeight: '300px',
         },
         heroSidebarNewsCardImg: {
             width: '100%',
-            height: '100px',
+            height: '150px', // Disamakan dengan file kedua
             objectFit: 'cover',
         },
         heroSidebarNewsCardCategory: {
@@ -236,8 +238,8 @@ export default function News() {
             top: '0',
             right: '0',
             background: 'linear-gradient(135deg, #e0f2fe, #bae6fd)',
-            padding: '4px 8px',
-            borderRadius: '0 0 12px 12px',
+            padding: '5px 10px', // Disamakan dengan file kedua
+            borderRadius: '5px', // Disamakan dengan file kedua
             fontSize: '12px',
             fontWeight: '600',
             textTransform: 'uppercase',
@@ -273,15 +275,15 @@ export default function News() {
         },
         newsGrid: {
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '32px',
-            marginBottom: '32px',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', // Disamakan dengan file kedua
+            gap: '20px', // Disamakan dengan file kedua
+            marginBottom: '20px', // Disamakan dengan file kedua
         },
         newsCard: {
             background: '#fff',
-            borderRadius: '12px',
+            borderRadius: '10px', // Disamakan dengan file kedua
             overflow: 'hidden',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)', // Disamakan dengan file kedua
             transition: 'transform 0.3s ease, box-shadow 0.3s ease',
             position: 'relative',
         },
@@ -303,16 +305,16 @@ export default function News() {
             top: '0',
             right: '0',
             background: 'linear-gradient(135deg, #e0f2fe, #bae6fd)',
-            padding: '4px 8px',
-            borderRadius: '0 0 12px 12px',
+            padding: '5px 10px', // Disamakan dengan file kedua
+            borderRadius: '5px', // Disamakan dengan file kedua
             fontSize: '12px',
             fontWeight: '600',
             textTransform: 'uppercase',
         },
         newsCardTitle: {
-            fontSize: '18px',
+            fontSize: '16px', // Disamakan dengan file kedua
             fontWeight: '600',
-            margin: '8px 12px 4px',
+            margin: '0 10px 10px', // Disamakan dengan file kedua
         },
         newsCardMeta: {
             fontSize: '12px',
@@ -323,12 +325,14 @@ export default function News() {
         newsCardDescription: {
             fontSize: '14px',
             color: '#4b5563',
-            margin: '0 12px 12px',
+            margin: '0 10px 10px', // Disamakan dengan file kedua
         },
         searchFilterContainer: {
-            marginBottom: '0',
-            padding: '16px 0',
-            background: 'transparent',
+            marginBottom: '20px', // Disamakan dengan file kedua
+            padding: '20px', // Disamakan dengan file kedua
+            background: '#fff', // Disamakan dengan file kedua
+            borderRadius: '10px', // Disamakan dengan file kedua
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)', // Disamakan dengan file kedua
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -342,10 +346,10 @@ export default function News() {
         },
         searchInput: {
             width: '100%',
-            padding: '8px 16px 8px 40px',
-            borderRadius: '8px',
-            border: '1px solid #d1d5db',
-            fontSize: '14px',
+            padding: '10px', // Disamakan dengan file kedua
+            borderRadius: '5px', // Disamakan dengan file kedua
+            border: '1px solid #ddd', // Disamakan dengan file kedua
+            fontSize: '16px', // Disamakan dengan file kedua
             background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)',
             transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
         },
@@ -397,36 +401,36 @@ export default function News() {
         pagination: {
             display: 'flex',
             justifyContent: 'center',
-            marginTop: '32px',
-            marginBottom: '32px',
-            gap: '12px',
+            marginTop: '20px', // Disamakan dengan file kedua
+            marginBottom: '20px', // Disamakan dengan file kedua
+            gap: '10px', // Disamakan dengan file kedua
         },
         pageButton: {
-            padding: '12px 18px',
-            borderRadius: '8px',
-            border: '1px solid #d1d5db',
-            background: 'linear-gradient(135deg, #ffffff, #f9fafb)',
+            padding: '10px 15px', // Disamakan dengan file kedua
+            borderRadius: '5px', // Disamakan dengan file kedua
+            border: '1px solid #ddd', // Disamakan dengan file kedua
+            background: 'linear-gradient(135deg, #ffffff, #f9fafb)', // Disamakan dengan file kedua
             cursor: 'pointer',
             fontSize: '14px',
             fontWeight: '500',
             transition: 'background 0.2s ease, transform 0.2s ease',
         },
         pageButtonActive: {
-            background: 'linear-gradient(135deg, #2563eb, #1e40af)',
+            background: 'linear-gradient(135deg, #2563eb, #1e40af)', // Disamakan dengan file kedua
             color: '#fff',
-            border: '1px solid #2563eb',
+            border: '1px solid #2563eb', // Disamakan dengan file kedua
             transform: 'scale(1.05)',
         },
         pageButtonDisabled: {
-            background: '#f3f4f6',
+            background: '#f3f4f6', // Disamakan dengan file kedua
             cursor: 'not-allowed',
             opacity: '0.6',
         },
         loadMoreButton: {
             display: filteredNews.length > 8 ? 'flex' : 'none',
             justifyContent: 'center',
-            marginTop: '32px',
-            marginBottom: '32px',
+            marginTop: '20px', // Disamakan dengan file kedua
+            marginBottom: '20px', // Disamakan dengan file kedua
         },
         loadMoreButtonInner: {
             padding: '12px 24px',
@@ -616,6 +620,9 @@ export default function News() {
                                                     </div>
                                                     <div style={styles.heroSidebarNewsCardMeta}>
                                                         ({formatRole(news.creator?.role)}), {formatDate(news.created_at)}
+                                                    </div>
+                                                    <div style={styles.newsCardDescription}>
+                                                        {(news.content?.replace(/<[^>]+>/g, '')?.substring(0, 100) || 'Deskripsi tidak tersedia') + '...'}
                                                     </div>
                                                 </div>
                                             </Link>

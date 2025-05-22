@@ -13,10 +13,10 @@ class NewsController extends Controller
      */
     public function index(Request $request)
     {
-        $newsItems = News::with('category')->orderBy('created_at', 'desc')->get();
+        $newsItems = News::with('category', 'creator')->orderBy('created_at', 'desc')->get();
 
         $perPage = $request->query('per_page', 10); // Ambil parameter per_page, default 10
-        $news = News::with('category')
+        $news = News::with('category', 'creator')
             ->where('is_active', true)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage); // Gunakan paginate alih-alih get
