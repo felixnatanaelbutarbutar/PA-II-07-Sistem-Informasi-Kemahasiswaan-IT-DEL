@@ -368,20 +368,20 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     {user ? (
                                         <button
                                             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                                            className="nav-item flex items-center px-2 md:px-3 font-medium transition-colors hover:text-white"
+                                            className="nav-item flex items-center px-2 md:px-3 font-medium text-white transition-colors hover:text-white"
                                         >
                                             <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm mr-2">
                                                 {user.name.charAt(0)}
                                             </div>
-                                            <span className="hidden md:inline text-white drop-shadow-md">{user.name}</span>
+                                            <span className="hidden md:inline">{user.name}</span>
                                             <ChevronDown
-                                                className={`ml-1 h-4 w-4 text-white transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}
+                                                className={`ml-1 h-4 w-4 transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}
                                             />
                                         </button>
                                     ) : (
                                         <Link
                                             href={route('login')}
-                                            className="login-button flex items-center px-4 py-2 bg-blue-300 text-white rounded-full hover:bg-blue-400 transition-colors duration-200"
+                                            className="nav-item flex items-center px-2 md:px-3 font-medium text-white transition-colors hover:text-white"
                                         >
                                             Login
                                         </Link>
@@ -466,7 +466,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                 </Link>
                                 <Link
                                     href="/newsguest"
-                                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-300 hover:text-white"
+                                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     Berita
@@ -648,14 +648,14 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     <div className="relative">
                                         <button
                                             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                                            className="w-full text-left px-3 py-2 text-base font-medium text-white hover:bg-blue-50 hover:text-blue-700 flex items-center justify-between"
+                                            className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-between"
                                         >
                                             <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm mr-2">
                                                 {user.name.charAt(0)}
                                             </div>
-                                            <span className="text-white drop-shadow-md">{user.name}</span>
+                                            <span>{user.name}</span>
                                             <ChevronDown
-                                                className={`h-5 w-5 text-white transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}
+                                                className={`h-5 w-5 transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}
                                             />
                                         </button>
                                         {userDropdownOpen && (
@@ -682,7 +682,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                 ) : (
                                     <Link
                                         href={route('login')}
-                                        className="block px-4 py-2 bg-blue-300 text-white rounded-full hover:bg-blue-400 transition-colors duration-200 w-full text-center"
+                                        className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
                                         Login

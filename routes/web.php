@@ -155,10 +155,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/announcements/count', [DashboardController::class, 'getAnnouncementsCount'])->name('announcements.count');
 
         // Activity Routes
-        Route::resource('activities', ActivityController::class)->except(['show', 'destroy']);
-        Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.delete');
+        Route::resource('activities', ActivityController::class)->except(['show', 'destroy', 'update']);
+        Route::post('activities/{activity}/edit', [ActivityController::class, 'update'])->name('activities.update');
+        Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.destroy');
         Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
-
+        
         // News Category Routes
         Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
         Route::post('news-category/{news_category}/update', [NewsCategoryController::class, 'update'])->name('news-category.update');
