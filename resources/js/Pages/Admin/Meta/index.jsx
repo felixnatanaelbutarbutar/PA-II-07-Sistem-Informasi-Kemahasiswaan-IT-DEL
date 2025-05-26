@@ -1,9 +1,39 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Index({ auth, permissions, userRole, menu, metas }) {
-    const [notification, setNotification] = useState({ show: false, type: '', message: '' });
+    const { flash } = usePage().props;
+    const [notification, setNotification] = useState({
+        show: false,
+        type: '',
+        message: '',
+    });
+
+    useEffect(() => {
+        if (flash) {
+            if (flash.success) {
+                setNotification({
+                    show: true,
+                    type: 'success',
+                    message: flash.success,
+                });
+            } else if (flash.error) {
+                setNotification({
+                    show: true,
+                    type: 'error',
+                    message: flash.error,
+                });
+            }
+
+            if (flash.success || flash.error) {
+                const timer = setTimeout(() => {
+                    setNotification({ show: false, type: '', message: '' });
+                }, 5000);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [flash]);
 
     const handleDelete = (id) => {
         if (confirm('Apakah Anda yakin ingin menghapus meta ini?')) {
@@ -14,7 +44,6 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                         type: 'success',
                         message: 'Meta berhasil dihapus!',
                     });
-                    setTimeout(() => setNotification({ ...notification, show: false }), 5000);
                 },
                 onError: () => {
                     setNotification({
@@ -22,7 +51,6 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                         type: 'error',
                         message: 'Gagal menghapus meta. Silakan coba lagi.',
                     });
-                    setTimeout(() => setNotification({ ...notification, show: false }), 5000);
                 },
             });
         }
@@ -36,7 +64,6 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                     type: 'success',
                     message: `Meta berhasil ${!isActive ? 'diaktifkan' : 'dinonaktifkan'}!`,
                 });
-                setTimeout(() => setNotification({ ...notification, show: false }), 5000);
             },
             onError: () => {
                 setNotification({
@@ -44,13 +71,17 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                     type: 'error',
                     message: 'Gagal mengubah status meta. Silakan coba lagi.',
                 });
-                setTimeout(() => setNotification({ ...notification, show: false }), 5000);
             },
         });
     };
 
     return (
-        <AdminLayout user={auth.user} userRole={userRole} permissions={permissions} navigation={menu}>
+        <AdminLayout
+            user={auth.user}
+            userRole={userRole}
+            permissions={permissions}
+            navigation={menu} // Pastikan navigation diteruskan dari menu
+        >
             <Head title="Daftar Meta" />
 
             {/* Notification */}
@@ -98,7 +129,7 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                         </div>
                         <div className="ml-auto pl-3">
                             <button
-                                onClick={() => setNotification({ ...notification, show: false })}
+                                onClick={() => setNotification({ show: false, type: '', message: '' })}
                                 className={`inline-flex rounded-md p-1.5 ${
                                     notification.type === 'success'
                                         ? 'text-emerald-500 hover:bg-emerald-100 focus:ring-emerald-500'
@@ -183,7 +214,7 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{meta.meta_title}</td>
                                         <td className="px-6 py-4 text-sm text-gray-900">
                                             <div
-                                                className="line-clamp-2"
+                                                className="line-clamp-2 ql-editor" // Tambahkan kelas ql-editor untuk mendukung Quill
                                                 dangerouslySetInnerHTML={{ __html: meta.meta_description }}
                                             />
                                         </td>

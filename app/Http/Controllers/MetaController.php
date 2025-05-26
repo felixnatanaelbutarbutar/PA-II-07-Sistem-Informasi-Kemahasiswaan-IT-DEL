@@ -16,24 +16,29 @@ class MetaController extends Controller
     {
         $metas = Meta::with('creator')->get();
         $user = Auth::user();
-        $role = strtolower($user->user_role);
+        // Ubah dari $user->user_role menjadi $user->role agar konsisten dengan NewsController
+        $role = strtolower($user->role ?? 'default'); // Tambahkan fallback 'default' jika role null
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
-        Log::info("Role: {$role}, Menu: ", $menuItems);
+        Log::info("Role: {$role}, Menu: ", $menuItems); // Debug untuk memeriksa nilai
 
         return inertia('Admin/Meta/index', [
             'metas' => $metas,
-            'auth' => ['user' => $user],
             'userRole' => $role,
+            'auth' => ['user' => $user],
             'permissions' => $permissions,
-            'navigation' => $menuItems,
+            'menu' => $menuItems,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
     public function create()
     {
         $user = Auth::user();
-        $role = strtolower($user->user_role);
+        $role = strtolower($user->role ?? 'default'); // Konsisten dengan index
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -41,7 +46,7 @@ class MetaController extends Controller
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,
-            'navigation' => $menuItems,
+            'menu' => $menuItems,
         ]);
     }
 
@@ -64,8 +69,17 @@ class MetaController extends Controller
     public function edit($meta_id)
     {
         $meta = Meta::with('creator')->findOrFail($meta_id);
+        $user = Auth::user();
+        $role = strtolower($user->role ?? 'default');
+        $menuItems = RoleHelper::getNavigationMenu($role);
+        $permissions = RoleHelper::getRolePermissions($role);
+
         return inertia('Admin/Meta/edit', [
             'meta' => $meta,
+            'auth' => ['user' => $user],
+            'userRole' => $role,
+            'permissions' => $permissions,
+            'menu' => $menuItems,
         ]);
     }
 
