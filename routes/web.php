@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BemController;
 use App\Http\Controllers\MpmController;
 use App\Http\Controllers\FormController;
+use App\Http\Controllers\MetaController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ApiProxyController;
@@ -159,7 +160,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('activities/{activity}/edit', [ActivityController::class, 'update'])->name('activities.update');
         Route::post('activities/{activity}/delete', [ActivityController::class, 'destroy'])->name('activities.destroy');
         Route::get('activities/export/pdf', [ActivityController::class, 'exportToPDF'])->name('activities.export.pdf');
-        
+
         // News Category Routes
         Route::resource('news-category', NewsCategoryController::class)->except(['show', 'destroy', 'update']);
         Route::post('news-category/{news_category}/update', [NewsCategoryController::class, 'update'])->name('news-category.update');
@@ -231,6 +232,19 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('achievements', AchievementController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
             Route::post('achievements/{achievement}/delete', [AchievementController::class, 'destroy'])->name('achievements.destroy');
+
+
+            // Download Routes
+            Route::resource('downloads', DownloadController::class)->except(['show', 'destroy', 'update']);
+            Route::post('downloads/{download}/update', [DownloadController::class, 'update'])->name('downloads.update');
+            Route::post('downloads/{download}/delete', [DownloadController::class, 'destroy'])->name('downloads.destroy');
+
+            // Meta Routes
+            Route::resource('meta', MetaController::class)->except(['show', 'destroy', 'update']);
+            Route::post('meta/{meta}/update', [MetaController::class, 'update'])->name('meta.update');
+            Route::post('meta/{meta}/delete', [MetaController::class, 'destroy'])->name('meta.destroy');
+            Route::patch('meta/{meta}/toggle-active', [MetaController::class, 'toggleActive'])->name('meta.toggle-active');
+            Route::post('meta/upload-image', [MetaController::class, 'uploadImage'])->name('meta.upload-image');
 
             // Achievement Type Routes
             Route::resource('achievement-type', AchievementTypeController::class)->except(['show', 'destroy', 'update']);

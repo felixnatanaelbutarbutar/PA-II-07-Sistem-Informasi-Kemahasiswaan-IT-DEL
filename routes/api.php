@@ -64,6 +64,9 @@ Route::get('/carousel/guest', [CarouselController::class, 'guestIndex'])->name('
 // Route untuk Aspiration Categories (for Dashboard statistics)
 Route::get('/aspiration-categories', [DashboardController::class, 'getAspirationCategories'])->name('api.aspiration-categories');
 
+// Route untuk Meta (ambil berdasarkan key)
+Route::get('/meta/{key}', [\App\Http\Controllers\Api\MetaController::class, 'getByKey']);
+
 Route::get('/activities', [ActivityController::class, 'index']);
 Route::get('/activities/active', [ActivityController::class, 'active']);
 Route::get('/activities/nearest', [ActivityController::class, 'nearest']);

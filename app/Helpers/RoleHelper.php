@@ -38,6 +38,7 @@ class RoleHelper
                 'kegiatan' => true,
                 'chatbot' => true,
                 'directors' => true,
+                'meta' => true,
 
             ],
             'adminbem' => [
@@ -439,6 +440,16 @@ class RoleHelper
                 'name' => 'Kelola Sambutan Kemahasiswaan',
                 'route' => 'admin.directors.index',
                 'icon' => 'directors',
+                'visible' => true,
+            ];
+        }
+
+        // Menu untuk Kelola Directors
+        if ($permissions['meta'] ?? false) {
+            $menuItems[] = [
+                'name' => 'Meta',
+                'route' => 'admin.meta.index',
+                'icon' => 'home',
                 'visible' => true,
             ];
         }
