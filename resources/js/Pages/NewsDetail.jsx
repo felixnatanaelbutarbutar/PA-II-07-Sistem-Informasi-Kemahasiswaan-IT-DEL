@@ -4,6 +4,7 @@ import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { useState, useEffect, useMemo } from 'react';
 import { debounce } from 'lodash';
+import 'react-quill/dist/quill.snow.css'; // Impor CSS Quill
 
 export default function NewsDetail() {
     const { news, news_id, newsItems, categories } = usePage().props;
@@ -220,7 +221,7 @@ export default function NewsDetail() {
 
                                 {/* Article content */}
                                 <article className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                                    <div dangerouslySetInnerHTML={{ __html: news.content }} />
+                                    <div className="ql-editor" dangerouslySetInnerHTML={{ __html: news.content }} />
                                 </article>
 
                                 {/* Author Info */}
@@ -438,6 +439,9 @@ export default function NewsDetail() {
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
                     overflow: hidden;
+                }
+                .ql-editor {
+                    padding: 0; /* Pastikan tidak ada padding berlebih */
                 }
             `}</style>
         </GuestLayout>

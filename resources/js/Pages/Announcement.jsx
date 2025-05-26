@@ -175,7 +175,7 @@ export default function Announcement() {
             month: 'long',
             year: 'numeric'
         }).format(date);
-    };
+};
 
     return (
         <GuestLayout>

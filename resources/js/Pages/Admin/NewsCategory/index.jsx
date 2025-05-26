@@ -229,7 +229,7 @@ export default function Index({ auth, userRole, permissions, menu, categories = 
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {category.category_name}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <td className="px-6 py-4 w  hitespace-nowrap text-sm text-gray-600">
                                         {category.description || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">

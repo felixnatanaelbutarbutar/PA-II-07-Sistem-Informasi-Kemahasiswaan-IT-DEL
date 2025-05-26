@@ -3,6 +3,7 @@ import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { Head, usePage, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import 'react-quill/dist/quill.snow.css'; // Impor CSS Quill
 
 export default function AnnouncementDetail() {
     const { props } = usePage();
@@ -188,6 +189,13 @@ export default function AnnouncementDetail() {
                 lineHeight: '1.8',
                 marginBottom: '20px',
             },
+            contentQuill: {
+                // Tambahkan gaya tambahan untuk mendukung Quill
+                '& .ql-align-center': { textAlign: 'center' },
+                '& .ql-align-right': { textAlign: 'right' },
+                '& .ql-align-justify': { textAlign: 'justify' },
+                '& .ql-editor': { padding: '0', margin: '0' }, // Pastikan kompatibel dengan Quill
+            },
             loadingState: {
                 display: 'flex',
                 justifyContent: 'center',
@@ -327,7 +335,9 @@ export default function AnnouncementDetail() {
                                     </div>
                                 </div>
                             </div>
+                            {/* Render konten dengan kelas Quill */}
                             <div
+                                className="ql-editor" // Tambahkan kelas ql-editor untuk styling Quill
                                 style={styles.content}
                                 dangerouslySetInnerHTML={{ __html: announcement.content || "Tidak ada konten." }}
                             />
@@ -368,8 +378,7 @@ export default function AnnouncementDetail() {
                     )}
                 </div>
             </div>
-                        <FooterLayout />
-
+            <FooterLayout />
         </GuestLayout>
     );
 }

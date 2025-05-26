@@ -375,6 +375,12 @@ export default function ActivityCalendar() {
         buttonExportModalHover: {
             background: '#1d4ed8',
         },
+        exportWrapper: {
+            maxWidth: '1280px',
+            margin: '24px auto',
+            padding: '0 16px',
+            textAlign: 'center',
+        },
     };
 
     return (
@@ -390,20 +396,22 @@ export default function ActivityCalendar() {
                 )}
 
                 <div style={styles.sectionHeader}>
-                    <div style={{ textAlign: 'center', marginTop: '24px' }}>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            style={styles.buttonExport}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = styles.buttonExportHover.background;
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = styles.buttonExport.background;
-                            }}
-                        >
-                            <Download style={{ width: '18px', height: '18px', marginRight: '8px' }} />
-                            Ekspor ke PDF
-                        </button>
+                    <div style={styles.colorGuideWrapper}>
+                        <h3 style={styles.colorGuideTitle}>Panduan Warna Kegiatan</h3>
+                        <div style={styles.colorGuideContainer}>
+                            <div style={styles.colorGuideItem}>
+                                <div style={{ ...styles.colorBox, backgroundColor: '#F54243' }}></div>
+                                <span style={styles.colorText}>Kegiatan dari Kemahasiswaan</span>
+                            </div>
+                            <div style={styles.colorGuideItem}>
+                                <div style={{ ...styles.colorBox, backgroundColor: '#22A7F4' }}></div>
+                                <span style={styles.colorText}>Kegiatan dari Admin BEM</span>
+                            </div>
+                            <div style={styles.colorGuideItem}>
+                                <div style={{ ...styles.colorBox, backgroundColor: '#E7E73E' }}></div>
+                                <span style={styles.colorText}>Kegiatan dari Admin MPM</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -524,22 +532,20 @@ export default function ActivityCalendar() {
                     </div>
                 )}
 
-                <div style={styles.colorGuideWrapper}>
-                    <h3 style={styles.colorGuideTitle}>Panduan Warna Kegiatan</h3>
-                    <div style={styles.colorGuideContainer}>
-                        <div style={styles.colorGuideItem}>
-                            <div style={{ ...styles.colorBox, backgroundColor: '#F54243' }}></div>
-                            <span style={styles.colorText}>Kegiatan dari Kemahasiswaan</span>
-                        </div>
-                        <div style={styles.colorGuideItem}>
-                            <div style={{ ...styles.colorBox, backgroundColor: '#22A7F4' }}></div>
-                            <span style={styles.colorText}>Kegiatan dari Admin BEM</span>
-                        </div>
-                        <div style={styles.colorGuideItem}>
-                            <div style={{ ...styles.colorBox, backgroundColor: '#E7E73E' }}></div>
-                            <span style={styles.colorText}>Kegiatan dari Admin MPM</span>
-                        </div>
-                    </div>
+                <div style={styles.exportWrapper}>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        style={styles.buttonExport}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = styles.buttonExportHover.background;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = styles.buttonExport.background;
+                        }}
+                    >
+                        <Download style={{ width: '18px', height: '18px', marginRight: '8px' }} />
+                        Ekspor ke PDF
+                    </button>
                 </div>
             </div>
 

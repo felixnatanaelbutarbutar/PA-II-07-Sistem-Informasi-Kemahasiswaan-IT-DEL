@@ -41,7 +41,7 @@ const FooterLayout = () => {
                                 </Link>
                             </li> */}
                             <li>
-                                <Link href="/newsguest" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                <Link href="/news" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
                                     Berita
                                 </Link>
                             </li>
@@ -61,11 +61,26 @@ const FooterLayout = () => {
                                     Beasiswa
                                 </Link>
                             </li>
-                            {/* <li>
-                                <Link href="/contact" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
-                                    Kontak
+                            <li>
+                                <Link href="/counseling" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Konseling
                                 </Link>
-                            </li> */}
+                            </li>
+                            <li>
+                                <Link href="/downloads" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Unduhan
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/bem" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Badan Eksekutif Mahasiswa
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/downloads" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
+                                    Majelis Perwakilan Mahasiswa
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 
@@ -118,7 +133,7 @@ const FooterLayout = () => {
                                 <FaTwitter size={16} />
                             </a>
                             <a
-                            href="https://www.tiktok.com/@institut.teknologi.del"
+                            href="https://www.instagram.com/kemahasiswaanitdel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
                             target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-3 bg-pink-600 rounded-full hover:bg-pink-700 transition duration-200"

@@ -19,7 +19,17 @@ class NewsCategoryController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        $categories = NewsCategory::with(['creator', 'updater'])->get();
+        $categories = NewsCategory::with(['creator', 'updater'])->get()->map(function ($category) {
+            return [
+                'category_id' => $category->category_id,
+                'category_name' => $category->category_name,
+                'description' => $category->description,
+                'created_by' => $category->creator ? $category->creator->name : null, // Ambil nama dari relasi
+                'updated_by' => $category->updater ? $category->updater->name : null,
+                'created_at' => $category->created_at->toDateTimeString(),
+                'updated_at' => $category->updated_at->toDateTimeString(),
+            ];
+        });
 
         return Inertia::render('Admin/NewsCategory/index', [
             'auth' => ['user' => $user],

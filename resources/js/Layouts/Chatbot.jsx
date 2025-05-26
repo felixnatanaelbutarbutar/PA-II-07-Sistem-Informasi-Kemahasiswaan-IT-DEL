@@ -6,7 +6,7 @@ export default function ChatbotWidget() {
         {
             role: 'bot',
             content:
-                'Hai! Selamat datang di layanan chatbot IT Del! Aku siap membantumu mencari informasi tentang beasiswa, organisasi, dan kegiatan kampus. Ada yang bisa kubantu? Kalau kamu punya pertanyaan tentang cara berprestasi di kelas, aku bisa memberikan beberapa tips umum, tapi untuk strategi belajar yang lebih spesifik dan disesuaikan dengan program studimu, lebih baik kamu berkonsultasi dengan dosen wali atau kakak tingkatmu. ',
+                'Hai! Selamat datang di layanan chatbot IT Del! Aku siap membantumu mencari informasi tentang beasiswa, organisasi, dan kegiatan kampus. Ada yang bisa kubantu?',
         },
     ]);
     const [input, setInput] = useState('');
