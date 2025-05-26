@@ -48,10 +48,10 @@ class ScholarshipController extends Controller
                 foreach ($searchTerms as $term) {
                     $lowerTerm = strtolower($term);
                     $q->orWhereRaw('LOWER(name) LIKE ?', ['%' . $lowerTerm . '%'])
-                      ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $lowerTerm . '%'])
-                      ->orWhereHas('category', function ($q) use ($lowerTerm) {
-                          $q->whereRaw('LOWER(category_name) LIKE ?', ['%' . $lowerTerm . '%']);
-                      });
+                        ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $lowerTerm . '%'])
+                        ->orWhereHas('category', function ($q) use ($lowerTerm) {
+                            $q->whereRaw('LOWER(category_name) LIKE ?', ['%' . $lowerTerm . '%']);
+                        });
                 }
             });
         }
@@ -59,7 +59,7 @@ class ScholarshipController extends Controller
         // Apply sorting
         if ($sortBy === 'updated_at') {
             $query->orderBy('is_active', 'desc') // Prioritize active status
-                  ->orderBy('updated_at', $sortDirection);
+                ->orderBy('updated_at', $sortDirection);
         }
 
         $scholarships = $query->get()->map(function ($scholarship) {
@@ -363,6 +363,7 @@ class ScholarshipController extends Controller
                         'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-', // Tanggal mulai
                         'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-', // Tanggal selesai
                         'category_id' => $scholarship->category_id ?? '-', // ID kategori
+                        'category_name' => $scholarship->category ? $scholarship->category->category_name ?? '-' : '-', // Tambahkan category_name
                     ];
                 }),
                 'auth' => ['user' => Auth::user()],
@@ -379,7 +380,7 @@ class ScholarshipController extends Controller
         }
     }
 
-        public function guestShow($scholarship_id)
+    public function guestShow($scholarship_id)
     {
         try {
             $scholarship = Scholarship::with('category')
@@ -429,14 +430,11 @@ class ScholarshipController extends Controller
                     'scholarship_id' => $scholarship->scholarship_id,
                     'name' => $scholarship->name ?? '-',
                     'description' => $scholarship->description ?? '-',
-                    'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null, // Tambahkan poster
-                    'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-', // Tambahkan start_date
-                    'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-', // Tambahkan end_date
-                    'category' => $scholarship->category ? [
-                        'id' => $scholarship->category->id,
-                        'name' => $scholarship->category->name,
-                    ] : null,
-                    'category_id' => $scholarship->category_id ?? '-', // Tambahkan category_id untuk konsistensi
+                    'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
+                    'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-',
+                    'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-',
+                    'category_id' => $scholarship->category_id ?? '-', // Tetap simpan jika diperlukan
+                    'category_name' => $scholarship->category ? $scholarship->category->category_name ?? '-' : '-', // Gunakan category_name
                 ],
                 'form' => $formData,
                 'flash' => session()->only(['success', 'error']),
@@ -463,10 +461,10 @@ class ScholarshipController extends Controller
                     foreach ($searchTerms as $term) {
                         $lowerTerm = strtolower($term);
                         $q->orWhereRaw('LOWER(name) LIKE ?', ['%' . $lowerTerm . '%'])
-                          ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $lowerTerm . '%'])
-                          ->orWhereHas('category', function ($q) use ($lowerTerm) {
-                              $q->whereRaw('LOWER(category_name) LIKE ?', ['%' . $lowerTerm . '%']);
-                          });
+                            ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $lowerTerm . '%'])
+                            ->orWhereHas('category', function ($q) use ($lowerTerm) {
+                                $q->whereRaw('LOWER(category_name) LIKE ?', ['%' . $lowerTerm . '%']);
+                            });
                     }
                 });
             }
@@ -479,7 +477,7 @@ class ScholarshipController extends Controller
 
             if ($sortBy === 'updated_at') {
                 $query->orderBy('is_active', 'desc')
-                      ->orderBy('updated_at', $sortDirection);
+                    ->orderBy('updated_at', $sortDirection);
             }
 
             $scholarships = $query->get()->map(function ($scholarship) {

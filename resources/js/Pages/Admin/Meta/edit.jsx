@@ -39,6 +39,7 @@ export default function Edit({ auth, permissions, userRole, menu, meta }) {
         created_by: meta.created_by,
         updated_by: auth.user.id,
     });
+    const [file, setFile] = useState(null); // State untuk menyimpan file baru
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [errors, setErrors] = useState({});
@@ -52,6 +53,25 @@ export default function Edit({ auth, permissions, userRole, menu, meta }) {
         }
     }, [notification]);
 
+    const handleFileChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            // Validasi ukuran file di client-side (maks 2MB)
+            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            if (selectedFile.size > maxSizeInBytes) {
+                setErrors((prev) => ({
+                    ...prev,
+                    file: 'Ukuran file terlalu besar. Maksimal 2MB.',
+                }));
+                setFile(null);
+                e.target.value = null; // Reset input file
+                return;
+            }
+            setFile(selectedFile);
+            setErrors((prev) => ({ ...prev, file: null })); // Clear error jika file valid
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -59,13 +79,13 @@ export default function Edit({ auth, permissions, userRole, menu, meta }) {
 
         // Client-side validation
         const newErrors = {};
-        if (!data.id.trim()) newErrors.id = 'ID wajib diisi.';
-        if (data.id.length > 10) newErrors.id = 'ID maksimal 10 karakter.';
         if (!data.meta_key.trim()) newErrors.meta_key = 'Meta Key wajib diisi.';
         if (data.meta_key.length > 255) newErrors.meta_key = 'Meta Key maksimal 255 karakter.';
         if (!data.meta_title.trim()) newErrors.meta_title = 'Meta Title wajib diisi.';
         if (data.meta_title.length > 255) newErrors.meta_title = 'Meta Title maksimal 255 karakter.';
-        if (!data.meta_description.trim()) newErrors.meta_description = 'Meta Description wajib diisi.';
+        if (!data.meta_description.replace(/<[^>]*>/g, '').trim()) {
+            newErrors.meta_description = 'Meta Description wajib diisi dengan konten yang valid.';
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -74,14 +94,21 @@ export default function Edit({ auth, permissions, userRole, menu, meta }) {
         }
 
         const formData = new FormData();
-        formData.append('id', data.id);
+        formData.append('_method', 'POST'); // Gunakan PUT untuk update dengan Inertia
         formData.append('meta_key', data.meta_key);
         formData.append('meta_title', data.meta_title);
         formData.append('meta_description', data.meta_description);
         formData.append('is_active', data.is_active ? '1' : '0');
         formData.append('created_by', data.created_by);
         formData.append('updated_by', data.updated_by);
-        formData.append('_method', 'PUT'); // Spoof PUT request for Inertia
+        if (file) {
+            formData.append('file', file); // Tambahkan file baru jika ada
+        }
+
+        // Log data yang dikirim untuk debugging
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
 
         try {
             await axios.post(route('admin.meta.update', data.id), formData, {
@@ -274,7 +301,6 @@ export default function Edit({ auth, permissions, userRole, menu, meta }) {
                                 disabled
                                 className="w-full px-4 py-3 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                             />
-                            {errors.id && <p className="text-red-500 text-xs mt-1">{errors.id}</p>}
                         </div>
 
                         <div className="space-y-2">
@@ -340,6 +366,28 @@ export default function Edit({ auth, permissions, userRole, menu, meta }) {
                             </div>
                             {errors.meta_description && (
                                 <p className="text-red-500 text-xs mt-1">{errors.meta_description}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Upload File Baru (jpg, png, pdf, maks. 2MB, opsional)
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,application/pdf"
+                                onChange={handleFileChange}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.file
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {errors.file && <p className="text-red-500 text-xs mt-1">{errors.file}</p>}
+                            {meta.file_path && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                    File saat ini: <a href={`/storage/${meta.file_path}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{meta.file_path.split('/').pop()}</a>
+                                </p>
                             )}
                         </div>
 

@@ -281,7 +281,7 @@ export default function ScholarshipDetail() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <p style={styles.detail}>
                                         <span style={{ fontWeight: '600', color: '#1e40af' }}>Kategori:</span>{' '}
-                                        {scholarship?.category?.name || scholarship?.category_id || '-'}
+                                        {scholarship?.category_name || '-'}
                                     </p>
                                     <p style={styles.detail}>
                                         <span style={{ fontWeight: '600', color: '#1e40af' }}>Tanggal Mulai:</span>{' '}

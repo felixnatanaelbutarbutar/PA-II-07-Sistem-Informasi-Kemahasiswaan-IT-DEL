@@ -19,12 +19,12 @@ export default function Home() {
         Regional: { Gold: 0, Silver: 0, Bronze: 0 },
     });
     const [carousels, setCarousels] = useState([]);
-    const [director, setDirector] = useState(null);
+    const [metaData, setMetaData] = useState(null); // Ganti dari director ke metaData
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [carouselLoading, setCarouselLoading] = useState(true);
     const [carouselError, setCarouselError] = useState(null);
-    const [directorError, setDirectorError] = useState(null);
+    const [metaError, setMetaError] = useState(null); // Ganti dari directorError ke metaError
     const [isWelcomeVisible, setIsWelcomeVisible] = useState(false);
     const [isNewsVisible, setIsNewsVisible] = useState(false);
     const [isAchievementsVisible, setIsAchievementsVisible] = useState(false);
@@ -81,21 +81,21 @@ export default function Home() {
             }
         };
 
-        const fetchDirector = async () => {
+        const fetchMetaData = async () => { // Ganti dari fetchDirector ke fetchMetaData
             try {
-                const directorResponse = await fetch('http://localhost:8000/api/director/active');
-                if (!directorResponse.ok) throw new Error('Gagal mengambil kata sambutan');
-                const directorData = await directorResponse.json();
-                setDirector(directorData);
+                const metaResponse = await fetch('http://localhost:8000/api/meta/kata-sambutan');
+                if (!metaResponse.ok) throw new Error('Gagal mengambil data meta');
+                const metaData = await metaResponse.json();
+                setMetaData(metaData);
             } catch (err) {
-                console.error('Error fetching director:', err);
-                setDirectorError('Gagal memuat kata sambutan. Silakan coba lagi nanti.');
+                console.error('Error fetching meta data:', err);
+                setMetaError('Gagal memuat kata sambutan. Silakan coba lagi nanti.');
             }
         };
 
         fetchData();
         fetchCarousels();
-        fetchDirector();
+        fetchMetaData();
     }, []);
 
     useEffect(() => {
@@ -463,7 +463,6 @@ export default function Home() {
             borderRadius: '12px',
             boxShadow: '0 6px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)',
             padding: '16px',
-            // height: '400px',
             minHeight: '400px',
             maxHeight: '400px',
             display: 'flex',
@@ -473,15 +472,15 @@ export default function Home() {
             overflowY: 'auto',
         },
         activityItem: {
-            padding: '6px 0', // Reduced from 8px
+            padding: '6px 0',
             borderBottom: '1px solid #e5e7eb',
             transition: 'background 0.3s ease, transform 0.2s ease',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            maxHeight: '120px', // Set a max height per item
-            overflow: 'hidden', // Hide overflow within each item
+            maxHeight: '120px',
+            overflow: 'hidden',
             ':hover': {
                 background: '#E0F2FE',
                 transform: 'translateX(4px)',
@@ -773,31 +772,31 @@ export default function Home() {
             color: '#4b5563',
             lineHeight: '1.7',
             background: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '12px 12px 12px 0', // Bentuk balon pesan
+            borderRadius: '12px 12px 12px 0',
             padding: '21px',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             backdropFilter: 'blur(10px)',
             maxHeight: '350px',
-            overflowY: 'auto', // Tetap aktif untuk scroll jika perlu
+            overflowY: 'auto',
             textAlign: 'justify',
-            position: 'relative', // Penting untuk pseudo-element
+            position: 'relative',
             transition: 'opacity 0.8s ease-out 0.4s, transform 0.8s ease-out 0.4s, filter 0.8s ease-out 0.4s',
             opacity: isWelcomeVisible ? 1 : 0,
             transform: isWelcomeVisible ? 'translateX(0) scale(1)' : 'translateX(20px) scale(0.95)',
             filter: isWelcomeVisible ? 'blur(0)' : 'blur(3px)',
-            zIndex: 1, // Pastikan elemen ini berada di atas elemen lain
+            zIndex: 1,
             ':after': {
                 content: '""',
                 position: 'absolute',
-                bottom: '-10px', // Posisi ekor di bawah
-                left: '30px', // Posisi ekor disesuaikan ke kanan sedikit
+                bottom: '-10px',
+                left: '30px',
                 width: '0',
                 height: '0',
-                borderLeft: '12px solid transparent', // Lebar segitiga disesuaikan
+                borderLeft: '12px solid transparent',
                 borderRight: '12px solid transparent',
-                borderTop: '12px solid rgba(255, 255, 255, 0.95)', // Sesuai dengan background
-                zIndex: 0, // Ekor di belakang teks
-                transform: 'translateX(-50%)', // Pusatkan ekor relatif ke posisi left
+                borderTop: '12px solid rgba(255, 255, 255, 0.95)',
+                zIndex: 0,
+                transform: 'translateX(-50%)',
             },
         },
         achievementsSection: {
@@ -1056,28 +1055,28 @@ export default function Home() {
             <div style={styles.welcomeSection} ref={welcomeSectionRef}>
                 <div style={styles.welcomeContainer}>
                     <div style={styles.welcomePhotoContainer}>
-                        {directorError ? (
+                        {metaError ? (
                             <div style={styles.welcomePhotoPlaceholder}>Gagal memuat foto</div>
-                        ) : director && director.photo ? (
+                        ) : metaData && metaData.file_path ? (
                             <img
                                 style={styles.welcomePhoto}
-                                src={`/storage/${director.photo}`}
-                                alt={director.name || 'Foto Direktur'}
+                                src={`/storage/${metaData.file_path}`}
+                                alt={metaData.meta_title || 'Foto Direktur'}
                             />
                         ) : (
                             <div style={styles.welcomePhotoPlaceholder}>Tidak ada foto tersedia</div>
                         )}
                     </div>
                     <div>
-                        {director && (
-                            <h3 style={styles.welcomeName}>{director.name}</h3>
+                        {metaData && (
+                            <h3 style={styles.welcomeName}>{metaData.meta_title}</h3>
                         )}
-                        {directorError ? (
-                            <p style={styles.errorMessage}>{directorError}</p>
-                        ) : director ? (
+                        {metaError ? (
+                            <p style={styles.errorMessage}>{metaError}</p>
+                        ) : metaData ? (
                             <div
                                 style={styles.welcomeMessage}
-                                dangerouslySetInnerHTML={{ __html: director.welcome_message }}
+                                dangerouslySetInnerHTML={{ __html: metaData.meta_description }}
                             />
                         ) : (
                             <p style={styles.welcomeMessage}>Memuat kata sambutan...</p>
@@ -1386,16 +1385,6 @@ export default function Home() {
                         )}
                     </div>
                 </div>
-                {/* <div style={styles.viewAllButtonContainer}>
-                    <Link
-                        href="/newsguest"
-                        style={styles.viewAllButton}
-                        aria-label="Lihat semua berita"
-                        onClick={handleButtonClick}
-                    >
-                        Lihat Semua Berita
-                    </Link>
-                </div> */}
             </div>
 
             {/* Achievements Section */}

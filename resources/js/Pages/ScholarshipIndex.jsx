@@ -129,7 +129,8 @@ export default function ScholarshipIndex() {
             },
             grid: {
                 display: 'grid',
-                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+                // Ubah menjadi fixed 4 kolom per baris
+                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(4, 1fr)', // 4 kolom tetap untuk layar besar
                 gap: width <= 768 ? '16px' : '24px',
                 padding: '16px',
             },
@@ -143,6 +144,8 @@ export default function ScholarshipIndex() {
                 flexDirection: 'column',
                 height: '100%',
                 overflow: 'hidden',
+                width: '100%', // Pastikan card mengambil lebar sesuai grid
+                boxSizing: 'border-box', // Hindari overflow karena padding/border
             },
             cardHover: {
                 transform: 'translateY(-6px)',
@@ -150,7 +153,7 @@ export default function ScholarshipIndex() {
                 background: '#f8fafc',
             },
             cardImage: {
-                width: '100',
+                width: '100%',
                 height: 0,
                 paddingBottom: '160.78%', // Tetap rasio 9:16
                 objectFit: 'cover',
@@ -168,8 +171,8 @@ export default function ScholarshipIndex() {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                width: '100',
-                height: '100',
+                width: '100%',
+                height: '100%',
             },
             cardTitle: {
                 fontSize: width <= 768 ? '16px' : '20px',
@@ -309,7 +312,6 @@ export default function ScholarshipIndex() {
                     </div>
                 )}
                 <div style={styles.section}>
-                    {/* <h2 style={styles.title}>Daftar Beasiswa</h2> */}
                     <div style={styles.searchFilterContainer}>
                         <input
                             type="text"
@@ -370,7 +372,7 @@ export default function ScholarshipIndex() {
                                         }}
                                     />
                                     <p style={styles.cardDetail}>
-                                        <strong>Kategori ID:</strong> {scholarship.category_id || '-'}
+                                        <strong>Kategori:</strong> {scholarship.category_name || '-'}
                                     </p>
                                     <p style={styles.cardDetail}>
                                         <strong>Tanggal Mulai:</strong> {formatDate(scholarship.start_date)}

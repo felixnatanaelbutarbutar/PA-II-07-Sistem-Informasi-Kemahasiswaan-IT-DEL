@@ -16,11 +16,10 @@ class MetaController extends Controller
     {
         $metas = Meta::with('creator')->get();
         $user = Auth::user();
-        // Ubah dari $user->user_role menjadi $user->role agar konsisten dengan NewsController
-        $role = strtolower($user->role ?? 'default'); // Tambahkan fallback 'default' jika role null
+        $role = strtolower($user->role ?? 'default');
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
-        Log::info("Role: {$role}, Menu: ", $menuItems); // Debug untuk memeriksa nilai
+        Log::info("Role: {$role}, Menu: ", $menuItems);
 
         return inertia('Admin/Meta/index', [
             'metas' => $metas,
@@ -38,7 +37,7 @@ class MetaController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $role = strtolower($user->role ?? 'default'); // Konsisten dengan index
+        $role = strtolower($user->role ?? 'default');
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -53,13 +52,23 @@ class MetaController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id' => 'required|string|max:10|unique:meta,id',
             'meta_key' => 'required|string|max:255|unique:meta,meta_key',
             'meta_title' => 'required|string|max:255',
             'meta_description' => 'required|string',
+            'file' => 'nullable|file|mimes:png,jpg,jpeg,pdf|max:2048',
             'is_active' => 'required|boolean',
             'created_by' => 'required|exists:users,id',
         ]);
+
+        // Generate ID otomatis
+        $metaId = $this->generateMetaId();
+        $validated['id'] = $metaId;
+
+        // Handle file upload
+        if ($request->hasFile('file')) {
+            $path = $request->file('file')->store('meta_files', 'public');
+            $validated['file_path'] = $path;
+        }
 
         Meta::create($validated);
 
@@ -85,16 +94,27 @@ class MetaController extends Controller
 
     public function update(Request $request, $meta_id)
     {
+        Log::debug('Request data:', $request->all());
         $meta = Meta::findOrFail($meta_id);
         $validated = $request->validate([
-            'id' => 'required|string|max:10|unique:meta,id,' . $meta_id,
             'meta_key' => 'required|string|max:255|unique:meta,meta_key,' . $meta_id,
             'meta_title' => 'required|string|max:255',
             'meta_description' => 'required|string',
+            'file' => 'nullable|file|mimes:png,jpg,jpeg,pdf|max:2048',
             'is_active' => 'required|boolean',
             'created_by' => 'required|exists:users,id',
             'updated_by' => 'nullable|exists:users,id',
         ]);
+
+        // Handle file upload
+        if ($request->hasFile('file')) {
+            // Hapus file lama jika ada
+            if ($meta->file_path) {
+                Storage::disk('public')->delete($meta->file_path);
+            }
+            $path = $request->file('file')->store('meta_files', 'public');
+            $validated['file_path'] = $path;
+        }
 
         $meta->update($validated);
 
@@ -104,6 +124,12 @@ class MetaController extends Controller
     public function destroy($meta_id)
     {
         $meta = Meta::findOrFail($meta_id);
+
+        // Hapus file dari storage jika ada
+        if ($meta->file_path) {
+            Storage::disk('public')->delete($meta->file_path);
+        }
+
         $meta->delete();
 
         return redirect()->route('admin.meta.index')->with('success', 'Meta berhasil dihapus!');
@@ -121,15 +147,20 @@ class MetaController extends Controller
         return redirect()->route('admin.meta.index')->with('success', 'Status meta berhasil diperbarui!');
     }
 
-    public function uploadImage(Request $request)
+    /**
+     * Generate a unique ID for meta_id
+     */
+    private function generateMetaId()
     {
-        $request->validate([
-            'image' => 'required|image|max:2048',
-        ]);
+        $lastMeta = Meta::latest('id')->first();
 
-        $path = $request->file('image')->store('public/images');
-        $url = Storage::url($path);
+        if ($lastMeta) {
+            $lastIdNumber = (int) substr($lastMeta->id, 4);
+            $newIdNumber = $lastIdNumber + 1;
+        } else {
+            $newIdNumber = 1;
+        }
 
-        return response()->json(['url' => $url]);
+        return 'meta' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
     }
 }

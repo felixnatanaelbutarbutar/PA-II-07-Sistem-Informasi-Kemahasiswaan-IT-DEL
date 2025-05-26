@@ -16,6 +16,7 @@ class Meta extends Model
         'meta_key',
         'meta_title',
         'meta_description',
+        'file_path', // Tambahkan kolom file_path
         'is_active',
         'created_by',
         'updated_by',

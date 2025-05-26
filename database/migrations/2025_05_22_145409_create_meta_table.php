@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('meta_key', 255)->unique();
             $table->string('meta_title', 255);
             $table->text('meta_description');
+            $table->string('file_path')->nullable(); // Kolom untuk menyimpan path file
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 

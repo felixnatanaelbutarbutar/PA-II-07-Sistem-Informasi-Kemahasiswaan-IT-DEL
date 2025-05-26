@@ -11,6 +11,7 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [achievementIdToDelete, setAchievementIdToDelete] = useState(null);
+    const [isToggling, setIsToggling] = useState({}); // State untuk melacak proses toggle
 
     // Handle flash messages and notification state
     useEffect(() => {
@@ -99,6 +100,40 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
         setAchievementIdToDelete(null);
     };
 
+    // Handle toggle active status
+    const handleToggleActive = (achievementId) => {
+        setIsToggling((prev) => ({ ...prev, [achievementId]: true }));
+        router.post(
+            route('admin.achievements.toggleActive', achievementId),
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onError: (errors) => {
+                    setNotification({
+                        show: true,
+                        type: 'error',
+                        message: 'Gagal mengubah status: ' + (errors.error || 'Terjadi kesalahan.'),
+                    });
+                    setIsToggling((prev) => ({ ...prev, [achievementId]: false }));
+                },
+                onSuccess: () => {
+                    setNotification({
+                        show: true,
+                        type: 'success',
+                        message: achievements.find((a) => a.achievement_id === achievementId).is_active
+                            ? 'Prestasi berhasil dinonaktifkan!'
+                            : 'Prestasi berhasil diaktifkan!',
+                    });
+                    setIsToggling((prev) => ({ ...prev, [achievementId]: false }));
+                },
+                onFinish: () => {
+                    setIsToggling((prev) => ({ ...prev, [achievementId]: false }));
+                },
+            }
+        );
+    };
+
     // Helper function to render medal icon
     const renderMedalIcon = (medal) => {
         if (!medal) return null;
@@ -120,6 +155,32 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                     clipRule="evenodd"
                 />
             </svg>
+        );
+    };
+
+    // Helper function to render image preview
+    const renderImagePreview = (image) => {
+        if (!image) {
+            return (
+                <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-lg">
+                    <span className="text-gray-500 text-sm">Tidak ada gambar</span>
+                </div>
+            );
+        }
+
+        return (
+            <img
+                src={`/storage/${image}`}
+                alt="Achievement Image"
+                className="w-full h-40 object-cover rounded-lg"
+                onError={(e) => {
+                    e.target.outerHTML = `
+                        <div class="w-full h-40 bg-gray-100 flex items-center justify-center rounded-lg">
+                            <span class="text-gray-500 text-sm">Gambar gagal dimuat</span>
+                        </div>
+                    `;
+                }}
+            />
         );
     };
 
@@ -402,8 +463,15 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                         {filteredAchievements.map((achievement) => (
                             <div
                                 key={achievement.achievement_id}
-                                className="group bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-blue-200 hover:-translate-y-1"
+                                className={`group bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-xl border ${
+                                    achievement.is_active
+                                        ? 'border-gray-100 hover:border-blue-200'
+                                        : 'border-red-100 opacity-75'
+                                } hover:-translate-y-1`}
                             >
+                                {/* Image Preview */}
+                                <div className="p-5">{renderImagePreview(achievement.image)}</div>
+
                                 <div className="p-5 flex flex-col flex-grow">
                                     {/* Achievement Title */}
                                     <h2 className="text-lg font-semibold text-gray-800 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">
@@ -445,10 +513,22 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                 })}
                                             </span>
                                         </p>
+                                        <p className="flex items-center">
+                                            <span className="font-medium text-gray-700 mr-2">Status:</span>
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                    achievement.is_active
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}
+                                            >
+                                                {achievement.is_active ? 'Aktif' : 'Tidak Aktif'}
+                                            </span>
+                                        </p>
                                     </div>
 
                                     {/* Action Buttons */}
-                                    <div className="mt-5 flex space-x-3">
+                                    <div className="mt-5 flex flex-wrap space-x-3">
                                         <Link
                                             href={route('admin.achievements.edit', achievement.achievement_id)}
                                             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 group-hover:scale-105 shadow-sm hover:shadow-md"
@@ -490,6 +570,57 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                             </svg>
                                             Hapus
                                         </button>
+                                        <button
+                                            onClick={() => handleToggleActive(achievement.achievement_id)}
+                                            disabled={isToggling[achievement.achievement_id]}
+                                            className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200 group-hover:scale-105 shadow-sm hover:shadow-md ${
+                                                achievement.is_active
+                                                    ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                        >
+                                            {achievement.is_active ? (
+                                                <>
+                                                    <svg
+                                                        className="w-4 h-4 mr-2"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M18.364 5.636a9 9 0 11-12.728 12.728 9 9 0 0112.728-12.728M12 9v3m0 0v3m0-3h3m-3 0H9"
+                                                        />
+                                                    </svg>
+                                                    {isToggling[achievement.achievement_id]
+                                                        ? 'Menonaktifkan...'
+                                                        : 'Nonaktifkan'}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg
+                                                        className="w-4 h-4 mr-2"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                    {isToggling[achievement.achievement_id]
+                                                        ? 'Mengaktifkan...'
+                                                        : 'Aktifkan'}
+                                                </>
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -503,8 +634,13 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                 key={achievement.achievement_id}
                                 className={`flex flex-col sm:flex-row items-start p-5 hover:bg-gray-50 transition-colors duration-200 ${
                                     index !== filteredAchievements.length - 1 ? 'border-b border-gray-100' : ''
-                                }`}
+                                } ${!achievement.is_active ? 'opacity-75 bg-red-50' : ''}`}
                             >
+                                {/* Image Preview */}
+                                <div className="w-full sm:w-40 sm:mr-5 mb-4 sm:mb-0">
+                                    {renderImagePreview(achievement.image)}
+                                </div>
+
                                 <div className="flex-grow">
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                                         <div className="flex-grow">
@@ -560,6 +696,20 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                         )}
                                                     </span>
                                                 </p>
+                                                <p className="flex items-center">
+                                                    <span className="font-medium text-gray-700 mr-2">
+                                                        Status:
+                                                    </span>
+                                                    <span
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                            achievement.is_active
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : 'bg-red-100 text-red-800'
+                                                        }`}
+                                                    >
+                                                        {achievement.is_active ? 'Aktif' : 'Tidak Aktif'}
+                                                    </span>
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="flex sm:flex-col space-x-3 sm:space-x-0 sm:space-y-2 mt-4 sm:mt-0">
@@ -606,6 +756,57 @@ export default function Index({ auth, permissions, userRole, menu, achievements 
                                                     />
                                                 </svg>
                                                 Hapus
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggleActive(achievement.achievement_id)}
+                                                disabled={isToggling[achievement.achievement_id]}
+                                                className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md ${
+                                                    achievement.is_active
+                                                        ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                                                        : 'bg-green-600 text-white hover:bg-green-700'
+                                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                            >
+                                                {achievement.is_active ? (
+                                                    <>
+                                                        <svg
+                                                            className="w-4 h-4 mr-2"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M18.364 5.636a9 9 0 11-12.728 12.728 9 9 0 0112.728-12.728M12 9v3m0 0v3m0-3h3m-3 0H9"
+                                                            />
+                                                        </svg>
+                                                        {isToggling[achievement.achievement_id]
+                                                            ? 'Menonaktifkan...'
+                                                            : 'Nonaktifkan'}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg
+                                                            className="w-4 h-4 mr-2"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M5 13l4 4L19 7"
+                                                            />
+                                                        </svg>
+                                                        {isToggling[achievement.achievement_id]
+                                                            ? 'Mengaktifkan...'
+                                                            : 'Aktifkan'}
+                                                    </>
+                                                )}
                                             </button>
                                         </div>
                                     </div>

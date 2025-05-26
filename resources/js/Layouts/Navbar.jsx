@@ -370,9 +370,11 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                                             className="nav-item flex items-center px-2 md:px-3 font-medium text-white transition-colors hover:text-white"
                                         >
-                                            <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm mr-2">
-                                                {user.name.charAt(0)}
-                                            </div>
+                                            <img
+                                                src="/assets/images/icon/icons8-name-48.png"
+                                                alt="Profile Icon"
+                                                className="h-8 w-8 rounded-lg shadow-sm mr-2"
+                                            />
                                             <span className="hidden md:inline">{user.name}</span>
                                             <ChevronDown
                                                 className={`ml-1 h-4 w-4 transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}
@@ -650,9 +652,11 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                                             className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-between"
                                         >
-                                            <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm mr-2">
-                                                {user.name.charAt(0)}
-                                            </div>
+                                            <img
+                                                src="/assets/images/icon/icons8-name-48.png"
+                                                alt="Profile Icon"
+                                                className="h-8 w-8 rounded-lg shadow-sm mr-2"
+                                            />
                                             <span>{user.name}</span>
                                             <ChevronDown
                                                 className={`h-5 w-5 transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`}

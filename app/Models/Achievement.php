@@ -19,9 +19,11 @@ class Achievement extends Model
         'description',
         'category',
         'achievement_type_id',
-        'medal', // Already optional
+        'medal',
         'event_name',
         'event_date',
+        'image',
+        'is_active',
         'created_by',
         'updated_by',
     ];

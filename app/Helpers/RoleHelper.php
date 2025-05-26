@@ -37,7 +37,7 @@ class RoleHelper
                 'carousel' => true,
                 'kegiatan' => true,
                 'chatbot' => true,
-                'directors' => true,
+                'directors' => false,
                 'meta' => true,
 
             ],

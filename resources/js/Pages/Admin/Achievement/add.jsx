@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react'; // Impor useForm dari @inertiajs/react
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function Add({ auth, permissions, userRole, menu, achievementTypes }) {
@@ -11,12 +11,15 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
         medal: '',
         event_name: '',
         event_date: '',
+        image: null, // Tambahkan field untuk image
+        is_active: true, // Default is_active true
         created_by: auth.user.id,
         updated_by: null,
     });
 
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
-    const [clientErrors, setClientErrors] = useState({}); // State untuk menyimpan error validasi sisi klien
+    const [clientErrors, setClientErrors] = useState({});
+    const [imagePreview, setImagePreview] = useState(null); // State untuk preview gambar
 
     useEffect(() => {
         if (notification.show) {
@@ -26,6 +29,40 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
             return () => clearTimeout(timer);
         }
     }, [notification]);
+
+    // Handle image change and preview
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validasi format dan ukuran file
+            const validFormats = ['image/jpeg', 'image/jpg', 'image/png'];
+            const maxSize = 2 * 1024 * 1024; // 2MB
+
+            if (!validFormats.includes(file.type)) {
+                setClientErrors((prev) => ({
+                    ...prev,
+                    image: 'Gambar harus berformat JPG, JPEG, atau PNG.',
+                }));
+                setData('image', null);
+                setImagePreview(null);
+                return;
+            }
+
+            if (file.size > maxSize) {
+                setClientErrors((prev) => ({
+                    ...prev,
+                    image: 'Ukuran gambar maksimal 2MB.',
+                }));
+                setData('image', null);
+                setImagePreview(null);
+                return;
+            }
+
+            setClientErrors((prev) => ({ ...prev, image: null }));
+            setData('image', file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -40,12 +77,11 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
         if (!data.event_date) newErrors.event_date = 'Tanggal acara wajib diisi.';
 
         if (Object.keys(newErrors).length > 0) {
-            setClientErrors(newErrors); // Simpan error validasi sisi klien
-            return; // Stop submission if there are client-side errors
+            setClientErrors(newErrors);
+            return;
         }
 
-        // Jika tidak ada error sisi klien, lanjutkan submit
-        setClientErrors({}); // Reset client errors sebelum submit
+        setClientErrors({});
         post(route('admin.achievements.store'), {
             onSuccess: () => {
                 setNotification({
@@ -54,6 +90,7 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
                     message: 'Prestasi berhasil ditambahkan!',
                 });
                 reset();
+                setImagePreview(null); // Reset preview gambar
                 setTimeout(() => {
                     router.visit(route('admin.achievements.index'));
                 }, 1500);
@@ -163,7 +200,7 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-8 mb-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
                         {/* Judul Prestasi */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
@@ -310,6 +347,55 @@ export default function Add({ auth, permissions, userRole, menu, achievementType
                             />
                             {(errors.event_date || clientErrors.event_date) && (
                                 <p className="text-red-500 text-xs mt-1">{errors.event_date || clientErrors.event_date}</p>
+                            )}
+                        </div>
+
+                        {/* Gambar */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Gambar Prestasi <span className="text-gray-500 text-xs">(Opsional, maks 2MB)</span>
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png"
+                                onChange={handleImageChange}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.image || clientErrors.image
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {(errors.image || clientErrors.image) && (
+                                <p className="text-red-500 text-xs mt-1">{errors.image || clientErrors.image}</p>
+                            )}
+                            {imagePreview && (
+                                <div className="mt-3">
+                                    <p className="text-sm text-gray-600">Pratinjau Gambar:</p>
+                                    <img
+                                        src={imagePreview}
+                                        alt="Image Preview"
+                                        className="mt-2 w-48 h-48 object-cover rounded-lg"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Status Aktif */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Status</label>
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={data.is_active}
+                                    onChange={(e) => setData('is_active', e.target.checked)}
+                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="ml-2 text-sm text-gray-600">
+                                    {data.is_active ? 'Aktif' : 'Tidak Aktif'}
+                                </span>
+                            </div>
+                            {errors.is_active && (
+                                <p className="text-red-500 text-xs mt-1">{errors.is_active}</p>
                             )}
                         </div>
 

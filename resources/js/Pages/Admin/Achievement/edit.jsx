@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function Edit({ auth, userRole, permissions, menu, achievement, achievementTypes }) {
@@ -11,12 +11,16 @@ export default function Edit({ auth, userRole, permissions, menu, achievement, a
         medal: achievement.medal || '',
         event_name: achievement.event_name || '',
         event_date: achievement.event_date || '',
+        image: null, // Untuk menyimpan file gambar baru
+        is_active: achievement.is_active ?? true, // Default ke true jika null
         created_by: achievement.created_by || auth.user.id,
         updated_by: auth.user.id,
+        // _method: 'PUT', // Tambahkan method spoofing untuk update
     });
 
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [clientErrors, setClientErrors] = useState({});
+    const [imagePreview, setImagePreview] = useState(achievement.image ? `/storage/${achievement.image}` : null); // Preview gambar yang ada
 
     useEffect(() => {
         if (notification.show) {
@@ -26,6 +30,46 @@ export default function Edit({ auth, userRole, permissions, menu, achievement, a
             return () => clearTimeout(timer);
         }
     }, [notification]);
+
+    // Handle image change and preview
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validasi format dan ukuran file
+            const validFormats = ['image/jpeg', 'image/jpg', 'image/png'];
+            const maxSize = 2 * 1024 * 1024; // 2MB
+
+            if (!validFormats.includes(file.type)) {
+                setClientErrors((prev) => ({
+                    ...prev,
+                    image: 'Gambar harus berformat JPG, JPEG, atau PNG.',
+                }));
+                setData('image', null);
+                setImagePreview(null);
+                return;
+            }
+
+            if (file.size > maxSize) {
+                setClientErrors((prev) => ({
+                    ...prev,
+                    image: 'Ukuran gambar maksimal 2MB.',
+                }));
+                setData('image', null);
+                setImagePreview(null);
+                return;
+            }
+
+            setClientErrors((prev) => ({ ...prev, image: null }));
+            setData('image', file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    // Handle remove image
+    const handleRemoveImage = () => {
+        setData('image', null);
+        setImagePreview(null);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -162,7 +206,7 @@ export default function Edit({ auth, userRole, permissions, menu, achievement, a
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-8 mb-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
                         {/* Judul Prestasi */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
@@ -309,6 +353,84 @@ export default function Edit({ auth, userRole, permissions, menu, achievement, a
                             />
                             {(errors.event_date || clientErrors.event_date) && (
                                 <p className="text-red-500 text-xs mt-1">{errors.event_date || clientErrors.event_date}</p>
+                            )}
+                        </div>
+
+                        {/* Gambar */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Gambar Prestasi <span className="text-gray-500 text-xs">(Opsional, maks 2MB)</span>
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png"
+                                onChange={handleImageChange}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.image || clientErrors.image
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {(errors.image || clientErrors.image) && (
+                                <p className="text-red-500 text-xs mt-1">{errors.image || clientErrors.image}</p>
+                            )}
+                            {imagePreview ? (
+                                <div className="mt-3">
+                                    <p className="text-sm text-gray-600">Pratinjau Gambar:</p>
+                                    <div className="relative">
+                                        <img
+                                            src={imagePreview}
+                                            alt="Image Preview"
+                                            className="mt-2 w-48 h-48 object-cover rounded-lg"
+                                            onError={(e) => {
+                                                e.target.src = '/path/to/fallback-image.jpg'; // Fallback gambar jika gagal dimuat
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveImage}
+                                            className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 transition"
+                                        >
+                                            <svg
+                                                className="w-4 h-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="mt-3">
+                                    <p className="text-sm text-gray-600">Tidak ada gambar dipilih.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Status Aktif */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Status</label>
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={data.is_active}
+                                    onChange={(e) => setData('is_active', e.target.checked)}
+                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="ml-2 text-sm text-gray-600">
+                                    {data.is_active ? 'Aktif' : 'Tidak Aktif'}
+                                </span>
+                            </div>
+                            {errors.is_active && (
+                                <p className="text-red-500 text-xs mt-1">{errors.is_active}</p>
                             )}
                         </div>
 

@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\RoleHelper;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AchievementController extends Controller
 {
@@ -69,12 +70,14 @@ class AchievementController extends Controller
             'event_date' => 'required|date',
             'created_by' => 'required|exists:users,id',
             'updated_by' => 'nullable|exists:users,id',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'is_active' => 'required|boolean', // Validasi untuk is_active
         ]);
 
         try {
             $achievementId = $this->generateAchievementId();
 
-            Achievement::create([
+            $data = [
                 'achievement_id' => $achievementId,
                 'title' => $request->title,
                 'description' => $request->description,
@@ -85,7 +88,16 @@ class AchievementController extends Controller
                 'event_date' => $request->event_date,
                 'created_by' => $request->created_by,
                 'updated_by' => $request->updated_by,
-            ]);
+                'is_active' => $request->is_active, // Set is_active dari request
+            ];
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('achievements', 'public');
+                $data['image'] = $imagePath;
+            }
+
+            Achievement::create($data);
 
             return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil ditambahkan.');
         } catch (\Exception $e) {
@@ -126,10 +138,12 @@ class AchievementController extends Controller
             'medal' => 'nullable|in:Gold,Silver,Bronze',
             'event_name' => 'required|string|max:255',
             'event_date' => 'required|date',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'is_active' => 'required|boolean', // Validasi untuk is_active
         ]);
 
         try {
-            $achievement->update($request->only([
+            $data = $request->only([
                 'title',
                 'description',
                 'category',
@@ -137,7 +151,22 @@ class AchievementController extends Controller
                 'medal',
                 'event_name',
                 'event_date',
-            ]));
+                'is_active', // Sertakan is_active
+            ]);
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                // Hapus gambar lama jika ada
+                if ($achievement->image) {
+                    Storage::disk('public')->delete($achievement->image);
+                }
+                $imagePath = $request->file('image')->store('achievements', 'public');
+                $data['image'] = $imagePath;
+            }
+
+            $data['updated_by'] = Auth::id();
+
+            $achievement->update($data);
 
             return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil diperbarui!');
         } catch (\Exception $e) {
@@ -150,12 +179,37 @@ class AchievementController extends Controller
     {
         try {
             $achievement = Achievement::where('achievement_id', $achievement_id)->firstOrFail();
+
+            // Hapus gambar dari storage jika ada
+            if ($achievement->image) {
+                Storage::disk('public')->delete($achievement->image);
+            }
+
             $achievement->delete();
 
             return redirect()->route('admin.achievements.index')->with('success', 'Prestasi berhasil dihapus!');
         } catch (\Exception $e) {
             Log::error('Error deleting achievement: ' . $e->getMessage());
             return redirect()->route('admin.achievements.index')->with('error', 'Gagal menghapus prestasi: ' . $e->getMessage());
+        }
+    }
+
+    public function toggleActive(Request $request, $achievement_id)
+    {
+        try {
+            $achievement = Achievement::where('achievement_id', $achievement_id)->firstOrFail();
+
+            // Toggle status is_active
+            $achievement->is_active = !$achievement->is_active;
+            $achievement->updated_by = Auth::id();
+            $achievement->save();
+
+            $message = $achievement->is_active ? 'Prestasi berhasil diaktifkan!' : 'Prestasi berhasil dinonaktifkan!';
+
+            return redirect()->route('admin.achievements.index')->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Error toggling achievement active status: ' . $e->getMessage());
+            return redirect()->route('admin.achievements.index')->with('error', 'Gagal mengubah status prestasi: ' . $e->getMessage());
         }
     }
 
@@ -176,7 +230,7 @@ class AchievementController extends Controller
     public function getGroupedAchievements()
     {
         try {
-            $achievements = Achievement::select('category', 'medal')->get();
+            $achievements = Achievement::select('category', 'medal')->where('is_active', true)->get(); // Hanya ambil yang aktif
 
             $groupedAchievements = [
                 'International' => ['Gold' => 0, 'Silver' => 0, 'Bronze' => 0],
@@ -205,7 +259,8 @@ class AchievementController extends Controller
 
     public function guestIndex()
     {
-        $achievements = Achievement::with('achievementType')->get();
+        $achievements = Achievement::with('achievementType')
+        ->where('is_active', true)->get(); // Hanya tampilkan yang aktif
 
         return Inertia::render('Achievement', [
             'achievements' => $achievements,
@@ -220,6 +275,7 @@ class AchievementController extends Controller
     {
         $achievement = Achievement::with('achievementType')
             ->where('achievement_id', $achievement_id)
+            ->where('is_active', true) // Pastikan hanya menampilkan yang aktif
             ->firstOrFail();
 
         return Inertia::render('AchievementDetail', [

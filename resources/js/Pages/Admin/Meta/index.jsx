@@ -9,6 +9,9 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
         type: '',
         message: '',
     });
+    const [selectedImage, setSelectedImage] = useState(null); // State untuk modal gambar
+    const [showDeleteModal, setShowDeleteModal] = useState(false); // State untuk modal konfirmasi hapus
+    const [metaIdToDelete, setMetaIdToDelete] = useState(null); // State untuk menyimpan ID meta yang akan dihapus
 
     useEffect(() => {
         if (flash) {
@@ -35,9 +38,14 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
         }
     }, [flash]);
 
-    const handleDelete = (id) => {
-        if (confirm('Apakah Anda yakin ingin menghapus meta ini?')) {
-            router.post(route('admin.meta.destroy', id), {}, {
+    const handleDeleteClick = (id) => {
+        setMetaIdToDelete(id);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        if (metaIdToDelete) {
+            router.post(route('admin.meta.destroy', metaIdToDelete), {}, {
                 onSuccess: () => {
                     setNotification({
                         show: true,
@@ -52,8 +60,17 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                         message: 'Gagal menghapus meta. Silakan coba lagi.',
                     });
                 },
+                onFinish: () => {
+                    setShowDeleteModal(false);
+                    setMetaIdToDelete(null);
+                },
             });
         }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setMetaIdToDelete(null);
     };
 
     const handleToggleActive = (id, isActive) => {
@@ -75,12 +92,28 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
         });
     };
 
+    const isImageFile = (filePath) => {
+        return filePath && /\.(png|jpg|jpeg)$/i.test(filePath);
+    };
+
+    const isPDFFile = (filePath) => {
+        return filePath && /\.pdf$/i.test(filePath);
+    };
+
+    const openImageModal = (filePath) => {
+        setSelectedImage(`/storage/${filePath}`);
+    };
+
+    const closeImageModal = () => {
+        setSelectedImage(null);
+    };
+
     return (
         <AdminLayout
             user={auth.user}
             userRole={userRole}
             permissions={permissions}
-            navigation={menu} // Pastikan navigation diteruskan dari menu
+            navigation={menu}
         >
             <Head title="Daftar Meta" />
 
@@ -155,6 +188,62 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                 </div>
             )}
 
+            {/* Modal untuk konfirmasi penghapusan */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-red-100 rounded-full p-3">
+                                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 text-center mb-2">Konfirmasi Penghapusan</h3>
+                        <p className="text-gray-600 text-center mb-6">Apakah Anda yakin ingin menghapus meta ini? Tindakan ini tidak dapat dibatalkan.</p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={cancelDelete}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal untuk melihat gambar lebih jelas */}
+            {selectedImage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75" onClick={closeImageModal}>
+                    <div className="relative max-w-4xl max-h-[90vh] overflow-auto">
+                        <button
+                            onClick={closeImageModal}
+                            className="absolute top-4 right-4 text-white bg-red-600 rounded-full p-2 hover:bg-red-700 transition"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <img
+                            src={selectedImage}
+                            alt="Enlarged Meta File"
+                            className="max-w-full max-h-[80vh] object-contain"
+                            onClick={(e) => e.stopPropagation()} // Mencegah penutupan modal saat klik gambar
+                        />
+                    </div>
+                </div>
+            )}
+
             <div className="py-12 max-w-7xl mx-auto px-6 sm:px-8">
                 {/* Styled Header */}
                 <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200/50 flex items-center justify-between">
@@ -189,6 +278,9 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                                     Meta Description
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    File
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -202,7 +294,7 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {metas.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                                    <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                                         Tidak ada data meta.
                                     </td>
                                 </tr>
@@ -214,9 +306,34 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{meta.meta_title}</td>
                                         <td className="px-6 py-4 text-sm text-gray-900">
                                             <div
-                                                className="line-clamp-2 ql-editor" // Tambahkan kelas ql-editor untuk mendukung Quill
+                                                className="line-clamp-2 ql-editor"
                                                 dangerouslySetInnerHTML={{ __html: meta.meta_description }}
                                             />
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-900">
+                                            {meta.file_path ? (
+                                                isImageFile(meta.file_path) ? (
+                                                    <img
+                                                        src={`/storage/${meta.file_path}`}
+                                                        alt="Meta File"
+                                                        className="h-12 w-12 object-cover rounded-md cursor-pointer"
+                                                        onClick={() => openImageModal(meta.file_path)}
+                                                    />
+                                                ) : isPDFFile(meta.file_path) ? (
+                                                    <a
+                                                        href={`/storage/${meta.file_path}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:underline"
+                                                    >
+                                                        Lihat PDF
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-gray-500">File tidak didukung</span>
+                                                )
+                                            ) : (
+                                                <span className="text-gray-500">Tidak ada file</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             <button
@@ -241,7 +358,7 @@ export default function Index({ auth, permissions, userRole, menu, metas }) {
                                                 Edit
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(meta.id)}
+                                                onClick={() => handleDeleteClick(meta.id)}
                                                 className="text-red-600 hover:text-red-800"
                                             >
                                                 Hapus

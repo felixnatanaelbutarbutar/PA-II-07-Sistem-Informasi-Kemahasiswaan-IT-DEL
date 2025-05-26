@@ -31,7 +31,6 @@ const quillModules = {
 
 export default function Add({ auth, permissions, userRole, menu }) {
     const [data, setData] = useState({
-        id: '',
         meta_key: '',
         meta_title: '',
         meta_description: '',
@@ -39,6 +38,7 @@ export default function Add({ auth, permissions, userRole, menu }) {
         created_by: auth.user.id,
         updated_by: null,
     });
+    const [file, setFile] = useState(null); // State untuk menyimpan file
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notification, setNotification] = useState({ show: false, type: '', message: '' });
     const [errors, setErrors] = useState({});
@@ -52,6 +52,25 @@ export default function Add({ auth, permissions, userRole, menu }) {
         }
     }, [notification]);
 
+    const handleFileChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            // Validasi ukuran file di client-side (maks 2MB)
+            const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+            if (selectedFile.size > maxSizeInBytes) {
+                setErrors((prev) => ({
+                    ...prev,
+                    file: 'Ukuran file terlalu besar. Maksimal 2MB.',
+                }));
+                setFile(null);
+                e.target.value = null; // Reset input file
+                return;
+            }
+            setFile(selectedFile);
+            setErrors((prev) => ({ ...prev, file: null })); // Clear error jika file valid
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -59,13 +78,13 @@ export default function Add({ auth, permissions, userRole, menu }) {
 
         // Client-side validation
         const newErrors = {};
-        if (!data.id.trim()) newErrors.id = 'ID wajib diisi.';
-        if (data.id.length > 10) newErrors.id = 'ID maksimal 10 karakter.';
         if (!data.meta_key.trim()) newErrors.meta_key = 'Meta Key wajib diisi.';
         if (data.meta_key.length > 255) newErrors.meta_key = 'Meta Key maksimal 255 karakter.';
         if (!data.meta_title.trim()) newErrors.meta_title = 'Meta Title wajib diisi.';
         if (data.meta_title.length > 255) newErrors.meta_title = 'Meta Title maksimal 255 karakter.';
-        if (!data.meta_description.trim()) newErrors.meta_description = 'Meta Description wajib diisi.';
+        if (!data.meta_description.replace(/<[^>]*>/g, '').trim()) {
+            newErrors.meta_description = 'Meta Description wajib diisi dengan konten yang valid.';
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -74,12 +93,19 @@ export default function Add({ auth, permissions, userRole, menu }) {
         }
 
         const formData = new FormData();
-        formData.append('id', data.id);
         formData.append('meta_key', data.meta_key);
         formData.append('meta_title', data.meta_title);
         formData.append('meta_description', data.meta_description);
         formData.append('is_active', data.is_active ? '1' : '0');
         formData.append('created_by', data.created_by);
+        if (file) {
+            formData.append('file', file); // Tambahkan file ke formData
+        }
+
+        // Log data yang dikirim untuk debugging
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
 
         try {
             await axios.post(route('admin.meta.store'), formData, {
@@ -94,7 +120,6 @@ export default function Add({ auth, permissions, userRole, menu }) {
 
             // Reset form
             setData({
-                id: '',
                 meta_key: '',
                 meta_title: '',
                 meta_description: '',
@@ -102,6 +127,7 @@ export default function Add({ auth, permissions, userRole, menu }) {
                 created_by: auth.user.id,
                 updated_by: null,
             });
+            setFile(null); // Reset file
 
             setTimeout(() => {
                 router.visit(route('admin.meta.index'));
@@ -275,25 +301,6 @@ export default function Add({ auth, permissions, userRole, menu }) {
                     <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6" noValidate>
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
-                                ID <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={data.id}
-                                onChange={(e) => setData((prev) => ({ ...prev, id: e.target.value }))}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.id
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                                placeholder="Masukkan ID (maks. 10 karakter)"
-                                maxLength={10}
-                            />
-                            {errors.id && <p className="text-red-500 text-xs mt-1">{errors.id}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
                                 Meta Key <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -360,6 +367,23 @@ export default function Add({ auth, permissions, userRole, menu }) {
 
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">
+                                Upload File (jpg, png, pdf, maks. 2MB)
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,application/pdf"
+                                onChange={handleFileChange}
+                                className={`w-full px-4 py-3 border rounded-lg transition ${
+                                    errors.file
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                }`}
+                            />
+                            {errors.file && <p className="text-red-500 text-xs mt-1">{errors.file}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
                                 Status Aktif
                             </label>
                             <label className="inline-flex items-center">
@@ -402,4 +426,4 @@ export default function Add({ auth, permissions, userRole, menu }) {
             </div>
         </AdminLayout>
     );
-}
+}   

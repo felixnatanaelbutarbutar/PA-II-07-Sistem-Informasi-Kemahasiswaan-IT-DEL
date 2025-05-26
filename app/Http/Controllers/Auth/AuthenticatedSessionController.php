@@ -224,6 +224,10 @@ class AuthenticatedSessionController extends Controller
                 'session_data' => $request->session()->all(),
             ]);
 
+            // Ambil intended URL sebelum regenerasi session
+            $intendedUrl = $request->session()->get('url.intended', null);
+            Log::info('Intended URL Before Regeneration:', ['url' => $intendedUrl]);
+
             // Regenerate session
             $request->session()->regenerate();
             Log::info('Session Regenerated:', [
@@ -240,11 +244,7 @@ class AuthenticatedSessionController extends Controller
                 default => '/',
             };
 
-            Log::info('Redirect Route:', ['route' => $defaultRedirectRoute]);
-
-            // Check if there's an intended URL
-            $intendedUrl = $request->session()->pull('url.intended', $defaultRedirectRoute);
-            Log::info('Intended URL:', ['url' => $intendedUrl]);
+            Log::info('Default Redirect Route:', ['route' => $defaultRedirectRoute]);
 
             // Jika request adalah AJAX, kembalikan JSON
             if ($request->wantsJson()) {
@@ -252,14 +252,14 @@ class AuthenticatedSessionController extends Controller
                     'status' => 'success',
                     'username' => $user->username,
                     'role' => $user->role,
-                    'redirect' => $intendedUrl,
+                    'redirect' => $intendedUrl ?? $defaultRedirectRoute,
                 ]);
 
                 Log::info('AJAX Login Response:', [
                     'status' => 'success',
                     'username' => $user->username,
                     'role' => $user->role,
-                    'redirect' => $intendedUrl,
+                    'redirect' => $intendedUrl ?? $defaultRedirectRoute,
                     'headers' => $response->headers->all(),
                     'cookies' => $response->headers->getCookies(),
                 ]);
@@ -267,8 +267,11 @@ class AuthenticatedSessionController extends Controller
                 return $response;
             }
 
-            // Redirect ke intended URL atau default route
-            $redirectResponse = redirect()->intended($defaultRedirectRoute)
+            // Redirect ke intended URL jika ada, jika tidak gunakan default route
+            $redirectUrl = $intendedUrl ?? $defaultRedirectRoute;
+            Log::info('Final Redirect URL:', ['url' => $redirectUrl]);
+
+            $redirectResponse = redirect($redirectUrl)
                 ->withCookie(cookie('laravel_session', $request->session()->getId(), 120));
             Log::info('Redirect Response Headers:', [
                 'headers' => $redirectResponse->headers->all(),

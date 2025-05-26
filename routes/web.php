@@ -106,19 +106,8 @@ Route::get('/login', function () {
             'intended_url' => $intendedUrl,
         ]);
 
-        // Role-based redirection
-        switch ($role) {
-            case 'superadmin':
-                return redirect()->intended(route('superadmin.dashboard'));
-            case 'kemahasiswaan':
-            case 'adminbem':
-            case 'adminmpm':
-                return redirect()->intended(route('admin.dashboard'));
-            case 'mahasiswa':
-                return redirect()->intended($intendedUrl); // Redirect to last visited page or default
-            default:
-                return redirect()->intended(route('scholarships.index'));
-        }
+        // Biarkan AuthenticatedSessionController menangani redirect setelah login
+        return redirect($intendedUrl);
     }
 
     // Store intended URL if provided
@@ -232,7 +221,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('achievements', AchievementController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievements/{achievement}/update', [AchievementController::class, 'update'])->name('achievements.update');
             Route::post('achievements/{achievement}/delete', [AchievementController::class, 'destroy'])->name('achievements.destroy');
-
+            Route::post('achievements/{achievement_id}/toggle-active', [AchievementController::class, 'toggleActive'])->name('achievements.toggleActive');
 
             // Download Routes
             Route::resource('downloads', DownloadController::class)->except(['show', 'destroy', 'update']);
@@ -243,9 +232,9 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('meta', MetaController::class)->except(['show', 'destroy', 'update']);
             Route::post('meta/{meta}/update', [MetaController::class, 'update'])->name('meta.update');
             Route::post('meta/{meta}/delete', [MetaController::class, 'destroy'])->name('meta.destroy');
-            Route::patch('meta/{meta}/toggle-active', [MetaController::class, 'toggleActive'])->name('meta.toggle-active');
-            Route::post('meta/upload-image', [MetaController::class, 'uploadImage'])->name('meta.upload-image');
-
+            // Route::patch('meta/{meta}/toggle-active', [MetaController::class, 'toggleActive'])->name('meta.toggle-active');
+            // Route::post('meta/upload-image', [MetaController::class, 'uploadImage'])->name('meta.upload-image');
+            Route::post('meta/{meta}/toggle-active', [MetaController::class, 'toggleActive'])->name('meta.toggle-active'); // Ubah ke POST sementara
             // Achievement Type Routes
             Route::resource('achievement-type', AchievementTypeController::class)->except(['show', 'destroy', 'update']);
             Route::post('achievement-type/{achievement_type}/update', [AchievementTypeController::class, 'update'])->name('achievement-type.update');
