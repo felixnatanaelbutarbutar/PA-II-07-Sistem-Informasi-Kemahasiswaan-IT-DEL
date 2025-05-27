@@ -225,7 +225,6 @@ export default function Achievement({ achievements, flash }) {
         achievementCard: {
             background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '20px',
-            overflow: 'hidden',
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.3)',

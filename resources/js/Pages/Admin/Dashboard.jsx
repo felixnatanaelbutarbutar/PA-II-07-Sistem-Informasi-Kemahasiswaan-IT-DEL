@@ -78,7 +78,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
         // Fetch aspiration data (for kemahasiswaan and adminmpm roles)
         if (['kemahasiswaan', 'adminmpm'].includes(userRole)) {
             setAspirationLoading(true);
-            axios.get('http://localhost:8000/api/aspiration-categories')
+            axios.get('http://157.15.124.200/api/aspiration-categories')
                 .then(response => {
                     if (Array.isArray(response.data)) {
                         setAspirationData(response.data);
@@ -97,7 +97,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
 
         // Fetch achievement data (for kemahasiswaan role only)
         if (userRole === 'kemahasiswaan') {
-            axios.get('http://localhost:8000/api/achievements-grouped')
+            axios.get('http://157.15.124.200/api/achievements-grouped')
                 .then(response => {
                     if (response.data && typeof response.data === 'object') {
                         setAchievementData(response.data);
