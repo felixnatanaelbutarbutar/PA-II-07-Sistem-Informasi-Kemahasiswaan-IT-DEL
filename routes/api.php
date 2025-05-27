@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\BemController;
+use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\ApiProxyController;
 use App\Http\Controllers\DashboardController;
@@ -16,7 +18,6 @@ use App\Http\Controllers\Api\NewsCategoryController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\SubmissionResponseController;
 use App\Http\Controllers\Api\AnnouncementCategoryController;
-use App\Http\Controllers\Api\FormController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,12 +71,9 @@ Route::get('/meta/{key}', [\App\Http\Controllers\Api\MetaController::class, 'get
 Route::get('/activities', [ActivityController::class, 'index']);
 Route::get('/activities/active', [ActivityController::class, 'active']);
 Route::get('/activities/nearest', [ActivityController::class, 'nearest']);
-// Route::middleware(['debug.sanctum', 'session', 'auth:sanctum'])->group(function () {
-//     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
-// });
-// Route::middleware(['debug.sanctum', 'session'])->group(function () {
-//     Route::get('/cis/students', [ApiProxyController::class, 'getStudents'])->name('api.cis.students');
-// });
+
+// Route untuk BEM
+Route::get('/bem', [BemController::class, 'show'])->name('api.bem.show');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/forms/submissions', [FormController::class, 'submitForm'])->name('forms.submissions.store');

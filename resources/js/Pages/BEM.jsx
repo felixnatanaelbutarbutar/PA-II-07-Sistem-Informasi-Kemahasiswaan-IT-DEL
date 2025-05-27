@@ -4,21 +4,37 @@ import FooterLayout from '@/Layouts/FooterLayout';
 import { Head, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
-export default function BEM({ bem }) {
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [expandedDepartments, setExpandedDepartments] = useState({});
+export default function BEM() {
+    const [bemData, setBemData] = useState(null); // State untuk menyimpan data BEM
+    const [isLoading, setIsLoading] = useState(true); // State untuk loading
+    const [error, setError] = useState(null); // State untuk error
+    const [expandedDepartments, setExpandedDepartments] = useState({}); // State untuk toggle departemen
     const { url } = usePage();
 
+    // Fetch data BEM dari API saat komponen dimuat
     useEffect(() => {
-        if (bem) {
-            setIsLoading(false);
-        } else {
-            setError('Gagal memuat data BEM');
-            setIsLoading(false);
-        }
-    }, [bem]);
+        const fetchBemData = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('http://localhost:8000/api/bem'); // Sesuaikan dengan URL API Anda
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil data BEM');
+                }
+                const data = await response.json();
+                setBemData(data); // Simpan data ke state
+                console.log('BEM data:', data);
+            } catch (error) {
+                console.error('Error fetching BEM data:', error);
+                setError('Gagal memuat data BEM. Silakan coba lagi nanti.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
+        fetchBemData();
+    }, []); // Empty dependency array agar hanya dijalankan sekali saat komponen dimuat
+
+    // Scroll ke section berdasarkan hash di URL
     useEffect(() => {
         const hash = url.split('#')[1];
         if (hash) {
@@ -31,6 +47,7 @@ export default function BEM({ bem }) {
         }
     }, [url]);
 
+    // Fungsi untuk toggle departemen
     const toggleDepartment = (deptIndex) => {
         setExpandedDepartments((prev) => ({
             ...prev,
@@ -68,16 +85,16 @@ export default function BEM({ bem }) {
                         </div>
                     ) : (
                         <>
-                            {bem ? (
+                            {bemData ? (
                                 <>
                                     <section className="bg-white/90 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 animate__animated animate__fadeIn" id="profil-bem">
                                         <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4 border-b-2 border-blue-500 pb-2">
                                             Badan Eksekutif Mahasiswa (BEM)
                                         </h2>
-                                        {bem.logo ? (
+                                        {bemData.logo ? (
                                             <div className="flex justify-center mb-6">
                                                 <img
-                                                    src={`/storage/${bem.logo}`}
+                                                    src={`/storage/${bemData.logo}`}
                                                     alt="Logo BEM IT Del"
                                                     className="w-32 h-32 object-contain rounded-lg shadow-md"
                                                     onError={(e) => (e.target.src = 'https://via.placeholder.com/150?text=Logo+BEM')}
@@ -90,7 +107,7 @@ export default function BEM({ bem }) {
                                                 </div>
                                             </div>
                                         )}
-                                        <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{bem.introduction || 'Tidak ada perkenalan.'}</p>
+                                        <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{bemData.introduction || 'Tidak ada perkenalan.'}</p>
                                     </section>
 
                                     <section className="bg-white/90 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 animate__animated animate__fadeIn" id="visi-misi">
@@ -101,14 +118,14 @@ export default function BEM({ bem }) {
                                             <div>
                                                 <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">Visi</h3>
                                                 <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-                                                    {bem.vision || 'Tidak ada visi.'}
+                                                    {bemData.vision || 'Tidak ada visi.'}
                                                 </p>
                                             </div>
                                             <div>
                                                 <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">Misi</h3>
-                                                {bem.mission && bem.mission.length > 0 ? (
+                                                {bemData.mission && bemData.mission.length > 0 ? (
                                                     <ul className="list-disc pl-5 text-gray-600 text-sm sm:text-base space-y-2">
-                                                        {bem.mission.map((mission, index) => (
+                                                        {bemData.mission.map((mission, index) => (
                                                             <li key={index}>{mission || 'Misi Tanpa Deskripsi'}</li>
                                                         ))}
                                                     </ul>
@@ -127,7 +144,7 @@ export default function BEM({ bem }) {
                                             <div>
                                                 <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">BPH BEM IT Del</h3>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                    {bem.structure?.positions?.map((position, index) => (
+                                                    {bemData.structure?.positions?.map((position, index) => (
                                                         <div
                                                             key={index}
                                                             className="bg-gradient-to-br from-white to-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 text-center"
@@ -155,7 +172,7 @@ export default function BEM({ bem }) {
 
                                             <div>
                                                 <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Departemen</h3>
-                                                {bem.structure?.departments?.map((dept, deptIndex) => (
+                                                {bemData.structure?.departments?.map((dept, deptIndex) => (
                                                     <div key={deptIndex} className="mb-4">
                                                         <div
                                                             className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-blue-600 transition-all"
@@ -213,11 +230,11 @@ export default function BEM({ bem }) {
                                             Program Kerja BEM
                                         </h2>
                                         <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4">
-                                            {bem.work_programs?.description || 'Tidak ada deskripsi program kerja.'}
+                                            {bemData.work_programs?.description || 'Tidak ada deskripsi program kerja.'}
                                         </p>
-                                        {bem.work_programs?.programs && bem.work_programs.programs.length > 0 ? (
+                                        {bemData.work_programs?.programs && bemData.work_programs.programs.length > 0 ? (
                                             <ul className="list-disc pl-5 text-gray-600 text-sm sm:text-base space-y-2">
-                                                {bem.work_programs.programs.map((program, index) => (
+                                                {bemData.work_programs.programs.map((program, index) => (
                                                     <li key={index}>{program || 'Program Tanpa Deskripsi'}</li>
                                                 ))}
                                             </ul>
@@ -233,13 +250,13 @@ export default function BEM({ bem }) {
                                         <div className="mb-4">
                                             <div
                                                 className={`inline-block px-6 py-2 rounded-full text-lg font-semibold ${
-                                                    bem.recruitment_status === 'OPEN' ? 'bg-green-500' : 'bg-red-500'
+                                                    bemData.recruitment_status === 'OPEN' ? 'bg-green-500' : 'bg-red-500'
                                                 }`}
                                             >
-                                                {bem.recruitment_status === 'OPEN' ? 'OPEN RECRUITMENT' : 'CLOSED RECRUITMENT'}
+                                                {bemData.recruitment_status === 'OPEN' ? 'OPEN RECRUITMENT' : 'CLOSED RECRUITMENT'}
                                             </div>
                                         </div>
-                                        {bem.recruitment_status === 'OPEN' && (
+                                        {bemData.recruitment_status === 'OPEN' && (
                                             <a
                                                 href="#"
                                                 className="block mt-4 text-white font-medium hover:text-blue-200 transition-colors duration-300 text-sm sm:text-base"
