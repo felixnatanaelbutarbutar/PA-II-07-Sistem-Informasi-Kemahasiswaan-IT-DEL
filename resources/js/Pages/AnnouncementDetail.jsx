@@ -16,7 +16,7 @@ export default function AnnouncementDetail() {
         const fetchAnnouncement = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`http://localhost:8000/api/announcements/${announcementId}`);
+                const response = await fetch(`http://157.15.124.200/api/announcements/${announcementId}`);
                 if (!response.ok) {
                     throw new Error('Gagal mengambil detail pengumuman');
                 }

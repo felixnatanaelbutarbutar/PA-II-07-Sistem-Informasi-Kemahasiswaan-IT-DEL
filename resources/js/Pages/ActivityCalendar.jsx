@@ -28,7 +28,7 @@ export default function ActivityCalendar({ metaDescription: initialMetaDescripti
     useEffect(() => {
         const fetchMetaDescription = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/meta/kalender-kegiatan');
+                const response = await fetch('http://157.15.124.200/api/meta/kalender-kegiatan');
                 if (!response.ok) throw new Error('Gagal mengambil data meta');
                 const data = await response.json();
                 const sanitizedDescription = DOMPurify.sanitize(data.meta_description || initialMetaDescription);
@@ -47,7 +47,7 @@ export default function ActivityCalendar({ metaDescription: initialMetaDescripti
     useEffect(() => {
         const fetchActivities = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/activities');
+                const response = await fetch('http://157.15.124.200/api/activities');
                 if (!response.ok) throw new Error('Gagal mengambil data kegiatan');
                 const data = await response.json();
                 setActivities(data.data || []);
@@ -59,7 +59,7 @@ export default function ActivityCalendar({ metaDescription: initialMetaDescripti
 
         const fetchActiveActivities = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/activities/active');
+                const response = await fetch('http://157.15.124.200/api/activities/active');
                 if (!response.ok) throw new Error('Gagal mengambil data kegiatan aktif');
                 const data = await response.json();
                 setActiveActivities(data);
@@ -123,8 +123,8 @@ export default function ActivityCalendar({ metaDescription: initialMetaDescripti
     };
 
     const exportUrl = startDate && endDate 
-        ? `http://localhost:8000/activities/guest-export-pdf?start_date=${startDate}&end_date=${endDate}`
-        : 'http://localhost:8000/activities/guest-export-pdf';
+        ? `http://157.15.124.200/activities/guest-export-pdf?start_date=${startDate}&end_date=${endDate}`
+        : 'http://157.15.124.200/activities/guest-export-pdf';
 
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };

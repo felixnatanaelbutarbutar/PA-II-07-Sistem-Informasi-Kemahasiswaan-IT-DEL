@@ -32,12 +32,12 @@ export default function Achievement({ achievements, flash }) {
 
         const fetchData = async () => {
             try {
-                const metaResponse = await fetch('http://localhost:8000/api/meta/prestasi');
+                const metaResponse = await fetch('http://157.15.124.200/api/meta/prestasi');
                 if (!metaResponse.ok) throw new Error('Gagal mengambil data meta prestasi');
                 const metaData = await metaResponse.json();
                 setMetaData(metaData);
 
-                const announcementsResponse = await fetch('http://localhost:8000/api/announcements');
+                const announcementsResponse = await fetch('http://157.15.124.200/api/announcements');
                 if (!announcementsResponse.ok) throw new Error('Gagal mengambil data pengumuman');
                 const announcementsData = await announcementsResponse.json();
                 setAnnouncements(announcementsData.data || []);
