@@ -18,7 +18,6 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
 
     // Handle flash messages for notifications
     useEffect(() => {
-        // Auto-hide notification after 5 seconds
         if (notification.show) {
             const timer = setTimeout(() => {
                 setNotification({ ...notification, show: false });
@@ -31,6 +30,12 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            console.log('File type:', file.type);
+            console.log('File size:', file.size / 1024 / 1024, 'MB');
+            if (file.size > 10 * 1024 * 1024) {
+                setErrors({ image: 'Ukuran file tidak boleh melebihi 10 MB.' });
+                return;
+            }
             setFormData({ ...formData, image: file });
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -44,9 +49,8 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setErrors({}); // Clear previous errors
+        setErrors({});
 
-        // Client-side validation for required fields
         const newErrors = {};
         if (!formData.title.trim()) {
             newErrors.title = 'Judul wajib diisi.';
@@ -55,7 +59,7 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setIsSubmitting(false);
-            return; // Stop submission if there are client-side errors
+            return;
         }
 
         try {
@@ -68,7 +72,7 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
             data.append('order', formData.order);
             data.append('is_active', formData.is_active ? 1 : 0);
 
-            await axios.post(route('admin.carousel.update', carousel.carousel_id), data, {
+            const response = await axios.post(route('admin.carousel.update', carousel.carousel_id), data, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -77,10 +81,9 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
             setNotification({
                 show: true,
                 type: 'success',
-                message: 'Carousel berhasil diperbarui!',
+                message: response.data.message || 'Carousel berhasil diperbarui!',
             });
 
-            // Reset the form to initial values
             setFormData({
                 title: carousel.title || '',
                 description: carousel.description || '',
@@ -90,10 +93,8 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
             });
             setPreviewImage(carousel.image_path ? `/storage/${carousel.image_path}` : null);
 
-            // Reset isSubmitting to false after success
             setIsSubmitting(false);
 
-            // Redirect after 1.5 seconds
             setTimeout(() => {
                 router.visit(route('admin.carousel.index'));
             }, 1500);
@@ -102,6 +103,11 @@ export default function CarouselEdit({ auth, userRole, permissions, menu, carous
 
             if (error.response && error.response.status === 422) {
                 setErrors(error.response.data.errors);
+                setNotification({
+                    show: true,
+                    type: 'error',
+                    message: error.response.data.message || 'Gagal memperbarui carousel.',
+                });
             } else {
                 setNotification({
                     show: true,

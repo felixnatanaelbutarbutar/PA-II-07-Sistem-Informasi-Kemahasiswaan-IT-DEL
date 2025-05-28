@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Carousel;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Carousel;
 use App\Helpers\RoleHelper;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Controller;
+use enshrined\svgSanitize\Sanitizer;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class CarouselController extends Controller
 {
@@ -45,7 +46,6 @@ class CarouselController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        // Hitung jumlah data di tabel carousels dan tambahkan 1 untuk default order
         $carouselCount = Carousel::count();
         $defaultOrder = $carouselCount + 1;
 
@@ -54,7 +54,7 @@ class CarouselController extends Controller
             'userRole' => $role,
             'permissions' => $permissions,
             'menu' => $menuItems,
-            'defaultOrder' => $defaultOrder, // Kirim defaultOrder ke frontend
+            'defaultOrder' => $defaultOrder,
         ]);
     }
 
@@ -83,8 +83,32 @@ class CarouselController extends Controller
 
         $user = Auth::user();
 
-        // Simpan file (gambar atau SVG)
+        if ($request->hasFile('image')) {
+            Log::info('Uploaded file: ' . $request->file('image')->getClientOriginalName());
+            Log::info('MIME type: ' . $request->file('image')->getMimeType());
+            Log::info('File size: ' . $request->file('image')->getSize() / 1024 / 1024 . ' MB');
+        }
+
         $imagePath = $request->file('image')->store('carousels', 'public');
+
+        if ($request->file('image')->getMimeType() === 'image/svg+xml') {
+            Log::info('Sanitizing SVG file...');
+            $sanitizer = new Sanitizer();
+            $svgContent = file_get_contents($request->file('image')->getRealPath());
+            $cleanSvg = $sanitizer->sanitize($svgContent);
+
+            if ($cleanSvg === false) {
+                Log::warning('SVG sanitization failed for file: ' . $request->file('image')->getClientOriginalName());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File SVG mengandung konten yang tidak aman.',
+                    'errors' => ['image' => 'File SVG mengandung konten yang tidak aman.'],
+                ], 422);
+            }
+
+            Storage::disk('public')->put($imagePath, $cleanSvg);
+            Log::info('SVG file sanitized and saved: ' . $imagePath);
+        }
 
         try {
             $carouselId = $this->generateCarouselId();
@@ -100,10 +124,8 @@ class CarouselController extends Controller
                 'updated_by' => $user->id,
             ]);
 
-            // Hapus cache setelah data berubah
             Cache::forget('carousels');
 
-            // Kembalikan response JSON untuk Inertia.js
             return response()->json([
                 'success' => true,
                 'message' => 'Carousel berhasil ditambahkan.',
@@ -117,6 +139,7 @@ class CarouselController extends Controller
             ], 500);
         }
     }
+
     /**
      * Show the form for editing the specified carousel.
      */
@@ -166,14 +189,36 @@ class CarouselController extends Controller
         $carousel = Carousel::findOrFail($carousel_id);
         $user = Auth::user();
 
-        // Simpan file baru jika ada
         $imagePath = $carousel->image_path;
         if ($request->hasFile('image')) {
-            // Hapus gambar lama jika ada
             if ($imagePath && Storage::disk('public')->exists($imagePath)) {
                 Storage::disk('public')->delete($imagePath);
             }
+
+            Log::info('Uploaded file: ' . $request->file('image')->getClientOriginalName());
+            Log::info('MIME type: ' . $request->file('image')->getMimeType());
+            Log::info('File size: ' . $request->file('image')->getSize() / 1024 / 1024 . ' MB');
+
             $imagePath = $request->file('image')->store('carousels', 'public');
+
+            if ($request->file('image')->getMimeType() === 'image/svg+xml') {
+                Log::info('Sanitizing SVG file...');
+                $sanitizer = new Sanitizer();
+                $svgContent = file_get_contents($request->file('image')->getRealPath());
+                $cleanSvg = $sanitizer->sanitize($svgContent);
+
+                if ($cleanSvg === false) {
+                    Log::warning('SVG sanitization failed for file: ' . $request->file('image')->getClientOriginalName());
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'File SVG mengandung konten yang tidak aman.',
+                        'errors' => ['image' => 'File SVG mengandung konten yang tidak aman.'],
+                    ], 422);
+                }
+
+                Storage::disk('public')->put($imagePath, $cleanSvg);
+                Log::info('SVG file sanitized and saved: ' . $imagePath);
+            }
         }
 
         try {
@@ -186,10 +231,8 @@ class CarouselController extends Controller
                 'updated_by' => $user->id,
             ]);
 
-            // Hapus cache setelah data berubah
             Cache::forget('carousels');
 
-            // Kembalikan response JSON untuk Inertia.js
             return response()->json([
                 'success' => true,
                 'message' => 'Carousel berhasil diperbarui.',
@@ -212,21 +255,22 @@ class CarouselController extends Controller
         $carousel = Carousel::findOrFail($carousel_id);
 
         try {
-            // Hapus gambar dari storage
-            Storage::disk('public')->delete($carousel->image_path);
-            // Hapus data carousel
-            $carousel->delete();
+            if ($carousel->image_path && Storage::disk('public')->exists($carousel->image_path)) {
+                Storage::disk('public')->delete($carousel->image_path);
+                Log::info('Deleted image file: ' . $carousel->image_path);
+            }
 
-            // Hapus cache setelah data berubah
+            $carousel->delete();
+            Log::info('Carousel deleted: ' . $carousel_id);
+
             Cache::forget('carousels');
+
+            return redirect()->route('admin.carousel.index')->with('success', 'Carousel berhasil dihapus!');
         } catch (\Exception $e) {
             Log::error('Error deleting carousel: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to delete carousel: ' . $e->getMessage()]);
         }
-
-        return redirect()->route('admin.carousel.index')->with('success', 'Carousel berhasil dihapus!');
     }
-
 
     /**
      * Generate a unique ID for carousel_id (e.g., car001, car002, etc.).
@@ -236,12 +280,12 @@ class CarouselController extends Controller
         $lastCarousel = Carousel::orderBy('carousel_id', 'desc')->first();
 
         if ($lastCarousel) {
-            $lastIdNumber = (int) substr($lastCarousel->carousel_id, 3); // Ambil angka dari 'carXXX'
+            $lastIdNumber = (int) substr($lastCarousel->carousel_id, 3);
             $newIdNumber = $lastIdNumber + 1;
         } else {
             $newIdNumber = 1;
         }
 
-        return 'car' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT); // Format: car001, car002, dll.
+        return 'car' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
     }
 }

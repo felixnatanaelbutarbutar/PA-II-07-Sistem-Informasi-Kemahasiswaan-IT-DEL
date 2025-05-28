@@ -8,7 +8,7 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
         title: '',
         description: '',
         image: null,
-        order: defaultOrder || 0, // Gunakan defaultOrder dari props
+        order: defaultOrder || 0,
         is_active: true,
     });
     const [previewImage, setPreviewImage] = useState(null);
@@ -18,7 +18,6 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
 
     // Handle flash messages and notification auto-hide
     useEffect(() => {
-        // Handle flash messages from server
         if (flash) {
             if (flash.success) {
                 setNotification({
@@ -35,7 +34,6 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
             }
         }
 
-        // Auto-hide notification after 5 seconds
         if (notification.show) {
             const timer = setTimeout(() => {
                 setNotification({ ...notification, show: false });
@@ -48,6 +46,12 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            console.log('File type:', file.type);
+            console.log('File size:', file.size / 1024 / 1024, 'MB');
+            if (file.size > 10 * 1024 * 1024) {
+                setErrors({ image: 'Ukuran file tidak boleh melebihi 10 MB.' });
+                return;
+            }
             setFormData({ ...formData, image: file });
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -61,9 +65,8 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setErrors({}); // Clear previous errors
+        setErrors({});
 
-        // Client-side validation for required fields
         const newErrors = {};
         if (!formData.title.trim()) {
             newErrors.title = 'Judul wajib diisi.';
@@ -75,7 +78,7 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setIsSubmitting(false);
-            return; // Stop submission if there are client-side errors
+            return;
         }
 
         try {
@@ -86,7 +89,7 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
             data.append('order', formData.order);
             data.append('is_active', formData.is_active ? 1 : 0);
 
-            await axios.post(route('admin.carousel.store'), data, {
+            const response = await axios.post(route('admin.carousel.store'), data, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -95,23 +98,20 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
             setNotification({
                 show: true,
                 type: 'success',
-                message: 'Carousel berhasil ditambahkan!',
+                message: response.data.message || 'Carousel berhasil ditambahkan!',
             });
 
-            // Reset the form
             setFormData({
                 title: '',
                 description: '',
                 image: null,
-                order: defaultOrder || 0, // Reset ke defaultOrder
+                order: defaultOrder || 0,
                 is_active: true,
             });
             setPreviewImage(null);
 
-            // Reset isSubmitting to false after success
             setIsSubmitting(false);
 
-            // Redirect after 1.5 seconds
             setTimeout(() => {
                 router.visit(route('admin.carousel.index'));
             }, 1500);
@@ -120,6 +120,11 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
 
             if (error.response && error.response.status === 422) {
                 setErrors(error.response.data.errors);
+                setNotification({
+                    show: true,
+                    type: 'error',
+                    message: error.response.data.message || 'Gagal menambahkan carousel.',
+                });
             } else {
                 setNotification({
                     show: true,
