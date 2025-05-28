@@ -7,26 +7,29 @@ import 'react-quill/dist/quill.snow.css';
 
 export default function AnnouncementDetail() {
     const { props } = usePage();
-    const announcementId = props.announcement_id || window.location.pathname.split('/').pop();
+    const announcementId = props.announcement_id || window.location.pathname.split('/').filter(Boolean).pop();
     const [announcement, setAnnouncement] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Extracted announcementId:', announcementId);
+
         const fetchAnnouncement = async () => {
             setIsLoading(true);
             try {
-                console.log('Fetching announcement with ID:', announcementId); // Debug
+                console.log('Fetching announcement with ID:', announcementId);
                 const response = await fetch(`https://kemahasiswaanitdel.site/api/announcements/${announcementId}`);
-                console.log('Response status:', response.status); // Debug
+                console.log('Response status:', response.status);
                 if (!response.ok) {
-                    throw new Error(`Gagal mengambil detail pengumuman: ${response.statusText}`);
+                    throw new Error(`Gagal mengambil detail pengumuman: ${response.status} ${response.statusText}`);
                 }
                 const data = await response.json();
-                console.log('Announcement data:', data); // Debug
+                console.log('Announcement data:', data);
                 setAnnouncement(data);
             } catch (err) {
-                console.error('Fetch error:', err.message); // Debug
+                console.error('Fetch error:', err.message);
                 setError(err.message);
             } finally {
                 setIsLoading(false);
@@ -74,7 +77,7 @@ export default function AnnouncementDetail() {
         if (filePath.toLowerCase().endsWith('.pdf')) {
             return (
                 <a
-                    href={`/storage/${filePath}`}
+                    href={`https://kemahasiswaanitdel.site/storage/${filePath}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center h-full text-blue-600 hover:text-blue-800 transition-colors duration-200"
@@ -93,7 +96,7 @@ export default function AnnouncementDetail() {
         if (isImage) {
             return (
                 <img
-                    src={`/storage/${filePath}`}
+                    src={`https://kemahasiswaanitdel.site/storage/${filePath}`}
                     alt={item?.title || 'Gambar pengumuman'}
                     style={styles.fileContainer}
                     onError={(e) => {
@@ -112,7 +115,7 @@ export default function AnnouncementDetail() {
 
         return (
             <a
-                href={`/storage/${filePath}`}
+                href={`https://kemahasiswaanitdel.site/storage/${filePath}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center justify-center h-full text-blue-600 hover:text-blue-800 transition-colors duration-200"
