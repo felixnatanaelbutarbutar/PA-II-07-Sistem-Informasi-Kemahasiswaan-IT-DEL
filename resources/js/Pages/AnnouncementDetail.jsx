@@ -3,7 +3,7 @@ import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
 import { Head, usePage, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import 'react-quill/dist/quill.snow.css'; // Impor CSS Quill
+import 'react-quill/dist/quill.snow.css';
 
 export default function AnnouncementDetail() {
     const { props } = usePage();
@@ -16,21 +16,36 @@ export default function AnnouncementDetail() {
         const fetchAnnouncement = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch('http://157.15.124.200/api/announcements/${announcementId}');
+                console.log('Fetching announcement with ID:', announcementId); // Debug
+                const response = await fetch(`https://kemahasiswaanitdel.site/api/announcements/${announcementId}`);
+                console.log('Response status:', response.status); // Debug
                 if (!response.ok) {
-                    throw new Error('Gagal mengambil detail pengumuman');
+                    throw new Error(`Gagal mengambil detail pengumuman: ${response.statusText}`);
                 }
                 const data = await response.json();
+                console.log('Announcement data:', data); // Debug
                 setAnnouncement(data);
             } catch (err) {
+                console.error('Fetch error:', err.message); // Debug
                 setError(err.message);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchAnnouncement();
+        if (announcementId) {
+            fetchAnnouncement();
+        } else {
+            setError('ID pengumuman tidak ditemukan');
+            setIsLoading(false);
+        }
     }, [announcementId]);
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('id-ID', options);
+    };
 
     const renderFile = (item) => {
         if (!item || (!item.file && !item.image)) {
@@ -190,11 +205,10 @@ export default function AnnouncementDetail() {
                 marginBottom: '20px',
             },
             contentQuill: {
-                // Tambahkan gaya tambahan untuk mendukung Quill
                 '& .ql-align-center': { textAlign: 'center' },
                 '& .ql-align-right': { textAlign: 'right' },
                 '& .ql-align-justify': { textAlign: 'justify' },
-                '& .ql-editor': { padding: '0', margin: '0' }, // Pastikan kompatibel dengan Quill
+                '& .ql-editor': { padding: '0', margin: '0' },
             },
             loadingState: {
                 display: 'flex',
@@ -242,11 +256,6 @@ export default function AnnouncementDetail() {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
-
-    const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString('id-ID', options);
-    };
 
     return (
         <GuestLayout>
@@ -335,9 +344,8 @@ export default function AnnouncementDetail() {
                                     </div>
                                 </div>
                             </div>
-                            {/* Render konten dengan kelas Quill */}
                             <div
-                                className="ql-editor" // Tambahkan kelas ql-editor untuk styling Quill
+                                className="ql-editor"
                                 style={styles.content}
                                 dangerouslySetInnerHTML={{ __html: announcement.content || "Tidak ada konten." }}
                             />
@@ -353,7 +361,6 @@ export default function AnnouncementDetail() {
                             <p style={styles.notFoundText}>
                                 Pengumuman yang Anda cari tidak ditemukan atau telah dihapus.
                             </p>
-                            {/* Tombol Kembali di Not Found */}
                             <Link
                                 href="/announcement"
                                 className="inline-flex items-center text-blue-600 hover:text-blue-700 mt-6"
