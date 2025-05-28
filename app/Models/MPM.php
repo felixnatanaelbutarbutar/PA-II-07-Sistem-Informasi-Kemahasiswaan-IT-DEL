@@ -6,10 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class MPM extends Model
 {
+    protected $table = 'mpms';
     protected $fillable = [
-        'logo', 'introduction', 'vision', 'mission', 'structure',
-        'recruitment_status', 'aspiration_status', 'is_active',
-        'management_period', 'created_by', 'updated_by'
+        'logo',
+        'introduction',
+        'vision',
+        'mission',
+        'structure',
+        'recruitment_status',
+        'aspiration_status',
+        'is_active',
+        'management_period',
+        'created_by',
+        'updated_by'
     ];
 
     protected $casts = [
