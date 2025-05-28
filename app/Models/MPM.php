@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Mpm extends Model
+class MPM extends Model
 {
     protected $fillable = [
         'logo', 'introduction', 'vision', 'mission', 'structure',

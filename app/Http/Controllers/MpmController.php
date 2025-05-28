@@ -17,7 +17,7 @@ class MpmController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $mpms = Mpm::with(['createdBy', 'updatedBy'])->get();
+        $mpms = MPM::with(['createdBy', 'updatedBy'])->get();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -45,7 +45,7 @@ class MpmController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $mpmExists = Mpm::exists();
+        $mpmExists = MPM::exists();
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -91,7 +91,7 @@ class MpmController extends Controller
             Log::info('Validation passed with management_period', ['management_period' => $validated['management_period']]);
 
             if ($validated['is_active']) {
-                Mpm::where('is_active', true)->update(['is_active' => false]);
+                MPM::where('is_active', true)->update(['is_active' => false]);
             }
 
             $structure = json_decode($request->input('structure'), true);
@@ -152,7 +152,7 @@ class MpmController extends Controller
 
             Log::info('Structure data after processing', ['structure' => $structure]);
 
-            Mpm::create([
+            MPM::create([
                 'introduction' => $validated['introduction'],
                 'vision' => $validated['vision'],
                 'mission' => json_decode($validated['mission'], true),
@@ -180,7 +180,7 @@ class MpmController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role);
 
-        $mpm = Mpm::with(['createdBy', 'updatedBy'])->findOrFail($id);
+        $mpm = MPM::with(['createdBy', 'updatedBy'])->findOrFail($id);
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
@@ -202,7 +202,7 @@ class MpmController extends Controller
 
     public function update(Request $request, $id)
     {
-        $mpm = Mpm::findOrFail($id);
+        $mpm = MPM::findOrFail($id);
 
         Log::info('Update request data:', $request->all());
         Log::info('Update request files:', $request->files->all());
@@ -227,7 +227,7 @@ class MpmController extends Controller
             Log::info('Validation passed');
 
             if ($validated['is_active']) {
-                Mpm::where('id', '!=', $id)->where('is_active', true)->update(['is_active' => false]);
+                MPM::where('id', '!=', $id)->where('is_active', true)->update(['is_active' => false]);
             }
 
             $structure = json_decode($request->input('structure'), true);
@@ -336,7 +336,7 @@ class MpmController extends Controller
     public function destroy($id)
     {
         try {
-            $mpm = Mpm::findOrFail($id);
+            $mpm = MPM::findOrFail($id);
             Log::info('Attempting to delete MPM with ID: ' . $id);
 
             if (!empty($mpm->structure['chairman']['photo']) && Storage::disk('public')->exists($mpm->structure['chairman']['photo'])) {
@@ -392,7 +392,7 @@ class MpmController extends Controller
         $user = Auth::user();
         $role = $user ? strtolower($user->role) : null;
 
-        $mpm = Mpm::where('is_active', true)
+        $mpm = MPM::where('is_active', true)
             ->with(['createdBy', 'updatedBy'])
             ->first(); // Ambil MPM aktif pertama (hanya satu data aktif)
 
@@ -418,10 +418,10 @@ class MpmController extends Controller
     public function toggleActive($id)
     {
         try {
-            $mpm = Mpm::findOrFail($id);
+            $mpm = MPM::findOrFail($id);
 
             if (!$mpm->is_active) {
-                Mpm::where('is_active', true)->update(['is_active' => false]);
+                MPM::where('is_active', true)->update(['is_active' => false]);
                 $mpm->is_active = true;
                 $message = 'Data MPM diaktifkan dengan sukses.';
             } else {
@@ -443,7 +443,7 @@ class MpmController extends Controller
         $user = Auth::user();
         $role = $user ? strtolower($user->role) : null;
 
-        $mpm = Mpm::with(['createdBy', 'updatedBy'])->findOrFail($id);
+        $mpm = MPM::with(['createdBy', 'updatedBy'])->findOrFail($id);
         $menuItems = $role ? RoleHelper::getNavigationMenu($role) : [];
         $permissions = $role ? RoleHelper::getRolePermissions($role) : [];
 
