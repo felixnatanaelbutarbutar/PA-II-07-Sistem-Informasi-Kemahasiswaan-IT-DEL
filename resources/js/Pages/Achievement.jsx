@@ -90,20 +90,22 @@ export default function Achievement({ achievements, flash }) {
 
     const styles = {
         container: {
-            padding: '60px 0',
+            maxWidth: '1500px',
+            padding: '20px',
+            margin: '0 auto',
             backgroundColor: '#F5F7FA',
             minHeight: '100vh',
             fontFamily: "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             position: 'relative',
         },
         mainLayout: {
-            maxWidth: '1300px',
+            maxWidth: '1500px',
             margin: '0 auto',
             padding: '0 20px',
             display: 'flex',
             gap: '30px',
             position: 'relative',
-            '@media (max-width: 1024px)': {
+            '@media (max-width: 1500px)': {
                 flexDirection: 'column',
             },
         },

@@ -146,6 +146,7 @@
                 background: 'linear-gradient(to bottom, #f8fafc, #e5e7eb)',
             },
             container: {
+                backgroundColor: '#F5F7FA',
                 maxWidth: '1500px', // Disamakan dengan file kedua
                 margin: '0 auto',
                 padding: '20px', // Disamakan dengan file kedua

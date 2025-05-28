@@ -24,11 +24,11 @@ class ActivityController extends Controller
         // Ambil semua kegiatan untuk kalender
         $activities = Activity::with(['creator', 'updater'])->get();
 
-        $metaDescription = $meta ? $meta->meta_description : 'Tidak ada deskripsi tersedia.';
+        // $metaDescription = $meta ? $meta->meta_description : 'Tidak ada deskripsi tersedia.';
 
-        return Inertia::render('ActivityCalendar', [
-            'metaDescription' => $metaDescription,
-        ]);
+        // return Inertia::render('ActivityCalendar', [
+        //     'metaDescription' => $metaDescription,
+        // ]);
 
         // Ambil kegiatan aktif (end_date >= hari ini atau end_date null)
         $today = Carbon::today(); // Tanggal saat ini: 12 Mei 2025
