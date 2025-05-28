@@ -40,12 +40,12 @@ export default function Achievement({ achievements, flash }) {
 
         const fetchData = async () => {
             try {
-                const metaResponse = await fetch('/api/meta/prestasi');
+                const metaResponse = await fetch('https://kemahasiswaanitdel.site/api/meta/prestasi');
                 if (!metaResponse.ok) throw new Error('Gagal mengambil data meta prestasi');
                 const metaData = await metaResponse.json();
                 setMetaData(metaData);
 
-                const announcementsResponse = await fetch('/api/announcements');
+                const announcementsResponse = await fetch('https://kemahasiswaanitdel.site/api/announcements');
                 if (!announcementsResponse.ok) throw new Error('Gagal mengambil data pengumuman');
                 const announcementsData = await announcementsResponse.json();
                 console.log('Announcements:', announcementsData.data); // Log to verify ID field

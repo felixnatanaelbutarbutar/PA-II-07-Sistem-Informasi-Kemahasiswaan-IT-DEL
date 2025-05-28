@@ -24,7 +24,7 @@
             const fetchNews = async () => {
                 setIsLoading(true);
                 try {
-                    const response = await fetch('/api/news');
+                    const response = await fetch('https://kemahasiswaanitdel.site/api/news');
                     if (!response.ok) {
                         throw new Error('Gagal mengambil data berita');
                     }
@@ -40,7 +40,7 @@
 
             const fetchCategories = async () => {
                 try {
-                    const response = await fetch('/api/news-categories');
+                    const response = await fetch('https://kemahasiswaanitdel.site/api/news-categories');
                     if (!response.ok) {
                         throw new Error('Gagal mengambil data kategori');
                     }

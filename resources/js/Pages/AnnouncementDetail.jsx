@@ -7,7 +7,7 @@ import 'react-quill/dist/quill.snow.css'; // Impor CSS Quill
 
 export default function AnnouncementDetail() {
     const { props } = usePage();
-    const announcementId = props.announcement_id || window.location.pathname.split('/').pop();
+    const announcementId = props.announcement_id || window.location.pathname.split('https://kemahasiswaanitdel.site/').pop();
     const [announcement, setAnnouncement] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);

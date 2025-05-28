@@ -14,7 +14,7 @@ export default function ScholarshipIndex() {
     // Fetch submission status for students
     useEffect(() => {
         if (isStudent && auth.user?.token) {
-            fetch('/api/forms/submissions', {
+            fetch('https://kemahasiswaanitdel.site/api/forms/submissions', {
                 headers: {
                     Authorization: `Bearer ${auth.user.token}`,
                 },

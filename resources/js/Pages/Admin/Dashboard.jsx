@@ -58,7 +58,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
         // console.log('User role:', userRole);
 
         // Fetch jumlah kegiatan aktif
-        axios.get('/admin/activities/count')
+        axios.get('https://kemahasiswaanitdel.site/admin/activities/count')
             .then(response => {
                 setActiveActivities(response.data.active_count);
             })
@@ -67,7 +67,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
             });
 
         // Fetch jumlah pengumuman
-        axios.get('/admin/announcements/count')
+        axios.get('https://kemahasiswaanitdel.site/admin/announcements/count')
             .then(response => {
                 setAnnouncementsCount(response.data.count);
             })
@@ -78,7 +78,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
         // Fetch aspiration data (for kemahasiswaan and adminmpm roles)
         if (['kemahasiswaan', 'adminmpm'].includes(userRole)) {
             setAspirationLoading(true);
-            axios.get('http://157.15.124.200/api/aspiration-categories')
+            axios.get('https://kemahasiswaanitdel.site/api/aspiration-categories')
                 .then(response => {
                     if (Array.isArray(response.data)) {
                         setAspirationData(response.data);
@@ -97,7 +97,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
 
         // Fetch achievement data (for kemahasiswaan role only)
         if (userRole === 'kemahasiswaan') {
-            axios.get('http://157.15.124.200/api/achievements-grouped')
+            axios.get('https://kemahasiswaanitdel.site/api/achievements-grouped')
                 .then(response => {
                     if (response.data && typeof response.data === 'object') {
                         setAchievementData(response.data);
@@ -447,7 +447,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                                 <div>
                                     <Link
                                         // href={route('admin.announcements.index')}
-                                        href='/admin/announcement'
+                                        href='https://kemahasiswaanitdel.site/admin/announcement'
                                         className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all
                                             ${document.documentElement.classList.contains('light') ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' : ''}
                                             ${document.documentElement.classList.contains('dark') ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-800/50' : ''}

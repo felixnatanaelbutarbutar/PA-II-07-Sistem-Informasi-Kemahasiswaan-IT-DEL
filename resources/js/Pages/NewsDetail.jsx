@@ -111,7 +111,7 @@ export default function NewsDetail() {
                 <meta name="description" content={news.content?.substring(0, 160) || 'Berita dari Institut Teknologi Del'} />
                 <meta property="og:title" content={news.title} />
                 <meta property="og:description" content={news.content?.substring(0, 160) || 'Berita dari Institut Teknologi Del'} />
-                <meta property="og:image" content={news.image ? `/storage/${news.image}` : '/assets/images/slide2.png'} />
+                <meta property="og:image" content={news.image ? `/storage/${news.image}` : 'https://kemahasiswaanitdel.site/assets/images/slide2.png'} />
                 <meta property="og:url" content={window.location.href} />
                 <meta name="twitter:card" content="summary_large_image" />
             </Head>
@@ -126,7 +126,7 @@ export default function NewsDetail() {
                             src={`/storage/${news.image}`}
                             alt={news.title}
                             className="w-full h-full object-cover"
-                            onError={(e) => (e.target.src = '/assets/images/slide2.png')}
+                            onError={(e) => (e.target.src = 'https://kemahasiswaanitdel.site/assets/images/slide2.png')}
                         />
                         <div className="absolute bottom-0 left-0 right-0 z-20 p-6 md:p-10 bg-gradient-to-t from-black/80 to-transparent">
                             <div className="max-w-7xl mx-auto">
@@ -325,7 +325,7 @@ export default function NewsDetail() {
                                                                 src={`/storage/${item.image}`}
                                                                 alt={item.title}
                                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                                onError={(e) => (e.target.src = '/assets/images/slide2.png')}
+                                                                onError={(e) => (e.target.src = 'https://kemahasiswaanitdel.site/assets/images/slide2.png')}
                                                             />
                                                         </div>
                                                     )}

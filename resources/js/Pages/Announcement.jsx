@@ -21,7 +21,7 @@ export default function Announcement() {
             setIsLoading(true);
             try {
                 // Get announcements list
-                const announcementsResponse = await fetch('/api/announcements');
+                const announcementsResponse = await fetch('https://kemahasiswaanitdel.site/api/announcements');
                 if (!announcementsResponse.ok) {
                     throw new Error('Gagal mengambil data pengumuman');
                 }
@@ -29,7 +29,7 @@ export default function Announcement() {
                 setAnnouncements(announcementsData.data || []);
 
                 // Get categories list
-                const categoriesResponse = await fetch('/api/announcement-categories');
+                const categoriesResponse = await fetch('https://kemahasiswaanitdel.site/api/announcement-categories');
                 if (!categoriesResponse.ok) {
                     throw new Error('Gagal mengambil data kategori');
                 }
@@ -37,7 +37,7 @@ export default function Announcement() {
                 setCategories(categoriesData);
 
                 // Get meta data
-                const metaResponse = await fetch('/api/meta/pengumuman');
+                const metaResponse = await fetch('https://kemahasiswaanitdel.site/api/meta/pengumuman');
                 if (!metaResponse.ok) {
                     throw new Error('Gagal mengambil data meta pengumuman');
                 }
