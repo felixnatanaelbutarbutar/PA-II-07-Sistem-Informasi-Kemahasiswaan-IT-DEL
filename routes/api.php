@@ -55,6 +55,12 @@ Route::get('/announcements', [AnnouncementController::class, 'index']);
 Route::get('/announcements/{announcement_id}', [AnnouncementController::class, 'show']);
 Route::get('/announcement-categories', [AnnouncementCategoryController::class, 'index']);
 
+// Route untuk BEM
+Route::get('/bem', [BemController::class, 'show'])->name('api.bem.show');
+
+Route::get('/achievements-grouped', [AchievementController::class, 'getGroupedAchievements']);
+
+
 // Route untuk Chatbot
 Route::post('/chatbot', [ChatbotController::class, 'chat']);
 
@@ -72,8 +78,6 @@ Route::get('/activities', [ActivityController::class, 'index']);
 Route::get('/activities/active', [ActivityController::class, 'active']);
 Route::get('/activities/nearest', [ActivityController::class, 'nearest']);
 
-// Route untuk BEM
-Route::get('/bem', [BemController::class, 'show'])->name('api.bem.show');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/forms/submissions', [FormController::class, 'submitForm'])->name('forms.submissions.store');

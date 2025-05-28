@@ -34,27 +34,27 @@ export default function Home() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const newsResponse = await fetch('http://157.15.124.200/api/news?per_page=4');
+                const newsResponse = await fetch('/api/news?per_page=4');
                 if (!newsResponse.ok) throw new Error('Gagal mengambil data berita');
                 const newsData = await newsResponse.json();
                 setNews(newsData.data || []);
 
-                const categoriesResponse = await fetch('http://157.15.124.200/api/news-categories');
+                const categoriesResponse = await fetch('/api/news-categories');
                 if (!categoriesResponse.ok) throw new Error('Gagal mengambil data kategori');
                 const categoriesData = await categoriesResponse.json();
                 setCategories(categoriesData);
 
-                const announcementsResponse = await fetch('http://157.15.124.200/api/announcements?per_page=4');
+                const announcementsResponse = await fetch('/api/announcements?per_page=4');
                 if (!announcementsResponse.ok) throw new Error('Gagal mengambil data pengumuman');
                 const announcementsData = await announcementsResponse.json();
                 setAnnouncements(announcementsData.data || []);
 
-                const activitiesResponse = await fetch('http://157.15.124.200/api/activities/nearest');
+                const activitiesResponse = await fetch('/api/activities/nearest');
                 if (!activitiesResponse.ok) throw new Error('Gagal mengambil data kegiatan terdekat');
                 const activitiesData = await activitiesResponse.json();
                 setActivities(activitiesData || []);
 
-                const achievementsResponse = await fetch('http://157.15.124.200/api/achievements-grouped');
+                const achievementsResponse = await fetch('/api/achievements-grouped');
                 if (!achievementsResponse.ok) throw new Error('Gagal mengambil data prestasi');
                 const achievementsData = await achievementsResponse.json();
                 setAchievements(achievementsData);
@@ -69,7 +69,7 @@ export default function Home() {
         const fetchCarousels = async () => {
             setCarouselLoading(true);
             try {
-                const carouselResponse = await fetch('http://157.15.124.200/api/carousel/guest');
+                const carouselResponse = await fetch('/api/carousel/guest');
                 if (!carouselResponse.ok) throw new Error('Gagal mengambil data carousel');
                 const carouselData = await carouselResponse.json();
                 setCarousels(carouselData || []);
@@ -83,7 +83,7 @@ export default function Home() {
 
         const fetchMetaData = async () => { // Ganti dari fetchDirector ke fetchMetaData
             try {
-                const metaResponse = await fetch('http://157.15.124.200/api/meta/kata-sambutan');
+                const metaResponse = await fetch('/api/meta/kata-sambutan');
                 if (!metaResponse.ok) throw new Error('Gagal mengambil data meta');
                 const metaData = await metaResponse.json();
                 setMetaData(metaData);
