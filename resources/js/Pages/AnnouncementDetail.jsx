@@ -7,7 +7,7 @@ import 'react-quill/dist/quill.snow.css'; // Impor CSS Quill
 
 export default function AnnouncementDetail() {
     const { props } = usePage();
-    const announcementId = props.announcement_id || window.location.pathname.split('https://kemahasiswaanitdel.site/').pop();
+    const announcementId = props.announcement_id || window.location.pathname.split('/').pop();
     const [announcement, setAnnouncement] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -16,7 +16,7 @@ export default function AnnouncementDetail() {
         const fetchAnnouncement = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`/api/announcements/${announcementId}`);
+                const response = await fetch('http://157.15.124.200/api/announcements/${announcementId}');
                 if (!response.ok) {
                     throw new Error('Gagal mengambil detail pengumuman');
                 }
