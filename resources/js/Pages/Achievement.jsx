@@ -12,7 +12,7 @@ export default function Achievement({ achievements, flash }) {
     const [announcements, setAnnouncements] = useState([]);
     const [announcementError, setAnnouncementError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 6; // Increased to 8 to show 4 cards per row across 2 rows
+    const itemsPerPage = 6;
 
     // Calculate pagination
     const totalPages = Math.ceil((achievements?.length || 0) / itemsPerPage);
@@ -40,12 +40,14 @@ export default function Achievement({ achievements, flash }) {
 
         const fetchData = async () => {
             try {
-                const metaResponse = await fetch('http://157.15.124.200/api/meta/prestasi');
+                // Fetch meta data
+                const metaResponse = await fetch('https://kemahasiswaanitdel.site/api/meta/prestasi');
                 if (!metaResponse.ok) throw new Error('Gagal mengambil data meta prestasi');
                 const metaData = await metaResponse.json();
                 setMetaData(metaData);
 
-                const announcementsResponse = await fetch('http://157.15.124.200/api/announcements');
+                // Fetch announcements
+                const announcementsResponse = await fetch('https://kemahasiswaanitdel.site/api/announcements');
                 if (!announcementsResponse.ok) throw new Error('Gagal mengambil data pengumuman');
                 const announcementsData = await announcementsResponse.json();
                 console.log('Announcements:', announcementsData.data); // Log to verify ID field
@@ -134,7 +136,7 @@ export default function Achievement({ achievements, flash }) {
         },
         sidebar: {
             width: '320px',
-            height:'630px',
+            height: '630px',
             padding: '24px',
             background: '#ffffff',
             borderRadius: '12px',
@@ -208,15 +210,15 @@ export default function Achievement({ achievements, flash }) {
         },
         achievementGrid: {
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', // Reduced min width to fit 4 cards
-            gap: '20px', // Slightly reduced gap for tighter layout
+            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+            gap: '20px',
             marginBottom: '40px',
         },
         achievementCard: {
             background: '#ffffff',
-            borderRadius: '10px', // Slightly smaller border radius
+            borderRadius: '10px',
             overflow: 'hidden',
-            boxShadow: '0 3px 5px -1px rgba(0, 0, 0, 0.1)', // Lighter shadow
+            boxShadow: '0 3px 5px -1px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e2e8f0',
             opacity: 0,
             transform: 'translateY(20px)',
@@ -229,7 +231,7 @@ export default function Achievement({ achievements, flash }) {
         },
         cardImageContainer: {
             position: 'relative',
-            height: '160px', // Reduced image height
+            height: '160px',
             overflow: 'hidden',
         },
         cardImage: {
@@ -249,10 +251,10 @@ export default function Achievement({ achievements, flash }) {
             transition: 'opacity 0.3s ease',
         },
         cardContent: {
-            padding: '16px', // Reduced padding
+            padding: '16px',
         },
         cardTitle: {
-            fontSize: '16px', // Smaller font size
+            fontSize: '16px',
             fontWeight: '600',
             color: '#1e293b',
             marginBottom: '6px',
@@ -263,7 +265,7 @@ export default function Achievement({ achievements, flash }) {
             lineHeight: '1.3',
         },
         cardDescription: {
-            fontSize: '13px', // Smaller font size
+            fontSize: '13px',
             color: '#64748b',
             marginBottom: '12px',
             display: '-webkit-box',
@@ -275,19 +277,19 @@ export default function Achievement({ achievements, flash }) {
         detailsContainer: {
             display: 'flex',
             flexDirection: 'column',
-            gap: '6px', // Reduced gap
+            gap: '6px',
         },
         cardDetail: {
-            fontSize: '12px', // Smaller font size
+            fontSize: '12px',
             color: '#64748b',
             display: 'flex',
             alignItems: 'center',
-            padding: '6px 10px', // Reduced padding
+            padding: '6px 10px',
             background: '#f8fafc',
             borderRadius: '5px',
         },
         cardDetailIcon: {
-            width: '14px', // Smaller icon
+            width: '14px',
             height: '14px',
             marginRight: '6px',
             color: '#3b82f6',
@@ -303,18 +305,18 @@ export default function Achievement({ achievements, flash }) {
         medalContainer: {
             display: 'flex',
             alignItems: 'center',
-            padding: '6px 10px', // Reduced padding
+            padding: '6px 10px',
             borderRadius: '6px',
             marginBottom: '10px',
         },
         medalIcon: {
-            width: '16px', // Smaller icon
+            width: '16px',
             height: '16px',
             marginRight: '6px',
         },
         medalLabel: {
             fontWeight: '600',
-            fontSize: '11px', // Smaller font size
+            fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
         },
@@ -324,34 +326,34 @@ export default function Achievement({ achievements, flash }) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '50px 30px', // Slightly smaller padding
+            padding: '50px 30px',
             background: '#ffffff',
             borderRadius: '10px',
             boxShadow: '0 3px 5px -1px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e2e8f0',
         },
         emptyStateIcon: {
-            width: '56px', // Smaller icon
+            width: '56px',
             height: '56px',
             color: '#cbd5e1',
             marginBottom: '12px',
         },
         emptyStateTitle: {
-            fontSize: '18px', // Smaller font size
+            fontSize: '18px',
             fontWeight: '600',
             color: '#475569',
             marginBottom: '6px',
         },
         emptyStateText: {
             color: '#64748b',
-            fontSize: '13px', // Smaller font size
+            fontSize: '13px',
             textAlign: 'center',
             lineHeight: '1.5',
         },
         metaCard: {
             background: '#ffffff',
             borderRadius: '10px',
-            padding: '30px 20px', // Slightly smaller padding
+            padding: '30px 20px',
             boxShadow: '0 3px 5px -1px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e2e8f0',
             textAlign: 'center',
@@ -365,12 +367,12 @@ export default function Achievement({ achievements, flash }) {
             marginTop: '30px',
         },
         paginationButton: {
-            padding: '6px 10px', // Smaller padding
+            padding: '6px 10px',
             borderRadius: '5px',
             border: '1px solid #e2e8f0',
             background: '#ffffff',
             color: '#64748b',
-            fontSize: '13px', // Smaller font size
+            fontSize: '13px',
             fontWeight: '500',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
@@ -390,7 +392,7 @@ export default function Achievement({ achievements, flash }) {
         },
         paginationInfo: {
             color: '#64748b',
-            fontSize: '13px', // Smaller font size
+            fontSize: '13px',
             fontWeight: '500',
             padding: '0 12px',
         },
@@ -696,7 +698,7 @@ export default function Achievement({ achievements, flash }) {
                                                             strokeLinecap="round"
                                                             strokeLinejoin="round"
                                                             strokeWidth={2}
-                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                         />
                                                     </svg>
                                                     <span style={styles.detailLabel}>Jenis:</span>
@@ -757,7 +759,7 @@ export default function Achievement({ achievements, flash }) {
                     <aside style={styles.sidebar}>
                         <div style={styles.sidebarTitle}>
                             <div style={styles.sidebarIcon}>
-                                <svg fill="currentColor" viewBox="0 0 20 20" style={{ width: '14px', height: '14x', color: '#ffffff' }}>
+                                <svg fill="currentColor" viewBox="0 0 20 20" style={{ width: '14px', height: '14px', color: '#ffffff' }}>
                                     <path
                                         fillRule="evenodd"
                                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -787,8 +789,8 @@ export default function Achievement({ achievements, flash }) {
                         ) : competitionAnnouncements.length > 0 ? (
                             competitionAnnouncements.map((announcement) => (
                                 <Link
-                                    key={announcement.id}
-                                    href={`/announcements/${announcement.id}`} // Fixed URL and ID field
+                                    key={announcement.announcement_id}
+                                    href={`/announcement/${announcement.announcement_id}`} // Sesuaikan dengan route announcement.show
                                     style={styles.announcementCard}
                                     onMouseEnter={(e) => Object.assign(e.target.style, styles.announcementCardHover)}
                                     onMouseLeave={(e) => Object.assign(e.target.style, styles.announcementCard)}

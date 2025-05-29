@@ -35,11 +35,6 @@ const FooterLayout = () => {
                                     Beranda
                                 </Link>
                             </li>
-                            {/* <li>
-                                <Link href="/about" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
-                                    Tentang Kami
-                                </Link>
-                            </li> */}
                             <li>
                                 <Link href="/news" className="text-sm text-gray-300 hover:text-blue-300 transition duration-200">
                                     Berita
