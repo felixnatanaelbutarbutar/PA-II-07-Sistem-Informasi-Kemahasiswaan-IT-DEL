@@ -252,7 +252,7 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                             >
                                                 <div className="font-medium">Unduhan</div>
                                                 <div className="text-xs text-gray-500">
-                                                    katakata
+                                                    Formulir dan Dokumen Akademik
                                                 </div>
                                             </Link>
                                         </div>

@@ -43,12 +43,38 @@ class AnnouncementController extends Controller
         ]);
     }
 
+    public function show($announcement_id)
+    {
+        try {
+            $announcement = Announcement::with(['category', 'createdBy', 'updatedBy'])
+                ->where('announcement_id', $announcement_id)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            Log::info('Announcement detail fetched:', ['announcement_id' => $announcement_id]);
+
+            return Inertia::render('AnnouncementDetail', [
+                'announcement' => $announcement,
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('Announcement not found:', ['announcement_id' => $announcement_id]);
+            return Inertia::render('AnnouncementDetail', [
+                'announcement' => null, // Mengirim null untuk menampilkan "Tidak Ditemukan"
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching announcement detail: ' . $e->getMessage());
+            return Inertia::render('AnnouncementDetail', [
+                'announcement' => null,
+            ]);
+        }
+    }
+
     private function generateAnnouncementId()
     {
         $lastAnnouncement = Announcement::orderBy('announcement_id', 'desc')->first();
 
         if ($lastAnnouncement) {
-            $lastIdNumber = (int) substr($lastAnnouncement->announcement_id, 3);
+            $lastIdNumber = (int)substr($lastAnnouncement->announcement_id, 3);
             $newIdNumber = $lastIdNumber + 1;
         } else {
             $newIdNumber = 1;
@@ -97,6 +123,7 @@ class AnnouncementController extends Controller
                 'file' => $filePath,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
+                'is_active' => true, // Pastikan default is_active adalah true
             ]);
         } catch (\Exception $e) {
             Log::error('Error creating announcement: ' . $e->getMessage());
@@ -177,16 +204,5 @@ class AnnouncementController extends Controller
         }
 
         return redirect()->route('admin.announcement.index')->with('success', 'Pengumuman berhasil dihapus.');
-    }
-
-    public function show($announcement_id)
-    {
-        $announcement = Announcement::with(['category', 'createdBy', 'updatedBy'])
-            ->where('announcement_id', $announcement_id)
-            ->firstOrFail();
-
-        return Inertia::render('AnnouncementDetail', [
-            'announcement' => $announcement,
-        ]);
     }
 }

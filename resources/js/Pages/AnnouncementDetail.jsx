@@ -1,48 +1,13 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import Navbar from '@/Layouts/Navbar';
 import FooterLayout from '@/Layouts/FooterLayout';
-import { Head, usePage, Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import 'react-quill/dist/quill.snow.css';
 
-export default function AnnouncementDetail() {
-    const { props } = usePage();
-    const announcementId = props.announcement_id || window.location.pathname.split('/').filter(Boolean).pop();
-    const [announcement, setAnnouncement] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+export default function AnnouncementDetail({ announcement }) {
+    const [isLoading, setIsLoading] = useState(false); // Tidak perlu loading karena data dari server
     const [error, setError] = useState(null);
-
-    useEffect(() => {
-        console.log('Current pathname:', window.location.pathname);
-        console.log('Extracted announcementId:', announcementId);
-
-        const fetchAnnouncement = async () => {
-            setIsLoading(true);
-            try {
-                console.log('Fetching announcement with ID:', announcementId);
-                const response = await fetch(`https://kemahasiswaanitdel.site/api/announcements/${announcementId}`);
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`Gagal mengambil detail pengumuman: ${response.status} ${response.statusText}`);
-                }
-                const data = await response.json();
-                console.log('Announcement data:', data);
-                setAnnouncement(data);
-            } catch (err) {
-                console.error('Fetch error:', err.message);
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        if (announcementId) {
-            fetchAnnouncement();
-        } else {
-            setError('ID pengumuman tidak ditemukan');
-            setIsLoading(false);
-        }
-    }, [announcementId]);
 
     const formatDate = (dateString) => {
         if (!dateString) return '';
@@ -213,21 +178,6 @@ export default function AnnouncementDetail() {
                 '& .ql-align-justify': { textAlign: 'justify' },
                 '& .ql-editor': { padding: '0', margin: '0' },
             },
-            loadingState: {
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '300px',
-            },
-            errorMessage: {
-                textAlign: 'center',
-                color: '#e53e3e',
-                padding: '20px',
-                background: 'rgba(255, 255, 255, 0.9)',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                marginBottom: '20px',
-            },
             notFound: {
                 textAlign: 'center',
                 padding: '40px',
@@ -260,100 +210,33 @@ export default function AnnouncementDetail() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    return (
-        <GuestLayout>
-            <Navbar showBreadcrumbAndHeader={false} />
-            <Head title={announcement?.title || "Detail Pengumuman"} />
-            <div style={styles.body}>
-                <div style={styles.container}>
-                    {/* Tombol Kembali */}
-                    <Link
-                        href="/announcement"
-                        className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6"
-                    >
-                        <svg
-                            className="w-5 h-5 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
+    if (!announcement) {
+        return (
+            <GuestLayout>
+                <Navbar showBreadcrumbAndHeader={false} />
+                <Head title="Detail Pengumuman" />
+                <div style={styles.body}>
+                    <div style={styles.container}>
+                        <Link
+                            href="/announcement"
+                            className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 19l-7-7 7-7"
-                            />
-                        </svg>
-                        Kembali ke Halaman Pengumuman
-                    </Link>
-
-                    {error && (
-                        <div style={styles.errorMessage}>
-                            {error}
-                        </div>
-                    )}
-
-                    {isLoading ? (
-                        <div style={styles.loadingState}>
                             <svg
-                                className="animate-spin h-10 w-10 text-blue-500"
-                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-5 h-5 mr-2"
                                 fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
                             >
-                                <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                />
                                 <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 19l-7-7 7-7"
                                 />
                             </svg>
-                        </div>
-                    ) : announcement ? (
-                        <div
-                            style={styles.detailContainer}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = styles.detailContainerHover.transform;
-                                e.currentTarget.style.boxShadow = styles.detailContainerHover.boxShadow;
-                                const img = e.currentTarget.querySelector('img');
-                                if (img) img.style.transform = styles.fileContainerHover.transform;
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'none';
-                                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                                const img = e.currentTarget.querySelector('img');
-                                if (img) img.style.transform = 'none';
-                            }}
-                        >
-                            <div style={styles.header}>
-                                {renderFile(announcement)}
-                                <div style={styles.headerContent}>
-                                    <div style={styles.category}>
-                                        {announcement.category?.category_name || "Uncategorized"}
-                                    </div>
-                                    <h1 style={styles.title}>
-                                        {announcement.title || "Tanpa Judul"}
-                                    </h1>
-                                    <div style={styles.meta}>
-                                        Dipublikasikan pada {formatDate(announcement.created_at)}
-                                    </div>
-                                </div>
-                            </div>
-                            <div
-                                className="ql-editor"
-                                style={styles.content}
-                                dangerouslySetInnerHTML={{ __html: announcement.content || "Tidak ada konten." }}
-                            />
-                        </div>
-                    ) : (
+                            Kembali ke Halaman Pengumuman
+                        </Link>
                         <div style={styles.notFound}>
                             <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -385,7 +268,74 @@ export default function AnnouncementDetail() {
                                 Kembali ke Halaman Pengumuman
                             </Link>
                         </div>
-                    )}
+                    </div>
+                </div>
+                <FooterLayout />
+            </GuestLayout>
+        );
+    }
+
+    return (
+        <GuestLayout>
+            <Navbar showBreadcrumbAndHeader={false} />
+            <Head title={announcement.title || "Detail Pengumuman"} />
+            <div style={styles.body}>
+                <div style={styles.container}>
+                    <Link
+                        href="/announcement"
+                        className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6"
+                    >
+                        <svg
+                            className="w-5 h-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 19l-7-7 7-7"
+                            />
+                        </svg>
+                        Kembali ke Halaman Pengumuman
+                    </Link>
+                    <div
+                        style={styles.detailContainer}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = styles.detailContainerHover.transform;
+                            e.currentTarget.style.boxShadow = styles.detailContainerHover.boxShadow;
+                            const img = e.currentTarget.querySelector('img');
+                            if (img) img.style.transform = styles.fileContainerHover.transform;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'none';
+                            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                            const img = e.currentTarget.querySelector('img');
+                            if (img) img.style.transform = 'none';
+                        }}
+                    >
+                        <div style={styles.header}>
+                            {renderFile(announcement)}
+                            <div style={styles.headerContent}>
+                                <div style={styles.category}>
+                                    {announcement.category?.category_name || "Uncategorized"}
+                                </div>
+                                <h1 style={styles.title}>
+                                    {announcement.title || "Tanpa Judul"}
+                                </h1>
+                                <div style={styles.meta}>
+                                    Dipublikasikan pada {formatDate(announcement.created_at)}
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            className="ql-editor"
+                            style={styles.content}
+                            dangerouslySetInnerHTML={{ __html: announcement.content || "Tidak ada konten." }}
+                        />
+                    </div>
                 </div>
             </div>
             <FooterLayout />
