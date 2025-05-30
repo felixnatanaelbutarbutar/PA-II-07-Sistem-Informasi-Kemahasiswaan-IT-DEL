@@ -6,11 +6,12 @@ export default function ChatbotWidget() {
         {
             role: 'bot',
             content:
-                'Hai! Selamat datang di layanan chatbot IT Del! Aku siap membantumu mencari informasi tentang beasiswa, organisasi, dan kegiatan kampus. Ada yang bisa kubantu?',
+                'Hai! Selamat datang di layanan chatbot IT Del! Aku siap membantumu mencari informasi tentang beasiswa, organisasi, dan kegiatan kampus. Pilih FAQ di bawah atau tanyakan langsung!',
         },
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [faqList, setFaqList] = useState([]);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const [isFocused, setIsFocused] = useState(false);
@@ -33,8 +34,31 @@ export default function ChatbotWidget() {
         if (isOpen) {
             scrollToBottom();
             inputRef.current?.focus();
+            // Ambil daftar FAQ saat widget dibuka
+            fetchFaqList();
         }
-    }, [messages, isOpen]);
+    }, [isOpen]);
+
+    // Fungsi untuk mengambil daftar FAQ dari API
+    const fetchFaqList = async () => {
+        try {
+            const response = await fetch('https://kemahasiswaanitdel.site/api/chatbot/faq');
+            if (!response.ok) throw new Error('Gagal mengambil daftar FAQ');
+            const data = await response.json();
+            if (data.status === 'success') {
+                setFaqList(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching FAQ list:', error);
+        }
+    };
+
+    // Fungsi untuk menangani klik FAQ
+    const handleFaqClick = (keyword, response) => {
+        const faqMessage = { role: 'bot', content: `**${keyword}**\n${response}` };
+        setMessages((prev) => [...prev, faqMessage]);
+        scrollToBottom();
+    };
 
     // Fungsi untuk mengirim pesan ke API
     const sendMessage = async (e) => {
@@ -47,11 +71,9 @@ export default function ChatbotWidget() {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/chatbot', {
+            const response = await fetch('https://kemahasiswaanitdel.site/api/chatbot', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: userMessage.content }),
             });
 
@@ -63,36 +85,23 @@ export default function ChatbotWidget() {
                     setMessages((prev) => [...prev, botMessage]);
                 }, 500);
             } else {
-                const errorMessage = {
-                    role: 'bot',
-                    content: `Maaf, terjadi kesalahan: ${data.message}`,
-                };
+                const errorMessage = { role: 'bot', content: `Maaf, terjadi kesalahan: ${data.message}` };
                 setTimeout(() => {
                     setMessages((prev) => [...prev, errorMessage]);
                 }, 500);
             }
         } catch (error) {
-            const errorMessage = {
-                role: 'bot',
-                content: 'Maaf, saya tidak dapat terhubung ke server. Silakan coba lagi nanti.',
-            };
+            const errorMessage = { role: 'bot', content: 'Maaf, saya tidak dapat terhubung ke server. Silakan coba lagi nanti.' };
             setTimeout(() => {
                 setMessages((prev) => [...prev, errorMessage]);
             }, 500);
         } finally {
-            setTimeout(() => {
-                setIsLoading(false);
-            }, 500);
+            setTimeout(() => setIsLoading(false), 500);
         }
     };
 
     const styles = {
-        widgetContainer: {
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            zIndex: 1000,
-        },
+        widgetContainer: { position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 },
         chatButton: {
             background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
             color: '#fff',
@@ -108,10 +117,7 @@ export default function ChatbotWidget() {
             height: '60px',
             transition: 'all 0.3s',
         },
-        chatButtonHover: {
-            transform: 'scale(1.1)',
-            boxShadow: '0 6px 20px rgba(59, 130, 246, 0.6)',
-        },
+        chatButtonHover: { transform: 'scale(1.1)', boxShadow: '0 6px 20px rgba(59, 130, 246, 0.6)' },
         chatContainer: {
             display: isOpen ? 'flex' : 'none',
             flexDirection: 'column',
@@ -148,19 +154,8 @@ export default function ChatbotWidget() {
             fontWeight: 'bold',
             fontSize: '14px',
         },
-        chatTitle: {
-            fontSize: '16px',
-            fontWeight: '600',
-            margin: '0',
-            flex: 1,
-        },
-        closeButton: {
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '20px',
-            cursor: 'pointer',
-        },
+        chatTitle: { fontSize: '16px', fontWeight: '600', margin: '0', flex: 1 },
+        closeButton: { background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer' },
         chatBox: {
             padding: '20px',
             flex: 1,
@@ -170,6 +165,22 @@ export default function ChatbotWidget() {
             scrollbarWidth: 'thin',
             scrollbarColor: '#d1d5db #f3f4f6',
         },
+        faqSection: {
+            marginBottom: '15px',
+            padding: '10px',
+            background: '#f9fafb',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+        },
+        faqTitle: { fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '8px' },
+        faqList: { listStyle: 'none', padding: '0', margin: '0' },
+        faqItem: {
+            padding: '8px 12px',
+            borderBottom: '1px solid #e5e7eb',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+        },
+        faqItemHover: { background: '#f3f4f6' },
         messageWrapper: {
             display: 'flex',
             flexDirection: 'column',
@@ -214,10 +225,7 @@ export default function ChatbotWidget() {
             borderTop: '1px solid #e5e7eb',
             background: 'rgba(249, 250, 251, 0.95)',
         },
-        form: {
-            display: 'flex',
-            gap: '10px',
-        },
+        form: { display: 'flex', gap: '10px' },
         input: {
             flex: 1,
             padding: '12px 18px',
@@ -229,10 +237,7 @@ export default function ChatbotWidget() {
             transition: 'all 0.3s',
             background: 'white',
         },
-        inputFocused: {
-            border: '2px solid #3b82f6',
-            boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.2)',
-        },
+        inputFocused: { border: '2px solid #3b82f6', boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.2)' },
         button: {
             padding: '0',
             width: '40px',
@@ -274,22 +279,10 @@ export default function ChatbotWidget() {
             margin: '0 3px',
             animation: 'bounce 1.4s infinite ease-in-out both',
         },
-        sendIcon: {
-            width: '20px',
-            height: '20px',
-        },
-        '@keyframes slideInLeft': {
-            '0%': { opacity: 0, transform: 'translateX(-20px)' },
-            '100%': { opacity: 1, transform: 'translateX(0)' },
-        },
-        '@keyframes slideInRight': {
-            '0%': { opacity: 0, transform: 'translateX(20px)' },
-            '100%': { opacity: 1, transform: 'translateX(0)' },
-        },
-        '@keyframes bounce': {
-            '0%, 80%, 100%': { transform: 'scale(0)' },
-            '40%': { transform: 'scale(1.0)' },
-        },
+        sendIcon: { width: '20px', height: '20px' },
+        '@keyframes slideInLeft': {},
+        '@keyframes slideInRight': {},
+        '@keyframes bounce': {},
     };
 
     // Add keyframes to document
@@ -297,23 +290,12 @@ export default function ChatbotWidget() {
         const styleSheet = document.createElement('style');
         styleSheet.type = 'text/css';
         styleSheet.innerText = `
-            @keyframes slideInLeft {
-                0% { opacity: 0; transform: translateX(-20px); }
-                100% { opacity: 1; transform: translateX(0); }
-            }
-            @keyframes slideInRight {
-                0% { opacity: 0; transform: translateX(20px); }
-                100% { opacity: 1; transform: translateX(0); }
-            }
-            @keyframes bounce {
-                0%, 80%, 100% { transform: scale(0); }
-                40% { transform: scale(1.0); }
-            }
+            @keyframes slideInLeft { 0% { opacity: 0; transform: translateX(-20px); } 100% { opacity: 1; transform: translateX(0); } }
+            @keyframes slideInRight { 0% { opacity: 0; transform: translateX(20px); } 100% { opacity: 1; transform: translateX(0); } }
+            @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         `;
         document.head.appendChild(styleSheet);
-        return () => {
-            document.head.removeChild(styleSheet);
-        };
+        return () => document.head.removeChild(styleSheet);
     }, []);
 
     const getTime = () => {
@@ -323,7 +305,6 @@ export default function ChatbotWidget() {
 
     return (
         <div style={styles.widgetContainer}>
-            {/* Tombol Chatbot */}
             <button
                 style={styles.chatButton}
                 onClick={() => setIsOpen(!isOpen)}
@@ -334,44 +315,44 @@ export default function ChatbotWidget() {
                 }}
             >
                 {isOpen ? (
-                    <svg
-                        style={{ width: '24px', height: '24px' }}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
+                    <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 ) : (
-                    <svg
-                        style={{ width: '24px', height: '24px' }}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                        />
+                    <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                 )}
             </button>
 
-            {/* Chatbot Widget */}
             <div style={styles.chatContainer}>
                 <div style={styles.chatHeader}>
                     <div style={styles.chatIcon}>D</div>
                     <h2 style={styles.chatTitle}>IT Del Assistant</h2>
-                    <button style={styles.closeButton} onClick={() => setIsOpen(false)}>
-                        ×
-                    </button>
+                    <button style={styles.closeButton} onClick={() => setIsOpen(false)}>×</button>
                 </div>
 
                 <div style={styles.chatBox}>
+                    {/* FAQ Section */}
+                    {faqList.length > 0 && (
+                        <div style={styles.faqSection}>
+                            <h3 style={styles.faqTitle}>Pertanyaan Umum (FAQ)</h3>
+                            <ul style={styles.faqList}>
+                                {faqList.map((faq, index) => (
+                                    <li
+                                        key={index}
+                                        style={styles.faqItem}
+                                        onClick={() => handleFaqClick(faq.keyword, faq.response)}
+                                        onMouseEnter={(e) => Object.assign(e.currentTarget.style, styles.faqItemHover)}
+                                        onMouseLeave={(e) => Object.assign(e.currentTarget.style, styles.faqItem)}
+                                    >
+                                        {faq.keyword}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
                     {messages.map((message, index) => (
                         <div
                             key={index}
@@ -385,12 +366,7 @@ export default function ChatbotWidget() {
                                     ...styles.messageBubble,
                                     ...(message.role === 'user' ? styles.userMessage : styles.botMessage),
                                 }}
-                                dangerouslySetInnerHTML={{
-                                    __html:
-                                        message.role === 'bot'
-                                            ? parseMarkdown(message.content)
-                                            : message.content,
-                                }}
+                                dangerouslySetInnerHTML={{ __html: message.role === 'bot' ? parseMarkdown(message.content) : message.content }}
                             />
                             <div
                                 style={{
@@ -423,31 +399,21 @@ export default function ChatbotWidget() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Tanyakan sesuatu..."
-                            style={{
-                                ...styles.input,
-                                ...(isFocused ? styles.inputFocused : {}),
-                            }}
+                            style={{ ...styles.input, ...(isFocused ? styles.inputFocused : {}) }}
                             disabled={isLoading}
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => setIsFocused(false)}
                         />
                         <button
                             type="submit"
-                            style={{
-                                ...styles.button,
-                                ...(isLoading ? styles.buttonDisabled : {}),
-                            }}
+                            style={{ ...styles.button, ...(isLoading ? styles.buttonDisabled : {}) }}
                             disabled={isLoading}
-                            onMouseEnter={(e) =>
-                                !isLoading && Object.assign(e.currentTarget.style, styles.buttonHover)
-                            }
+                            onMouseEnter={(e) => !isLoading && Object.assign(e.currentTarget.style, styles.buttonHover)}
                             onMouseLeave={(e) => {
                                 if (!isLoading) {
-                                    e.currentTarget.style.background =
-                                        'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)';
+                                    e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)';
                                     e.currentTarget.style.transform = 'none';
-                                    e.currentTarget.style.boxShadow =
-                                        '0 3px 10px rgba(59, 130, 246, 0.4)';
+                                    e.currentTarget.style.boxShadow = '0 3px 10px rgba(59, 130, 246, 0.4)';
                                 }
                             }}
                         >
@@ -463,28 +429,9 @@ export default function ChatbotWidget() {
                                     }}
                                 ></div>
                             ) : (
-                                <svg
-                                    style={styles.sendIcon}
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        d="M22 2L11 13"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                    <path
-                                        d="M22 2L15 22L11 13L2 9L22 2Z"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
+                                <svg style={styles.sendIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             )}
                         </button>

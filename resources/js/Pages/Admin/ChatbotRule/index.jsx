@@ -236,16 +236,16 @@ export default function Index({ auth, userRole, permissions, navigation, chatbot
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                Kelola Aturan Chatbot
+                                Kelola FAQ
                             </h1>
-                            <p className="text-gray-500 mt-1">Kelola aturan untuk chatbot</p>
+                            <p className="text-gray-500 mt-1">Kelola pertanyaan yang sering ditanyakan</p>
                         </div>
                         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                             {/* Search Bar */}
                             <div className="relative flex-grow md:flex-grow-0 md:w-64">
                                 <input
                                     type="text"
-                                    placeholder="Cari aturan chatbot..."
+                                    placeholder="Cari FAQ..."
                                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10 transition-all duration-300"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -311,7 +311,7 @@ export default function Index({ auth, userRole, permissions, navigation, chatbot
                                         d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                     />
                                 </svg>
-                                Tambah Aturan Chatbot
+                                Tambah FAQ
                             </Link>
                         </div>
                     </div>
@@ -390,12 +390,12 @@ export default function Index({ auth, userRole, permissions, navigation, chatbot
                             </svg>
                         </div>
                         <h3 className="text-xl font-medium text-gray-700 mb-2">
-                            {searchQuery ? 'Tidak ada hasil pencarian' : 'Tidak ada aturan chatbot yang tersedia'}
+                            {searchQuery ? 'Tidak ada hasil pencarian' : 'Tidak ada FAQ yang tersedia'}
                         </h3>
                         <p className="text-gray-500 text-center max-w-md mb-6">
                             {searchQuery
-                                ? 'Tidak ada aturan chatbot yang cocok dengan pencarian Anda.'
-                                : 'Silakan tambahkan aturan chatbot baru untuk mulai mengatur respons otomatis.'}
+                                ? 'Tidak ada FAQ yang cocok dengan pencarian Anda.'
+                                : 'Silakan tambahkan FAQ baru untuk mulai mengatur respons otomatis.'}
                         </p>
                         {searchQuery ? (
                             <button
@@ -437,7 +437,7 @@ export default function Index({ auth, userRole, permissions, navigation, chatbot
                                         d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                                     />
                                 </svg>
-                                Tambah Aturan Chatbot Baru
+                                Tambah FAQ Baru
                             </Link>
                         )}
                     </div>

@@ -19,14 +19,32 @@ class ChatbotController extends Controller
     }
 
     /**
+     * Endpoint untuk mengambil daftar FAQ
+     */
+    public function getFaq()
+    {
+        try {
+            $faqList = DB::table('chatbot_rules')->select('keyword', 'response')->get();
+            return response()->json([
+                'status' => 'success',
+                'data' => $faqList,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching FAQ list: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mengambil daftar FAQ',
+            ], 500);
+        }
+    }
+
+    /**
      * Chatbot endpoint
      */
     public function chat(Request $request)
     {
         // Validasi input
-        $request->validate([
-            'message' => 'required|string',
-        ]);
+        $request->validate(['message' => 'required|string']);
 
         $userMessage = $request->input('message');
         $userMessageLower = strtolower($userMessage);
@@ -78,22 +96,12 @@ class ChatbotController extends Controller
             try {
                 $client = new Client();
                 $response = $client->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . env('GOOGLE_GEMINI_API_KEY'), [
-                    'headers' => [
-                        'Content-Type' => 'application/json',
-                    ],
+                    'headers' => ['Content-Type' => 'application/json'],
                     'json' => [
                         'contents' => [
-                            [
-                                'parts' => [
-                                    ['text' => $systemPrompt],
-                                    ['text' => $userMessage],
-                                ],
-                            ],
+                            ['parts' => [['text' => $systemPrompt], ['text' => $userMessage]]],
                         ],
-                        'generationConfig' => [
-                            'temperature' => 0.5,
-                            'maxOutputTokens' => 150,
-                        ],
+                        'generationConfig' => ['temperature' => 0.5, 'maxOutputTokens' => 150],
                     ],
                 ]);
 
@@ -103,10 +111,7 @@ class ChatbotController extends Controller
                 // Gabungkan jawaban awal dengan jawaban yang diperkaya
                 $finalReply = $reply . " " . $enhancedResponse;
 
-                return response()->json([
-                    'status' => 'success',
-                    'reply' => $finalReply,
-                ]);
+                return response()->json(['status' => 'success', 'reply' => $finalReply]);
             } catch (\Exception $e) {
                 Log::error('Chatbot Enhancement Error: ' . $e->getMessage(), [
                     'exception' => $e,
@@ -114,10 +119,7 @@ class ChatbotController extends Controller
                 ]);
 
                 // Jika gagal memperkaya, kembalikan jawaban awal saja
-                return response()->json([
-                    'status' => 'success',
-                    'reply' => $reply,
-                ]);
+                return response()->json(['status' => 'success', 'reply' => $reply]);
             }
         }
 
@@ -127,42 +129,24 @@ class ChatbotController extends Controller
         try {
             $client = new Client();
             $response = $client->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . env('GOOGLE_GEMINI_API_KEY'), [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
+                'headers' => ['Content-Type' => 'application/json'],
                 'json' => [
-                    'contents' => [
-                        [
-                            'parts' => [
-                                ['text' => $systemPrompt],
-                                ['text' => $userMessage],
-                            ],
-                        ],
-                    ],
-                    'generationConfig' => [
-                        'temperature' => 0.5,
-                        'maxOutputTokens' => 150,
-                    ],
+                    'contents' => [['parts' => [['text' => $systemPrompt], ['text' => $userMessage]]]],
+                    'generationConfig' => ['temperature' => 0.5, 'maxOutputTokens' => 150],
                 ],
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
             $botReply = $data['candidates'][0]['content']['parts'][0]['text'];
 
-            return response()->json([
-                'status' => 'success',
-                'reply' => $botReply,
-            ]);
+            return response()->json(['status' => 'success', 'reply' => $botReply]);
         } catch (\Exception $e) {
             Log::error('Chatbot Error: ' . $e->getMessage(), [
                 'exception' => $e,
                 'user_message' => $userMessage,
             ]);
 
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan saat menghubungi chatbot: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan saat menghubungi chatbot: ' . $e->getMessage()], 500);
         }
     }
 }

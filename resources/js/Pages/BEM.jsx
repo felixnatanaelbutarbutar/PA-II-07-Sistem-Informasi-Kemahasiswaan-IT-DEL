@@ -16,7 +16,7 @@ export default function BEM() {
         const fetchBemData = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch('http://localhost:8000/api/bem'); // Sesuaikan dengan URL API Anda
+                const response = await fetch('https://kemahasiswaanitdel.site/api/bem'); // Sesuaikan dengan URL API Anda
                 if (!response.ok) {
                     throw new Error('Gagal mengambil data BEM');
                 }

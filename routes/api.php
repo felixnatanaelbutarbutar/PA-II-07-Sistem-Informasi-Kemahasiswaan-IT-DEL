@@ -55,28 +55,32 @@ Route::get('/announcements', [AnnouncementController::class, 'index']);
 Route::get('/announcements/{announcement_id}', [AnnouncementController::class, 'show']);
 Route::get('/announcement-categories', [AnnouncementCategoryController::class, 'index']);
 
-// Route untuk BEM
+// Route untuk FAQ
+Route::post('/chatbot', [ChatbotController::class, 'chat']);
+Route::get('/chatbot/faq', [ChatbotController::class, 'getFaq']);
+
+// Route API untuk BEM
 Route::get('/bem', [BemController::class, 'show'])->name('api.bem.show');
+
+// Route API untuk KALENDER KEGIATAN
+Route::get('/activities', [ActivityController::class, 'index']);
+Route::get('/activities/active', [ActivityController::class, 'active']);
+Route::get('/activities/nearest', [ActivityController::class, 'nearest']);
+
 
 Route::get('/achievements-grouped', [AchievementController::class, 'getGroupedAchievements']);
 
-
-// Route untuk Chatbot
-Route::post('/chatbot', [ChatbotController::class, 'chat']);
 
 Route::get('/achievements-grouped', [AchievementController::class, 'getGroupedAchievements']);
 
 Route::get('/carousel/guest', [CarouselController::class, 'guestIndex'])->name('api.carousel.guest.index');
 
 // Route untuk Aspiration Categories (for Dashboard statistics)
-Route::get('/aspiration-categories', [DashboardController::class, 'getAspirationCategories'])->name('api.aspiration-categories');
+Route::get('`/aspiration-categories`', [DashboardController::class, 'getAspirationCategories'])->name('api.aspiration-categories');
 
 // Route untuk Meta (ambil berdasarkan key)
 Route::get('/meta/{key}', [\App\Http\Controllers\Api\MetaController::class, 'getByKey']);
 
-Route::get('/activities', [ActivityController::class, 'index']);
-Route::get('/activities/active', [ActivityController::class, 'active']);
-Route::get('/activities/nearest', [ActivityController::class, 'nearest']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
