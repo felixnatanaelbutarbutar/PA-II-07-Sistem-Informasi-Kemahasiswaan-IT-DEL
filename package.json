@@ -4,7 +4,7 @@
     "scripts": {
         "dev": "vite",
         "serve": "concurrently \"php artisan serve\" \"npm run dev\"",
-        "build": "vite build",
+        "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
         "lint": "eslint resources/js --ext .js,.jsx --ignore-path .gitignore --fix"
     },
     "devDependencies": {
