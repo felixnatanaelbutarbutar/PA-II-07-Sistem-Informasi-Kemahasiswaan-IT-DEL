@@ -66,7 +66,7 @@ class CarouselController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:10240',
+            'image' => 'required|file|mimes:jpeg,png,jpg,gif,svg,bmp|max:10240', // Added bmp
             'order' => [
                 'required',
                 'integer',
@@ -169,7 +169,7 @@ class CarouselController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:10240',
+            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,bmp|max:10240', // Added bmp
             'order' => [
                 'required',
                 'integer',

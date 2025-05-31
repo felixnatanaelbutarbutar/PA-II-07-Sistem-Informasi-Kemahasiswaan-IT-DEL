@@ -295,7 +295,7 @@ export default function CarouselAdd({ auth, userRole, permissions, menu, flash, 
                                 </label>
                                 <input
                                     type="file"
-                                    accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml"
+                                    accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml,image/bmp" // Added image/bmp
                                     onChange={handleImageChange}
                                     className={`mt-1 block w-full rounded-lg px-4 py-3 border transition ${
                                         errors.image
