@@ -76,7 +76,7 @@ Route::get('/achievements-grouped', [AchievementController::class, 'getGroupedAc
 Route::get('/carousel/guest', [CarouselController::class, 'guestIndex'])->name('api.carousel.guest.index');
 
 // Route untuk Aspiration Categories (for Dashboard statistics)
-Route::get('`/aspiration-categories`', [DashboardController::class, 'getAspirationCategories'])->name('api.aspiration-categories');
+Route::get('/aspiration-categories', [DashboardController::class, 'getAspirationCategories'])->name('api.aspiration-categories');
 
 // Route untuk Meta (ambil berdasarkan key)
 Route::get('/meta/{key}', [\App\Http\Controllers\Api\MetaController::class, 'getByKey']);

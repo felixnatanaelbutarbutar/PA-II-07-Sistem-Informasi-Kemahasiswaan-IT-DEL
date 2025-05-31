@@ -31,6 +31,19 @@ export default function ScholarshipIndex() {
         }
     }, [isStudent, auth.user?.token]);
 
+    // Buat daftar kategori unik dengan category_id dan category_name
+    const categories = Array.from(
+        new Map(
+            scholarships.map(scholarship => [
+                scholarship.category_id,
+                {
+                    category_id: scholarship.category_id,
+                    category_name: scholarship.category_name,
+                },
+            ])
+        ).values()
+    ).filter(category => category.category_id !== '-' && category.category_name !== '-');
+
     // Filter scholarships based on search term and category
     const filteredScholarships = scholarships.filter((scholarship) => {
         const matchesSearch =
@@ -96,7 +109,7 @@ export default function ScholarshipIndex() {
                 justifyContent: 'center',
                 gap: '20px',
                 marginBottom: '32px',
-                flexWrap: 'wrap', // Responsif untuk layar kecil
+                flexWrap: 'wrap',
             },
             searchInput: {
                 width: width <= 768 ? '100%' : '60%',
@@ -111,7 +124,7 @@ export default function ScholarshipIndex() {
                     borderColor: '#1e40af',
                     boxShadow: '0 4px 12px rgba(30, 64, 175, 0.2)',
                 },
-                minWidth: '200px', // Minimum width untuk konsistensi
+                minWidth: '200px',
             },
             filterSelect: {
                 padding: '14px 20px',
@@ -129,8 +142,7 @@ export default function ScholarshipIndex() {
             },
             grid: {
                 display: 'grid',
-                // Ubah menjadi fixed 4 kolom per baris
-                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(4, 1fr)', // 4 kolom tetap untuk layar besar
+                gridTemplateColumns: width <= 768 ? '1fr' : 'repeat(4, 1fr)',
                 gap: width <= 768 ? '16px' : '24px',
                 padding: '16px',
             },
@@ -144,8 +156,8 @@ export default function ScholarshipIndex() {
                 flexDirection: 'column',
                 height: '100%',
                 overflow: 'hidden',
-                width: '100%', // Pastikan card mengambil lebar sesuai grid
-                boxSizing: 'border-box', // Hindari overflow karena padding/border
+                width: '100%',
+                boxSizing: 'border-box',
             },
             cardHover: {
                 transform: 'translateY(-6px)',
@@ -155,7 +167,7 @@ export default function ScholarshipIndex() {
             cardImage: {
                 width: '100%',
                 height: 0,
-                paddingBottom: '160.78%', // Tetap rasio 9:16
+                paddingBottom: '160.78%',
                 objectFit: 'cover',
                 borderRadius: '8px',
                 marginBottom: '12px',
@@ -326,9 +338,9 @@ export default function ScholarshipIndex() {
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         >
                             <option value="Semua">Semua Kategori</option>
-                            {[...new Set(scholarships.map(scholarship => scholarship.category_id))].map((category) => (
-                                <option key={category} value={category}>
-                                    {category}
+                            {categories.map((category) => (
+                                <option key={category.category_id} value={category.category_id}>
+                                    {category.category_name}
                                 </option>
                             ))}
                         </select>

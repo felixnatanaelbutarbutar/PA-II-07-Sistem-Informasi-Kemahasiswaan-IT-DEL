@@ -42,6 +42,30 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
     const [bookedSlots, setBookedSlots] = useState([]);
     const [flash, setFlash] = useState(initialFlash || {});
     const [activeTab, setActiveTab] = useState('info');
+    const [metaData, setMetaData] = useState(null); // State untuk data meta
+    const [metaError, setMetaError] = useState(null); // State untuk error meta
+    const [isMetaLoading, setIsMetaLoading] = useState(true); // State untuk loading meta
+
+    // Fetch meta data when component mounts
+    useEffect(() => {
+        const fetchMetaData = async () => {
+            setIsMetaLoading(true);
+            try {
+                const metaResponse = await fetch('https://kemahasiswaanitdel.site/api/meta/konseling');
+                if (!metaResponse.ok) {
+                    throw new Error('Gagal mengambil data meta konseling');
+                }
+                const metaData = await metaResponse.json();
+                setMetaData(metaData);
+            } catch (err) {
+                setMetaError(err.message);
+            } finally {
+                setIsMetaLoading(false);
+            }
+        };
+
+        fetchMetaData();
+    }, []);
 
     useEffect(() => {
         if (redirectToLogin) {
@@ -244,59 +268,6 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
                         width: 100%;
                     }
-                    .page-header {
-                        text-align: center;
-                        margin-bottom: 40px;
-                        width: 100%;
-                        max-width: 1400px;
-                        position: relative;
-                        padding: 50px 20px;
-                        background: #ffffff;
-                        border-radius: 20px;
-                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-                        overflow: hidden;
-                        border: 1px solid #e0f2fe;
-                    }
-                    .page-header:before {
-                        content: '';
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(2, 132, 199, 0.1) 100%);
-                        z-index: 0;
-                    }
-                    .page-header h1 {
-                        font-size: 48px;
-                        font-weight: 800;
-                        color: #0369a1;
-                        margin-bottom: 15px;
-                        position: relative;
-                        z-index: 1;
-                        animation: slideIn 1s ease;
-                    }
-                    .page-header p {
-                        font-size: 18px;
-                        color: #475569;
-                        max-width: 800px;
-                        margin: 0 auto;
-                        line-height: 1.6;
-                        position: relative;
-                        z-index: 1;
-                    }
-                    .page-header .header-illustration {
-                        position: absolute;
-                        top: 10px;
-                        right: 10px;
-                        width: 120px;
-                        opacity: 0.15;
-                        z-index: 0;
-                    }
-                    @keyframes slideIn {
-                        from { opacity: 0; transform: translateY(-20px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
                     .tab-navigation {
                         display: flex;
                         justify-content: center;
@@ -343,12 +314,143 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         transition: all 0.3s ease;
                         animation: fadeIn 0.5s ease;
                     }
-                    @keyframes fadeIn {
-                        from { opacity: 0; transform: translateY(10px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
                     .info-section {
                         text-align: center;
+                    }
+                    .info-section .meta-container {
+                        position: relative;
+                        background: #ffffff;
+                        border-radius: 20px;
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+                        padding: 40px;
+                        text-align: center;
+                        overflow: hidden;
+                        border: 1px solid #e0f2fe;
+                        transition: transform 0.3s ease;
+                    }
+                    .info-section .meta-container:hover {
+                        transform: translateY(-5px);
+                        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+                    }
+                    .info-section .meta-container::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(2, 132, 199, 0.1) 100%);
+                        z-index: 0;
+                    }
+                    .info-section .meta-content {
+                        position: relative;
+                        z-index: 1;
+                    }
+                    .info-section .meta-icon {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 64px;
+                        height: 64px;
+                        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                        border-radius: 50%;
+                        margin-bottom: 20px;
+                        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+                        animation: bounceIn 1s ease;
+                    }
+                    @keyframes bounceIn {
+                        0% { transform: scale(0); opacity: 0; }
+                        60% { transform: scale(1.2); opacity: 1; }
+                        100% { transform: scale(1); }
+                    }
+                    .info-section .meta-icon svg {
+                        width: 32px;
+                        height: 32px;
+                        color: #ffffff;
+                    }
+                    .info-section .meta-title {
+                        font-size: 36px;
+                        font-weight: 800;
+                        color: #0369a1;
+                        margin-bottom: 15px;
+                        animation: slideIn 1s ease;
+                    }
+                    .info-section .meta-description {
+                        font-size: 18px;
+                        color: #475569;
+                        max-width: 800px;
+                        margin: 0 auto 30px;
+                        line-height: 1.6;
+                        animation: fadeIn 1s ease 0.3s forwards;
+                        opacity: 0;
+                    }
+                    .info-section .meta-image-container {
+                        margin-top: 0;
+                        display: flex;
+                        justify-content: center;
+                    }
+                    .info-section .meta-image {
+                        max-width: 300px;
+                        max-height: 300px;
+                        border-radius: 15px;
+                        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+                        transition: transform 0.3s ease;
+                        object-fit: cover;
+                    }
+                    .info-section .meta-image:hover {
+                        transform: scale(1.05);
+                    }
+                    .info-section .meta-error {
+                        background: #fef2f2;
+                        border: 1px solid #fee2e2;
+                        border-radius: 15px;
+                        padding: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 10px;
+                        color: #dc2626;
+                        font-size: 16px;
+                        font-weight: 500;
+                    }
+                    .info-section .meta-loading {
+                        background: #f0f9ff;
+                        border-radius: 15px;
+                        padding: 40px;
+                        text-align: center;
+                    }
+                    .info-section .meta-loading .spinner {
+                        width: 64px;
+                        height: 64px;
+                        border: 4px solid #e0f2fe;
+                        border-top: 4px solid #0ea5e9;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto 20px;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                    .info-section .meta-loading .placeholder {
+                        height: 24px;
+                        background: #e0f2fe;
+                        border-radius: 8px;
+                        margin: 10px auto;
+                        animation: pulse 1.5s infinite;
+                    }
+                    .info-section .meta-loading .placeholder.title {
+                        width: 50%;
+                        max-width: 300px;
+                    }
+                    .info-section .meta-loading .placeholder.description {
+                        width: 70%;
+                        max-width: 500px;
+                    }
+                    @keyframes pulse {
+                        0% { opacity: 0.6; }
+                        50% { opacity: 1; }
+                        100% { opacity: 0.6; }
                     }
                     .info-section h2 {
                         font-size: 32px;
@@ -656,8 +758,8 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                         text-align: center;
                         margin-bottom: 20px;
                         position: relative;
-                        display: block; /* Changed from inline-block to block */
-                        width: 100%; /* Ensure it takes full width */
+                        display: block;
+                        width: 100%;
                         margin-left: auto;
                         margin-right: auto;
                     }
@@ -903,23 +1005,14 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                             width: 100%;
                             max-width: 340px;
                         }
+                        .info-section .meta-image {
+                            max-width: 250px;
+                            max-height: 250px;
+                        }
                     }
                     @media (max-width: 768px) {
                         .main-container {
                             padding: 30px 15px;
-                        }
-                        .page-header {
-                            padding: 30px 15px;
-                            max-width: 100%;
-                        }
-                        .page-header h1 {
-                            font-size: 32px;
-                        }
-                        .page-header p {
-                            font-size: 16px;
-                        }
-                        .page-header .header-illustration {
-                            width: 100px;
                         }
                         .tab-navigation {
                             flex-wrap: wrap;
@@ -986,6 +1079,18 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
                             font-size: 10px;
                             padding: 2px 4px !important;
                         }
+                        .info-section .meta-image {
+                            max-width: 200px;
+                            max-height: 200px;
+                        }
+                    }
+                    @keyframes slideIn {
+                        from { opacity: 0; transform: translateY(-20px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
                     }
                 `}
             </style>
@@ -1034,64 +1139,100 @@ export default function Counseling({ auth, flash: initialFlash, errors: serverEr
 
                 {activeTab === 'info' && (
                     <div className="content-section info-section">
-                        <h2>Pentingnya Konseling</h2>
-                        <p>
-                            Konseling adalah proses yang membantu individu mengatasi tantangan emosional, psikologis, atau sosial. Dengan bimbingan konselor, Anda dapat menemukan solusi untuk masalah yang memengaruhi kesejahteraan dan produktivitas Anda.
-                        </p>
-                        <h3>Manfaat Bimbingan dan Konseling</h3>
-                        <div className="info-cards">
-                            <div className="info-card">
-                                <img
-                                    src="/assets/images/icon/graduated-student-svgrepo-com.svg"
-                                    alt="Academic Support Icon"
-                                />
-                                <h3>Dukungan Akademik</h3>
-                                <p>
-                                    Membantu Anda mengatasi tantangan akademik, seperti kesulitan belajar, manajemen waktu, atau tekanan ujian, untuk mencapai potensi maksimal.
-                                </p>
+                        {metaError ? (
+                            <div className="meta-error">
+                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                {metaError}
                             </div>
-                            <div className="info-card">
-                                <img
-                                    src="/assets/images/icon/brain-inside-head-think-mentality-brain-svgrepo-com.svg"
-                                    alt="Emotional Wellbeing Icon"
-                                />
-                                <h3>Kesejahteraan Emosional</h3>
-                                <p>
-                                    Memberikan ruang aman untuk mengekspresikan emosi, mengelola stres, dan membangun ketahanan emosional.
-                                </p>
+                        ) : isMetaLoading ? (
+                            <div className="meta-loading">
+                                <div className="spinner"></div>
+                                <div className="placeholder title"></div>
+                                <div className="placeholder description"></div>
                             </div>
-                            <div className="info-card">
-                                <img
-                                    src="/assets/images/icon/strategy-project-develop-idea-svgrepo-com.svg"
-                                    alt="Personal Development Icon"
-                                />
-                                <h3>Pengembangan Diri</h3>
-                                <p>
-                                    Mendukung Anda dalam menemukan tujuan, meningkatkan kepercayaan diri, dan mengembangkan keterampilan interpersonal.
-                                </p>
+                        ) : (
+                            <div className="meta-container">
+                                <div className="meta-content">
+                                    <div className="meta-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                        </svg>
+                                    </div>
+                                    <h2 className="meta-title">{metaData.meta_title || 'Pentingnya Konseling'}</h2>
+                                    <div
+                                        className="meta-description"
+                                        dangerouslySetInnerHTML={{ __html: metaData.meta_description || 'Konseling adalah proses yang membantu individu mengatasi tantangan emosional, psikologis, atau sosial. Dengan bimbingan konselor, Anda dapat menemukan solusi untuk masalah yang memengaruhi kesejahteraan dan produktivitas Anda.' }}
+                                    />
+                                    {metaData.file_path && (
+                                        <div className="meta-image-container">
+                                            <img
+                                                src={`/storage/${metaData.file_path}`}
+                                                alt="Counselor Image"
+                                                className="meta-image"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                        <h3>Masalah yang Dapat Dibahas dalam Konseling</h3>
-                        <ul>
-                            <li><strong>Kecemasan:</strong> Mengatasi rasa cemas berlebih yang mengganggu aktivitas sehari-hari.</li>
-                            <li><strong>Stres:</strong> Menemukan strategi untuk mengelola tekanan dari berbagai aspek kehidupan.</li>
-                            <li><strong>Kejenuhan:</strong> Mengatasi rasa bosan atau kehilangan motivasi dalam studi atau kegiatan.</li>
-                            <li><strong>Masalah Asrama:</strong> Menyelesaikan konflik dengan teman sekamar atau menyesuaikan diri dengan lingkungan asrama.</li>
-                            <li><strong>Masalah Perkuliahan:</strong> Mengatasi tantangan akademik, seperti kesulitan belajar atau tekanan tugas.</li>
-                            <li><strong>Masalah Relasi:</strong> Memperbaiki hubungan dengan teman, keluarga, atau pasangan.</li>
-                        </ul>
-                        <p className="quote">
-                            "Saat masalah Anda sudah mengganggu aktivitas atau produktivitas sehari-hari, jangan ragu untuk mengakses atau menghubungi layanan konseling."
-                        </p>
-                        <div className="location-card">
-                            <img
-                                src="https://img.icons8.com/color/96/000000/marker.png"
-                                alt="Location Icon"
-                            />
-                            <h3>Lokasi Ruangan Konseling</h3>
-                            <p>
-                                Gedung 5, Lantai 2 (di antara Gedung 525 dan 526). Silakan datang 10 menit sebelum sesi dimulai.
+                        )}
+                        <div className="content-section info-section">
+                            <h2>Manfaat Bimbingan dan Konseling</h2>
+                            <div className="info-cards">
+                                <div className="info-card">
+                                    <img
+                                        src="/assets/images/icon/graduated-student-svgrepo-com.svg"
+                                        alt="Academic Support Icon"
+                                    />
+                                    <h3>Dukungan Akademik</h3>
+                                    <p>
+                                        Membantu Anda mengatasi tantangan akademik, seperti kesulitan belajar, manajemen waktu, atau tekanan ujian, untuk mencapai potensi maksimal.
+                                    </p>
+                                </div>
+                                <div className="info-card">
+                                    <img
+                                        src="/assets/images/icon/brain-inside-head-think-mentality-brain-svgrepo-com.svg"
+                                        alt="Emotional Wellbeing Icon"
+                                    />
+                                    <h3>Kesejahteraan Emosional</h3>
+                                    <p>
+                                        Memberikan ruang aman untuk mengekspresikan emosi, mengelola stres, dan membangun ketahanan emosional.
+                                    </p>
+                                </div>
+                                <div className="info-card">
+                                    <img
+                                        src="/assets/images/icon/strategy-project-develop-idea-svgrepo-com.svg"
+                                        alt="Personal Development Icon"
+                                    />
+                                    <h3>Pengembangan Diri</h3>
+                                    <p>
+                                        Mendukung Anda dalam menemukan tujuan, meningkatkan kepercayaan diri, dan mengembangkan keterampilan interpersonal.
+                                    </p>
+                                </div>
+                            </div>
+                            <h3>Masalah yang Dapat Dibahas dalam Konseling</h3>
+                            <ul>
+                                <li><strong>Kecemasan:</strong> Mengatasi rasa cemas berlebih yang mengganggu aktivitas sehari-hari.</li>
+                                <li><strong>Stres:</strong> Menemukan strategi untuk mengelola tekanan dari berbagai aspek kehidupan.</li>
+                                <li><strong>Kejenuhan:</strong> Mengatasi rasa bosan atau kehilangan motivasi dalam studi atau kegiatan.</li>
+                                <li><strong>Masalah Asrama:</strong> Menyelesaikan konflik dengan teman sekamar atau menyesuaikan diri dengan lingkungan asrama.</li>
+                                <li><strong>Masalah Perkuliahan:</strong> Mengatasi tantangan akademik, seperti kesulitan belajar atau tekanan tugas.</li>
+                                <li><strong>Masalah Relasi:</strong> Memperbaiki hubungan dengan teman, keluarga, atau pasangan.</li>
+                            </ul>
+                            <p className="quote">
+                                "Saat masalah Anda sudah mengganggu aktivitas atau produktivitas sehari-hari, jangan ragu untuk mengakses atau menghubungi layanan konseling."
                             </p>
+                            <div className="location-card">
+                                <img
+                                    src="https://img.icons8.com/color/96/000000/marker.png"
+                                    alt="Location Icon"
+                                />
+                                <h3>Lokasi Ruangan Konseling</h3>
+                                <p>
+                                    Gedung 5, Lantai 2 (di antara Gedung 525 dan 526). Silakan datang 10 menit sebelum sesi dimulai.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 )}
