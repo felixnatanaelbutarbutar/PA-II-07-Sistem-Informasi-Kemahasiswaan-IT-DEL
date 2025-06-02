@@ -421,23 +421,72 @@
     pointer-events: none;
 }
 
+/* Responsive carousel content */
+.carousel-caption {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: white;
+    width: 90%;
+    max-width: 800px;
+    padding: 2rem;
+}
+
+.carousel-caption h1 {
+    font-size: clamp(1.5rem, 4vw, 3.5rem);
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+    line-height: 1.2;
+}
+
+.carousel-caption p {
+    font-size: clamp(0.9rem, 2vw, 1.25rem);
+    margin-bottom: 2rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    line-height: 1.4;
+}
+
+.carousel-caption .btn {
+    font-size: clamp(0.8rem, 1.5vw, 1rem);
+    padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 2rem);
+    margin: 0.5rem;
+}
+
+@media (max-width: 576px) {
+    .carousel-caption {
+        padding: 1rem;
+        width: 95%;
+    }
+    
+    .carousel-caption h1 {
+        margin-bottom: 0.75rem;
+    }
+    
+    .carousel-caption p {
+        margin-bottom: 1.5rem;
+    }
+}
+
 .swiper-pagination {
     position: absolute !important;
-    bottom: 40px !important;
+    bottom: clamp(20px, 4vw, 40px) !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     width: auto !important;
     display: flex;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: clamp(4px, 1vw, 8px);
+    padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(8px);
 }
 
 .swiper-pagination-bullet {
-    width: 8px;
-    height: 8px;
+    width: clamp(6px, 1.5vw, 8px);
+    height: clamp(6px, 1.5vw, 8px);
     background: rgba(255, 255, 255, 0.5);
     border-radius: 50%;
     opacity: 1;
@@ -471,11 +520,11 @@
 }
 
 .swiper-button-next {
-    right: 30px;
+    right: clamp(15px, 3vw, 30px);
 }
 
 .swiper-button-prev {
-    left: 30px;
+    left: clamp(15px, 3vw, 30px);
 }
 
 .swiper-button-next:hover,
@@ -487,7 +536,7 @@
 
 .swiper-button-next:after,
 .swiper-button-prev:after {
-    font-size: 24px;
+    font-size: clamp(18px, 3vw, 24px);
     font-weight: bold;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -495,6 +544,26 @@
 .swiper-button-disabled {
     opacity: 0 !important;
     cursor: default;
+}
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+    .swiper-button-next,
+    .swiper-button-prev {
+        opacity: 0.7;
+        transform: translateY(-50%) scale(1);
+    }
+    
+    .swiper-container:hover .swiper-button-next,
+    .swiper-container:hover .swiper-button-prev {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .swiper-button-next,
+    .swiper-button-prev {
+        display: none; /* Hide navigation buttons on very small screens */
+    }
 }
 
 @keyframes fadeIn {

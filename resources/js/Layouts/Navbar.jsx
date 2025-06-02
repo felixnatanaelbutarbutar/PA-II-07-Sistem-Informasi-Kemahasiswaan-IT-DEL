@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import '../../css/home.css';
-import { LogOut, ChevronDown } from 'lucide-react'; // Tambahkan ikon yang diperlukan
+import { LogOut, ChevronDown } from 'lucide-react';
 
 const Navbar = ({ showBreadcrumbAndHeader = true }) => {
     const [layananDropdownOpen, setLayananDropdownOpen] = useState(false);
@@ -11,8 +11,8 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
     const layananDropdownRef = useRef(null);
     const organisasiDropdownRef = useRef(null);
     const userDropdownRef = useRef(null);
-    const { url, props } = usePage(); // Ambil props untuk mengakses user
-    const user = props.auth?.user; // Ambil data user dari auth
+    const { url, props } = usePage();
+    const user = props.auth?.user;
 
     const isActive = (path) => url === path;
 
@@ -66,7 +66,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
             },
         });
         setOrganisasiDropdownOpen(false);
-        setMobileMenuOpen(false);
     };
 
     const getPageTitle = () => {
@@ -363,7 +362,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     )}
                                 </div>
 
-                                {/* Tombol Login atau Nama Pengguna */}
                                 <div className="relative" ref={userDropdownRef}>
                                     {user ? (
                                         <button
@@ -580,35 +578,80 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                                 <Link
                                                     href="/bem#profil-bem"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => handleNavigation('/bem#profil-bem', 'profil-bem')}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#profil-bem', 'profil-bem');
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#profil-bem', 'profil-bem');
+                                                        setMobileMenuOpen(false);
+                                                    }}
                                                 >
                                                     Profil BEM
                                                 </Link>
                                                 <Link
                                                     href="/bem#visi-misi"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => handleNavigation('/bem#visi-misi', 'visi-misi')}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#visi-misi', 'visi-misi');
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#visi-misi', 'visi-misi');
+                                                        setMobileMenuOpen(false);
+                                                    }}
                                                 >
                                                     Visi & Misi
                                                 </Link>
                                                 <Link
                                                     href="/bem#struktur-organisasi"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => handleNavigation('/bem#struktur-organisasi', 'struktur-organisasi')}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#struktur-organisasi', 'struktur-organisasi');
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#struktur-organisasi', 'struktur-organisasi');
+                                                        setMobileMenuOpen(false);
+                                                    }}
                                                 >
                                                     Struktur Organisasi
                                                 </Link>
                                                 <Link
                                                     href="/bem#program-kerja"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => handleNavigation('/bem#program-kerja', 'program-kerja')}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#program-kerja', 'program-kerja');
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#program-kerja', 'program-kerja');
+                                                        setMobileMenuOpen(false);
+                                                    }}
                                                 >
                                                     Program Kerja
                                                 </Link>
                                                 <Link
                                                     href="/bem#partisipasi-anda"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => handleNavigation('/bem#partisipasi-anda', 'partisipasi-anda')}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#partisipasi-anda', 'partisipasi-anda');
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/bem#partisipasi-anda', 'partisipasi-anda');
+                                                        setMobileMenuOpen(false);
+                                                    }}
                                                 >
                                                     Partisipasi Anda
                                                 </Link>
@@ -619,7 +662,15 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                                 <Link
                                                     href="/mpm"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        router.visit('/mpm');
+                                                        setOrganisasiDropdownOpen(false);
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        router.visit('/mpm');
                                                         setOrganisasiDropdownOpen(false);
                                                         setMobileMenuOpen(false);
                                                     }}
@@ -629,14 +680,32 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                                 <Link
                                                     href="/mpm#struktur-komisi"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => handleNavigation('/mpm#struktur-komisi', 'struktur-komisi')}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/mpm#struktur-komisi', 'struktur-komisi');
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/mpm#struktur-komisi', 'struktur-komisi');
+                                                        setMobileMenuOpen(false);
+                                                    }}
                                                 >
                                                     Struktur Komisi
                                                 </Link>
                                                 <Link
                                                     href="/mpm#partisipasi-anda"
                                                     className="block px-3 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                                    onClick={() => handleNavigation('/mpm#partisipasi-anda', 'partisipasi-anda')}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/mpm#partisipasi-anda', 'partisipasi-anda');
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation('/mpm#partisipasi-anda', 'partisipasi-anda');
+                                                        setMobileMenuOpen(false);
+                                                    }}
                                                 >
                                                     Partisipasi Anda
                                                 </Link>
@@ -645,7 +714,6 @@ const Navbar = ({ showBreadcrumbAndHeader = true }) => {
                                     )}
                                 </div>
 
-                                {/* Tombol Login atau Nama Pengguna di Mobile Menu */}
                                 {user ? (
                                     <div className="relative">
                                         <button
