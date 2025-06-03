@@ -140,7 +140,7 @@ export default function MPM({ mpm }) {
                                     {/* Struktur Komisi Section */}
                                     <section className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 animate__animated animate__fadeIn" id="struktur-komisi">
                                         <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 border-b-2 border-blue-500 pb-2">
-                                            Struktur Komisi MPM
+                                            Struktur Komisi MPM knt
                                         </h2>
                                         {mpm.structure?.commissions && mpm.structure.commissions.length > 0 ? (
                                             <div className="space-y-8">
