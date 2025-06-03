@@ -3,7 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 // Memoized Scholarship Card Component to prevent unnecessary re-renders
-const ScholarshipCard = React.memo(({ scholarship, openDropdownId, toggleDropdown, handleToggleClick, handleDeleteClick, isDeleting, isToggling, dropdownRefs, getGridDropdownPosition }) => {
+const ScholarshipCard = React.memo(({ scholarship, openDropdownId, toggleDropdown, handleToggleClick, handleDeleteClick, isDeleting, isToggling, dropdownRefs, getGridDropdownPosition, openPosterModal }) => {
   const dropdownPosition = openDropdownId === scholarship.scholarship_id ? getGridDropdownPosition(scholarship.scholarship_id) : { top: 0, left: 0 };
 
   // Strip HTML tags from description
@@ -29,9 +29,10 @@ const ScholarshipCard = React.memo(({ scholarship, openDropdownId, toggleDropdow
           <img
             src={scholarship.poster}
             alt={scholarship.name}
-            className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition duration-700 group-hover:scale-110 cursor-pointer"
+            onClick={() => openPosterModal(scholarship.poster)}
             onError={handleImageError}
-            loading="lazy" // Lazy load images
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center no-image-placeholder">
@@ -199,6 +200,8 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
   const [notificationType, setNotificationType] = useState('success');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showToggleModal, setShowToggleModal] = useState(false);
+  const [showPosterModal, setShowPosterModal] = useState(false);
+  const [selectedPoster, setSelectedPoster] = useState(null);
   const [scholarshipToDelete, setScholarshipToDelete] = useState(null);
   const [scholarshipToToggle, setScholarshipToToggle] = useState(null);
   const [toggleAction, setToggleAction] = useState(null);
@@ -224,7 +227,7 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
     }
   }, [flash]);
 
-  // Handle click outside to close dropdown and Escape key press
+  // Handle click outside to close dropdown, poster modal, and Escape key press
   useEffect(() => {
     const handleClickOutside = (event) => {
       let isOutside = true;
@@ -241,6 +244,8 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setOpenDropdownId(null);
+        setShowPosterModal(false);
+        setSelectedPoster(null);
       }
     };
 
@@ -274,6 +279,18 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
   // Memoized toggleDropdown to prevent unnecessary re-renders
   const toggleDropdown = useCallback((scholarshipId) => {
     setOpenDropdownId((prev) => (prev === scholarshipId ? null : scholarshipId));
+  }, []);
+
+  // Handler to open the poster modal
+  const openPosterModal = useCallback((posterUrl) => {
+    setSelectedPoster(posterUrl);
+    setShowPosterModal(true);
+  }, []);
+
+  // Handler to close the poster modal
+  const closePosterModal = useCallback(() => {
+    setShowPosterModal(false);
+    setSelectedPoster(null);
   }, []);
 
   // Handle initiating actions
@@ -313,7 +330,7 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
     }
 
     setIsDeleting(true);
-    router.delete(route('admin.scholarship.destroy', scholarshipToDelete.scholarship_id), {
+    router.post(route('admin.scholarship.destroy', scholarshipToDelete.scholarship_id), {}, {
       preserveState: true,
       preserveScroll: true,
       onSuccess: () => {
@@ -331,7 +348,6 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
       },
       onFinish: () => setIsDeleting(false),
     });
- γνωστικότητα
   };
 
   // Confirm and perform toggle
@@ -428,16 +444,13 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
     const spaceAbove = rect.top;
     const viewportWidth = window.innerWidth;
 
-    // Position dropdown above the button
-    let top = rect.top - dropdownHeight - 8; // 8px gap above the button
-    let left = rect.right - dropdownWidth; // Align right edge with button
+    let top = rect.top - dropdownHeight - 8;
+    let left = rect.right - dropdownWidth;
 
-    // Adjust if dropdown would be above viewport
     if (top < 0) {
-      top = rect.bottom + 8; // Fallback to below if no space above
+      top = rect.bottom + 8;
     }
 
-    // Adjust if dropdown would exceed viewport width
     if (left < 0) {
       left = 8;
     } else if (left + dropdownWidth > viewportWidth) {
@@ -633,9 +646,49 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                     ? 'Mengaktifkan...'
                     : 'Menonaktifkan...'
                   : toggleAction === 'activate'
-                  ? 'Aktifkan'
-                  : 'Nonaktifkan'}
+                    ? 'Aktifkan'
+                    : 'Nonaktifkan'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Poster Modal */}
+      {showPosterModal && selectedPoster && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
+          onClick={closePosterModal}
+        >
+          <div
+            className="relative bg-white rounded-xl p-4 max-w-3xl w-full mx-4 transform transition-all duration-300 scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closePosterModal}
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-full p-1"
+              aria-label="Close modal"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="flex justify-center">
+              <img
+                src={selectedPoster}
+                alt="Poster Beasiswa"
+                className="max-h-[80vh] max-w-full object-contain rounded-lg"
+                onError={(e) => {
+                  e.target.src = '/images/placeholder.png';
+                  e.target.className = 'max-h-[80vh] max-w-full object-contain rounded-lg bg-gray-200';
+                }}
+              />
             </div>
           </div>
         </div>
@@ -749,7 +802,8 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  viewBox="0 0 24 _CHARSET=utf-8
+24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -780,6 +834,7 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                 isToggling={isToggling}
                 dropdownRefs={dropdownRefs}
                 getGridDropdownPosition={getGridDropdownPosition}
+                openPosterModal={openPosterModal}
               />
             ))}
           </div>
@@ -791,35 +846,35 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Poster
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap max-w-[150px] truncate">
                     Nama Beasiswa
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap max-w-[100px] truncate">
                     Kategori
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Tanggal Mulai
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Tanggal Selesai
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Status
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap cursor-pointer"
                     onClick={() => handleSort('updated_at')}
                   >
                     Terakhir Diperbarui
                     {sortBy === 'updated_at' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Dibuat Oleh
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Aksi
                   </th>
                 </tr>
@@ -834,7 +889,8 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                           <img
                             src={scholarship.poster}
                             alt={scholarship.name}
-                            className="w-16 h-10 object-cover rounded"
+                            className="w-16 h-10 object-cover rounded cursor-pointer"
+                            onClick={() => openPosterModal(scholarship.poster)}
                             onError={(e) => {
                               e.target.src = '/images/placeholder.png';
                               e.target.className = 'w-16 h-10 object-cover bg-gray-200 rounded';
@@ -1074,4 +1130,3 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
     </AdminLayout>
   );
 }
-
