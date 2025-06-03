@@ -124,7 +124,7 @@ export default function ActivityCalendar({ metaDescription: initialMetaDescripti
 
     const exportUrl = startDate && endDate 
         ? `/activities/guest-export-pdf?start_date=${startDate}&end_date=${endDate}`
-        : 'https://kemahasiswaanitdel.site/activities/guest-export-pdf';
+        : 'https://kemahasiswaanitdel.site/activities/export/pdf';
 
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
