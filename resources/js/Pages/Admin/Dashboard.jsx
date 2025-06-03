@@ -382,7 +382,7 @@ export default function Dashboard({ auth, userRole, permissions, menu, totalMaha
                                         ${document.documentElement.classList.contains('light-blue') ? 'text-blue-700' : ''}
                                         ${document.documentElement.classList.contains('dark-blue') ? 'text-blue-300' : ''}`}>
                                         <TrendingUp className="mr-2 h-4 w-4" />
-                                        <p className="text-sm font-medium">Total Mahasiswa</p>
+                                        <p className="text-sm font-medium">Total Mahasiswa Pengguna Sistem</p>
                                     </div>
                                     <p className={`text-2xl font-bold
                                         ${document.documentElement.classList.contains('light') ? 'text-blue-600' : ''}
