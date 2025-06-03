@@ -33,7 +33,7 @@ class AspirationController extends Controller
         $aspirations = Aspiration::with(['category'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-
+        //udah ku ganti loh
         $mpm = MPM::first(); // Ambil data MPM pertama (asumsikan hanya ada satu)
 
         $menuItems = RoleHelper::getNavigationMenu($role);
