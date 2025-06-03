@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\BEM;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Helpers\RoleHelper;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class BemController extends Controller
 {
@@ -179,6 +180,8 @@ class BemController extends Controller
         Log::info('Update request data:', $request->all());
         Log::info('Update request files:', $request->files->all());
 
+        // Hapus cache agar data baru tampil di API
+        Cache::forget('bem');
         try {
             $validated = $request->validate([
                 'introduction' => 'required|string',

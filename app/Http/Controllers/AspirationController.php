@@ -16,7 +16,7 @@ class AspirationController extends Controller
     public function index()
     {
         $categories = AspirationCategory::all();
-        $mpm = Mpm::first(); // Ambil data MPM pertama (asumsikan hanya ada satu)
+        $mpm = MPM::first(); // Ambil data MPM pertama (asumsikan hanya ada satu)
 
         return Inertia::render('Aspiration', [
             'categories' => $categories,
@@ -34,7 +34,7 @@ class AspirationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        $mpm = Mpm::first(); // Ambil data MPM pertama (asumsikan hanya ada satu)
+        $mpm = MPM::first(); // Ambil data MPM pertama (asumsikan hanya ada satu)
 
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
@@ -55,7 +55,7 @@ class AspirationController extends Controller
     public function store(Request $request)
     {
         // Ambil data MPM terbaru
-        $mpm = Mpm::first();
+        $mpm = MPM::first();
 
         if (!$mpm || $mpm->aspiration_status === 'CLOSED') {
             return redirect()->route('mpm.show')->with('error', 'Pendataan aspirasi sedang ditutup.');
@@ -113,7 +113,7 @@ class AspirationController extends Controller
 
     public function updateAspirationStatus(Request $request)
     {
-        $mpm = Mpm::first();
+        $mpm = MPM::first();
         if (!$mpm) {
             return redirect()->route('admin.aspiration.index')->with('error', 'Data MPM tidak ditemukan.');
         }
