@@ -39,34 +39,37 @@ export default function AspirationIndex({ auth, userRole, permissions, menu, asp
     };
 
     const confirmDelete = () => {
-        if (aspirationToDelete) {
-            setIsDeleting(true);
-            router.delete(route('admin.aspiration.destroy', aspirationToDelete), {
-                preserveState: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    setNotificationMessage('Aspirasi berhasil dihapus!');
-                    setNotificationType('success');
-                    setShowNotification(true);
-                    setIsDeleting(false);
-                    setShowDeleteModal(false);
-                    setAspirationToDelete(null);
-                },
-                onError: (errors) => {
-                    console.error('Error deleting aspiration:', errors);
-                    setNotificationMessage('Gagal menghapus aspirasi: ' + (errors.error || 'Terjadi kesalahan.'));
-                    setNotificationType('error');
-                    setShowNotification(true);
-                    setIsDeleting(false);
-                    setShowDeleteModal(false);
-                    setAspirationToDelete(null);
-                },
-                onFinish: () => {
-                    setIsDeleting(false);
-                },
-            });
-        }
-    };
+    if (aspirationToDelete) {
+        setIsDeleting(true);
+        router.post(route('admin.aspiration.destroy', aspirationToDelete), {
+            // _method: 'DELETE', // method spoofing
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setNotificationMessage('Aspirasi berhasil dihapus!');
+                setNotificationType('success');
+                setShowNotification(true);
+                setIsDeleting(false);
+                setShowDeleteModal(false);
+                setAspirationToDelete(null);
+            },
+            onError: (errors) => {
+                console.error('Error deleting aspiration:', errors);
+                setNotificationMessage('Gagal menghapus aspirasi: ' + (errors.error || 'Terjadi kesalahan.'));
+                setNotificationType('error');
+                setShowNotification(true);
+                setIsDeleting(false);
+                setShowDeleteModal(false);
+                setAspirationToDelete(null);
+            },
+            onFinish: () => {
+                setIsDeleting(false);
+            },
+        });
+    }
+};
+
 
     const cancelDelete = () => {
         setShowDeleteModal(false);
