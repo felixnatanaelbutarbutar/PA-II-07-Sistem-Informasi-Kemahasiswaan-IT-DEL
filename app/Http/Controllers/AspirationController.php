@@ -90,8 +90,8 @@ class AspirationController extends Controller
         $role = strtolower($user->role);
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
-
-        return Inertia::render('Admin/Aspiration/show', [
+        // Udah kuperbaiki
+        return Inertia::render('Admin/Aspiration/show',     [
             'auth' => ['user' => $user],
             'userRole' => $role,
             'permissions' => $permissions,

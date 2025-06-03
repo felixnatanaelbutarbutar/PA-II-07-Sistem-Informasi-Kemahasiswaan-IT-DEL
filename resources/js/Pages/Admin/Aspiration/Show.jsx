@@ -2,7 +2,7 @@ import React from 'react'; // Tambahkan impor React
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { FaFolder, FaFileAlt, FaImage, FaCalendarAlt, FaArrowLeft } from 'react-icons/fa';
-
+// ga tau
 export default function Show({ auth, userRole, permissions, menu, aspiration }) {
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
