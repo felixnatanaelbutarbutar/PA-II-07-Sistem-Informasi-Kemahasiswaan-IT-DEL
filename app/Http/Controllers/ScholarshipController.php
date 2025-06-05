@@ -26,22 +26,19 @@ class ScholarshipController extends Controller
         $menuItems = RoleHelper::getNavigationMenu($role);
         $permissions = RoleHelper::getRolePermissions($role);
 
-        // Get query parameters for filtering and searching
-        $status = $request->query('status'); // 'active', 'inactive', or null
-        $sortBy = $request->query('sort_by', 'updated_at'); // Default to updated_at
-        $sortDirection = $request->query('sort_direction', 'desc'); // Default to desc
+        $status = $request->query('status');
+        $sortBy = $request->query('sort_by', 'updated_at');
+        $sortDirection = $request->query('sort_direction', 'desc');
         $search = $request->query('search');
 
         $query = Scholarship::with(['category', 'creator', 'updater']);
 
-        // Apply status filter
         if ($status === 'active') {
             $query->where('is_active', true);
         } elseif ($status === 'inactive') {
             $query->where('is_active', false);
         }
 
-        // Apply case-insensitive search on name, description, and category_name
         if ($search) {
             $searchTerms = array_filter(explode(' ', trim($search)));
             $query->where(function ($q) use ($searchTerms) {
@@ -56,9 +53,8 @@ class ScholarshipController extends Controller
             });
         }
 
-        // Apply sorting
         if ($sortBy === 'updated_at') {
-            $query->orderBy('is_active', 'desc') // Prioritize active status
+            $query->orderBy('is_active', 'desc')
                 ->orderBy('updated_at', $sortDirection);
         }
 
@@ -68,8 +64,6 @@ class ScholarshipController extends Controller
                 'name' => $scholarship->name,
                 'description' => $scholarship->description,
                 'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
-                'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateString() : null,
-                'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
                 'category_id' => $scholarship->category_id,
                 'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
                 'is_active' => $scholarship->is_active,
@@ -123,8 +117,6 @@ class ScholarshipController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
             'category_id' => 'required|exists:scholarship_categories,category_id',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -147,8 +139,6 @@ class ScholarshipController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
                 'poster' => $posterPath,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
                 'category_id' => $request->category_id,
                 'is_active' => $request->is_active ?? true,
                 'created_by' => $user->id,
@@ -185,8 +175,6 @@ class ScholarshipController extends Controller
                 'name' => $scholarship->name,
                 'description' => $scholarship->description,
                 'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
-                'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateString() : null,
-                'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
                 'category_id' => $scholarship->category_id,
                 'is_active' => $scholarship->is_active,
                 'status' => $scholarship->is_active ? 'Aktif' : 'Non-Aktif',
@@ -201,8 +189,6 @@ class ScholarshipController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'poster' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
             'category_id' => 'required|exists:scholarship_categories,category_id',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -220,8 +206,6 @@ class ScholarshipController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
                 'poster' => $posterPath,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
                 'category_id' => $request->category_id,
                 'is_active' => $request->is_active ?? $scholarship->is_active,
                 'updated_by' => Auth::id(),
@@ -289,8 +273,6 @@ class ScholarshipController extends Controller
                         'name' => $scholarship->name,
                         'description' => $scholarship->description,
                         'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
-                        'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateString() : null,
-                        'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
                         'category_id' => $scholarship->category_id,
                         'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
                         'is_active' => $scholarship->is_active,
@@ -347,7 +329,6 @@ class ScholarshipController extends Controller
                 ->where('is_active', true)
                 ->get();
 
-            // Debugging: Log data scholarships untuk memastikan poster dan tanggal tersedia
             Log::info('Scholarships fetched in guestIndex', [
                 'count' => $scholarships->count(),
                 'sample' => $scholarships->take(1)->toArray(),
@@ -359,11 +340,9 @@ class ScholarshipController extends Controller
                         'scholarship_id' => $scholarship->scholarship_id,
                         'name' => $scholarship->name ?? '-',
                         'description' => $scholarship->description ?? '-',
-                        'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null, // Konversi path ke URL
-                        'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-', // Tanggal mulai
-                        'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-', // Tanggal selesai
-                        'category_id' => $scholarship->category_id ?? '-', // ID kategori
-                        'category_name' => $scholarship->category ? $scholarship->category->category_name ?? '-' : '-', // Tambahkan category_name
+                        'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
+                        'category_id' => $scholarship->category_id ?? '-',
+                        'category_name' => $scholarship->category ? $scholarship->category->category_name ?? '-' : '-',
                     ];
                 }),
                 'auth' => ['user' => Auth::user()],
@@ -374,8 +353,6 @@ class ScholarshipController extends Controller
             Log::error('Error in FormController::guestIndex: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
-
-            // Hindari redirect loop, gunakan redirect ke homepage
             return redirect()->route('home')->with('error', 'Gagal memuat daftar beasiswa. Silakan coba lagi nanti.');
         }
     }
@@ -431,10 +408,8 @@ class ScholarshipController extends Controller
                     'name' => $scholarship->name ?? '-',
                     'description' => $scholarship->description ?? '-',
                     'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
-                    'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateTimeString() : '-',
-                    'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateTimeString() : '-',
-                    'category_id' => $scholarship->category_id ?? '-', // Tetap simpan jika diperlukan
-                    'category_name' => $scholarship->category ? $scholarship->category->category_name ?? '-' : '-', // Gunakan category_name
+                    'category_id' => $scholarship->category_id ?? '-',
+                    'category_name' => $scholarship->category ? $scholarship->category->category_name ?? '-' : '-',
                 ],
                 'form' => $formData,
                 'flash' => session()->only(['success', 'error']),
@@ -485,8 +460,6 @@ class ScholarshipController extends Controller
                     'scholarship_id' => $scholarship->scholarship_id,
                     'name' => $scholarship->name,
                     'description' => $scholarship->description,
-                    'start_date' => $scholarship->start_date ? $scholarship->start_date->toDateString() : null,
-                    'end_date' => $scholarship->end_date ? $scholarship->end_date->toDateString() : null,
                     'category_name' => $scholarship->category ? $scholarship->category->category_name : null,
                     'status' => $scholarship->is_active ? 'Aktif' : 'Non-Aktif',
                     'created_by' => $scholarship->creator ? $scholarship->creator->name : null,

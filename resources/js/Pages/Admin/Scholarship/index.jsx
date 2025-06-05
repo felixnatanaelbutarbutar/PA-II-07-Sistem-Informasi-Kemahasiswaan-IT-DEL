@@ -48,33 +48,6 @@ const ScholarshipCard = React.memo(({ scholarship, openDropdownId, toggleDropdow
         <h2 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition">
           {scholarship.name}
         </h2>
-        <div className="flex items-center text-sm text-gray-500 mb-3">
-          <svg
-            className="w-4 h-4 mr-1 text-blue-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          {scholarship.start_date && scholarship.end_date
-            ? `${new Date(scholarship.start_date).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })} - ${new Date(scholarship.end_date).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}`
-            : 'Tanggal tidak ditentukan'}
-        </div>
         <div className="mb-4">
           <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
             {stripHtmlTags(scholarship.description)}
@@ -802,8 +775,7 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 _CHARSET=utf-8
-24"
+                  viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -856,12 +828,6 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                     Kategori
                   </th>
                   <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                    Tanggal Mulai
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                    Tanggal Selesai
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Status
                   </th>
                   <th
@@ -908,24 +874,6 @@ export default function Index({ auth, userRole, permissions, menu, scholarships 
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {scholarship.category_name || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {scholarship.start_date
-                          ? new Date(scholarship.start_date).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })
-                          : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {scholarship.end_date
-                          ? new Date(scholarship.end_date).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })
-                          : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         <span

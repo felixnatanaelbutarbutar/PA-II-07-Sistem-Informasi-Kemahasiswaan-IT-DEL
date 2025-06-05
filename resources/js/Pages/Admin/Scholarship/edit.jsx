@@ -29,6 +29,15 @@ const quillModules = {
     },
 };
 
+const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'align', 'list', 'bullet', 'indent',
+    'blockquote', 'code-block',
+    'color', 'background',
+    'link', 'image', 'video',
+];
+
 export default function Edit({ auth, userRole, permissions, menu, scholarship, categories, flash }) {
     if (!auth?.user || !scholarship) {
         return (
@@ -44,8 +53,6 @@ export default function Edit({ auth, userRole, permissions, menu, scholarship, c
         name: scholarship.name || '',
         description: scholarship.description || '',
         poster: null,
-        start_date: scholarship.start_date || '',
-        end_date: scholarship.end_date || '',
         category_id: scholarship.category_id || '',
         updated_by: auth.user.id,
     });
@@ -92,11 +99,6 @@ export default function Edit({ auth, userRole, permissions, menu, scholarship, c
         if (!data.description.replace(/<[^>]+>/g, '').trim()) {
             newErrors.description = 'Deskripsi beasiswa wajib diisi.';
         }
-        if (!data.start_date) newErrors.start_date = 'Tanggal buka wajib diisi.';
-        if (!data.end_date) newErrors.end_date = 'Tanggal tutup wajib diisi.';
-        if (data.start_date && data.end_date && new Date(data.end_date) < new Date(data.start_date)) {
-            newErrors.end_date = 'Tanggal tutup tidak boleh lebih awal dari tanggal buka.';
-        }
         if (!data.category_id) newErrors.category_id = 'Kategori wajib dipilih.';
 
         if (Object.keys(newErrors).length > 0) {
@@ -111,8 +113,6 @@ export default function Edit({ auth, userRole, permissions, menu, scholarship, c
         if (data.poster) {
             formData.append('poster', data.poster);
         }
-        formData.append('start_date', data.start_date);
-        formData.append('end_date', data.end_date);
         formData.append('category_id', data.category_id);
         formData.append('updated_by', data.updated_by);
 
@@ -219,16 +219,6 @@ export default function Edit({ auth, userRole, permissions, menu, scholarship, c
             }
         };
     };
-
-    // Add custom handlers to ReactQuill
-    const quillFormats = [
-        'header',
-        'bold', 'italic', 'underline', 'strike',
-        'align', 'list', 'bullet', 'indent',
-        'blockquote', 'code-block',
-        'color', 'background',
-        'link', 'image', 'video',
-    ];
 
     const setupQuill = (quill) => {
         const toolbar = quill.getModule('toolbar');
@@ -418,44 +408,6 @@ export default function Edit({ auth, userRole, permissions, menu, scholarship, c
                                     </div>
                                 )}
                             </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Buka <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.start_date}
-                                onChange={(e) => setData((prev) => ({ ...prev, start_date: e.target.value }))}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.start_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.start_date && (
-                                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Tutup <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.end_date}
-                                onChange={(e) => setData((prev) => ({ ...prev, end_date: e.target.value }))}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.end_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.end_date && (
-                                <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>
-                            )}
                         </div>
 
                         <div className="space-y-2">

@@ -15,8 +15,8 @@ return new class extends Migration
             $table->string('setting_id', 10)->primary();
             $table->string('form_id', 10);
             $table->boolean('accept_responses')->default(true);
-            $table->boolean('one_submission_per_email')->default(false);
-            $table->boolean('allow_edit')->default(true);
+            $table->boolean('one_submission_per_email')->default(false); //dihapus
+            $table->boolean('allow_edit')->default(true); //di
             $table->dateTime('submission_start')->nullable(); // waktu mulai ditambahkan
             $table->dateTime('submission_deadline')->nullable(); // waktu tutup
             $table->unsignedInteger('max_submissions')->nullable();

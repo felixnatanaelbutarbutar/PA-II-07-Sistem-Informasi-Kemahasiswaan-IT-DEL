@@ -19,13 +19,11 @@ class ScholarshipForm extends Model
         'scholarship_id',
         'form_name',
         'description',
-        'is_active',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
         'created_by' => 'integer',
         'updated_by' => 'integer',
     ];

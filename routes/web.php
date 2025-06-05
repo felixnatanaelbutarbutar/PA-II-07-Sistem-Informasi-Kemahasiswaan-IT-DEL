@@ -51,11 +51,14 @@ Route::get('/announcement', function () {
 Route::get('/announcement/{announcement_id}', [AnnouncementController::class, 'show'])->name('announcement.show');
 
 // Counseling Routes (Accessible to Guests and Mahasiswa)
-Route::get('/counseling', [CounselingController::class, 'index'])->name('counseling.index');
-Route::post('/counseling', [CounselingController::class, 'store'])
-    ->middleware(['auth', 'role:mahasiswa'])
-    ->name('counseling.store');
+Route::get('/counseling', [CounselingController::class, 'index'])
+    ->name('counseling.index')
+    ->middleware(['auth', 'role:mahasiswa,adminbem,adminmpm,kemahasiswaan']);
 
+Route::post('/counseling', [CounselingController::class, 'store'])
+    ->name('counseling.store')
+    ->middleware(['auth', 'role:mahasiswa,adminbem,adminmpm,kemahasiswaan']);
+    
 // Activity Calendar for Guests
 Route::get('/activities', [ActivityController::class, 'guestIndex'])->name('activities.guest.index');
 Route::get('/activities/export/pdf', [ActivityController::class, 'guestExportToPDF'])->name('activities.guest.export.pdf');

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('poster')->nullable();
-            $table->date('start_date')->nullable(); // Use date or datetime
-            $table->date('end_date')->nullable();   // Use date or datetime
+            $table->date('start_date')->nullable(); // Sudah dihapus dipakai migrations yang baru
+            $table->date('end_date')->nullable();   // Sudah dihapus dipakai migrations yang baru
             $table->string('category_id');
             $table->boolean('is_active')->default(true);
             $table->unsignedBigInteger('created_by');

@@ -73,7 +73,7 @@ class CounselingController extends Controller
         return Inertia::render('Counseling', [
             'auth' => [
                 'user' => $user,
-                'isMahasiswa' => $user && $user->role === 'mahasiswa',
+                'isMahasiswa' => $user && in_array($user->role, ['mahasiswa', 'adminbem', 'adminmpm']),
             ],
             'counselings' => [
                 'data' => $counselings,
@@ -144,23 +144,26 @@ class CounselingController extends Controller
 
         $user = Auth::user();
 
-        // Ensure the user is logged in and has the role 'mahasiswa'
-        if (!$user || $user->role !== 'mahasiswa') {
-            Log::warning('User not authenticated or not mahasiswa', [
+        // Ensure the user is logged in and has an allowed role
+        $allowedRoles = ['mahasiswa', 'adminbem', 'adminmpm'];
+        if (!$user || !in_array($user->role, $allowedRoles)) {
+            Log::warning('User not authenticated or role not allowed', [
                 'user' => $user,
+                'role' => $user ? $user->role : 'none',
             ]);
-            return redirect()->route('login')->with('error', 'Anda harus login sebagai mahasiswa untuk mengirimkan permintaan konseling.');
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai mahasiswa, admin BEM, atau admin MPM untuk mengirimkan permintaan konseling.');
         }
 
+        // Rest of the method remains unchanged...
         try {
             // Validate the request
             $validated = $request->validate([
                 'issue' => 'required|string|max:1000',
-                'noWhatsApp' => 'required|string|max:15|regex:/^[0-9+()-]+$/', // Changed from noTelephone
+                'noWhatsApp' => 'required|string|max:15|regex:/^[0-9+()-]+$/',
                 'bookingDate' => [
                     'required',
                     'date',
-                    'after_or_equal:' . now()->addDays(1)->toDateString(), // Updated to H+1
+                    'after_or_equal:' . now()->addDays(1)->toDateString(),
                     function ($attribute, $value, $fail) {
                         $date = Carbon::parse($value);
                         if ($date->isSunday()) {
@@ -168,10 +171,10 @@ class CounselingController extends Controller
                         }
                     },
                 ],
-                'bookingTime' => 'required|in:08:00,09:00,10:00,11:00,13:00,14:00,15:00,16:00', // Updated to include 08:00 and 16:00
+                'bookingTime' => 'required|in:08:00,09:00,10:00,11:00,13:00,14:00,15:00,16:00',
             ]);
 
-            // Mapping data yang divalidasi ke nama kolom database
+            // Mapping validated data to database columns
             $dataToStore = [
                 'issue' => $validated['issue'],
                 'noWhatsApp' => $validated['noWhatsApp'],

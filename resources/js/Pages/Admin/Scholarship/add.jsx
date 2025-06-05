@@ -43,8 +43,6 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         name: '',
         description: '',
         poster: null,
-        start_date: '',
-        end_date: '',
         category_id: '',
         is_active: true,
         created_by: auth.user.id,
@@ -173,11 +171,6 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                 newErrors.poster = 'File harus berupa JPG atau PNG.';
             }
         }
-        if (!data.start_date) newErrors.start_date = 'Tanggal mulai wajib diisi.';
-        if (!data.end_date) newErrors.end_date = 'Tanggal selesai wajib diisi.';
-        if (data.end_date && data.start_date && new Date(data.end_date) < new Date(data.start_date)) {
-            newErrors.end_date = 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.';
-        }
         if (!data.category_id) newErrors.category_id = 'Kategori wajib dipilih.';
 
         if (Object.keys(newErrors).length > 0) {
@@ -194,8 +187,6 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
         const formData = new FormData();
         formData.append('name', data.name);
         formData.append('description', data.description);
-        formData.append('start_date', data.start_date);
-        formData.append('end_date', data.end_date);
         formData.append('category_id', data.category_id);
         formData.append('is_active', data.is_active ? 1 : 0);
         formData.append('created_by', data.created_by);
@@ -218,8 +209,6 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                 name: '',
                 description: '',
                 poster: null,
-                start_date: '',
-                end_date: '',
                 category_id: '',
                 is_active: true,
                 created_by: auth.user.id,
@@ -451,42 +440,6 @@ export default function Add({ auth, permissions, userRole, menu, categories }) {
                             {errors.description && (
                                 <p className="text-red-500 text-xs mt-1">{errors.description}</p>
                             )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Mulai <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.start_date}
-                                onChange={(e) => handleInputChange('start_date', e.target.value)}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.start_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.start_date && (
-                                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Selesai <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={data.end_date}
-                                onChange={(e) => handleInputChange('end_date', e.target.value)}
-                                className={`w-full px-4 py-3 border rounded-lg transition ${
-                                    errors.end_date
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                                }`}
-                            />
-                            {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
                         </div>
 
                         <div className="flex justify-end space-x-4 pt-4 border-t">

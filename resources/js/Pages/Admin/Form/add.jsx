@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import React from 'react';
@@ -36,6 +36,8 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
         scholarship_id: '',
         form_name: '',
         description: '',
+        submission_start: '',
+        submission_deadline: '',
         sections: [{
             title: '',
             fields: [{
@@ -43,7 +45,7 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                 field_type: 'text',
                 is_required: false,
                 options: '',
-                order: 1, // Changed to number
+                order: 1,
                 file: null,
             }],
         }],
@@ -63,7 +65,7 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
         }
     }, [notification]);
 
-    const addSection = () => {
+    const addSection = useCallback(() => {
         setData('sections', [
             ...data.sections,
             {
@@ -78,20 +80,22 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                 }],
             },
         ]);
-    };
+    }, [data.sections, setData]);
 
-    const updateSectionTitle = (sectionIndex, newTitle) => {
+    const updateSectionTitle = useCallback((sectionIndex, newTitle) => {
         const updatedSections = [...data.sections];
         updatedSections[sectionIndex].title = newTitle;
         setData('sections', updatedSections);
-    };
+    }, [data.sections, setData]);
 
-    const deleteSection = (sectionIndex) => {
+    const deleteSection = useCallback((sectionIndex) => {
         if (data.sections.length > 1) {
             setData('sections', data.sections.filter((_, i) => i !== sectionIndex));
-            const newErrors = { ...errors };
-            delete newErrors[`sections.${sectionIndex}`];
-            setErrors(newErrors);
+            setErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[`sections.${sectionIndex}`];
+                return newErrors;
+            });
         } else {
             setNotification({
                 show: true,
@@ -99,9 +103,9 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                 message: 'Formulir harus memiliki minimal satu bagian.',
             });
         }
-    };
+    }, [data.sections, setData]);
 
-    const addField = (sectionIndex) => {
+    const addField = useCallback((sectionIndex) => {
         const updatedSections = [...data.sections];
         const section = updatedSections[sectionIndex];
         section.fields.push({
@@ -113,16 +117,16 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
             file: null,
         });
         setData('sections', updatedSections);
-    };
+    }, [data.sections, setData]);
 
-    const updateField = (sectionIndex, fieldIndex, key, value) => {
+    const updateField = useCallback((sectionIndex, fieldIndex, key, value) => {
         const updatedSections = [...data.sections];
         const field = updatedSections[sectionIndex].fields[fieldIndex];
 
         if (key === 'is_required') {
             field.is_required = value;
         } else if (key === 'order') {
-            field.order = parseInt(value) || 1; // Ensure valid number
+            field.order = parseInt(value) || 1;
         } else if (key === 'file') {
             field.file = value;
         } else if (key === 'field_type' && value !== 'dropdown') {
@@ -134,9 +138,9 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
 
         setData('sections', updatedSections);
         validateField(sectionIndex, fieldIndex, { ...field, [key]: value });
-    };
+    }, [data.sections, setData]);
 
-    const addOption = (sectionIndex, fieldIndex) => {
+    const addOption = useCallback((sectionIndex, fieldIndex) => {
         const updatedSections = [...data.sections];
         const field = updatedSections[sectionIndex].fields[fieldIndex];
         const options = field.options ? field.options.split(',').map(opt => opt.trim()) : [];
@@ -144,9 +148,9 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
         field.options = options.join(', ');
         setData('sections', updatedSections);
         validateField(sectionIndex, fieldIndex, { ...field, options: options.join(', ') });
-    };
+    }, [data.sections, setData]);
 
-    const updateOption = (sectionIndex, fieldIndex, optionIndex, value) => {
+    const updateOption = useCallback((sectionIndex, fieldIndex, optionIndex, value) => {
         const updatedSections = [...data.sections];
         const field = updatedSections[sectionIndex].fields[fieldIndex];
         const options = field.options ? field.options.split(',').map(opt => opt.trim()) : [];
@@ -154,9 +158,9 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
         field.options = options.join(', ');
         setData('sections', updatedSections);
         validateField(sectionIndex, fieldIndex, { ...field, options: options.join(', ') });
-    };
+    }, [data.sections, setData]);
 
-    const deleteOption = (sectionIndex, fieldIndex, optionIndex) => {
+    const deleteOption = useCallback((sectionIndex, fieldIndex, optionIndex) => {
         const updatedSections = [...data.sections];
         const field = updatedSections[sectionIndex].fields[fieldIndex];
         const options = field.options ? field.options.split(',').map(opt => opt.trim()) : [];
@@ -166,9 +170,9 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
             setData('sections', updatedSections);
             validateField(sectionIndex, fieldIndex, { ...field, options: options.join(', ') });
         }
-    };
+    }, [data.sections, setData]);
 
-    const deleteField = (sectionIndex, fieldIndex) => {
+    const deleteField = useCallback((sectionIndex, fieldIndex) => {
         const updatedSections = [...data.sections];
         if (updatedSections[sectionIndex].fields.length > 1) {
             updatedSections[sectionIndex].fields = updatedSections[sectionIndex].fields
@@ -178,9 +182,11 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                     order: i + 1,
                 }));
             setData('sections', updatedSections);
-            const newErrors = { ...errors };
-            delete newErrors[`sections.${sectionIndex}.fields.${fieldIndex}`];
-            setErrors(newErrors);
+            setErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[`sections.${sectionIndex}.fields.${fieldIndex}`];
+                return newErrors;
+            });
         } else {
             setNotification({
                 show: true,
@@ -188,9 +194,9 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                 message: 'Setiap bagian harus memiliki minimal satu pertanyaan.',
             });
         }
-    };
+    }, [data.sections, setData]);
 
-    const handleFileChange = (sectionIndex, fieldIndex, e) => {
+    const handleFileChange = useCallback((sectionIndex, fieldIndex, e) => {
         const file = e.target.files[0];
         if (file) {
             const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
@@ -213,22 +219,24 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
             }
             updateField(sectionIndex, fieldIndex, 'file', file);
         }
-    };
+    }, [updateField]);
 
-    const validateField = (sectionIndex, fieldIndex, field) => {
-        const newErrors = { ...errors };
-        if (!field.field_name.trim()) {
-            newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.field_name`] = 'Pertanyaan wajib diisi.';
-        } else {
-            delete newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.field_name`];
-        }
-        if (field.field_type === 'dropdown' && (!field.options || !field.options.trim())) {
-            newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.options`] = 'Opsi wajib diisi untuk pilihan ganda.';
-        } else {
-            delete newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.options`];
-        }
-        setErrors(newErrors);
-    };
+    const validateField = useCallback((sectionIndex, fieldIndex, field) => {
+        setErrors((prev) => {
+            const newErrors = { ...prev };
+            if (!field.field_name.trim()) {
+                newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.field_name`] = 'Pertanyaan wajib diisi.';
+            } else {
+                delete newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.field_name`];
+            }
+            if (field.field_type === 'dropdown' && (!field.options || !field.options.trim())) {
+                newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.options`] = 'Opsi wajib diisi untuk pilihan ganda.';
+            } else {
+                delete newErrors[`sections.${sectionIndex}.fields.${fieldIndex}.options`];
+            }
+            return newErrors;
+        });
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -242,6 +250,15 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
         }
         if (!data.form_name.trim()) {
             newErrors.form_name = 'Judul formulir wajib diisi.';
+        }
+        if (data.submission_start && !isValidDate(data.submission_start)) {
+            newErrors.submission_start = 'Tanggal pembukaan tidak valid.';
+        }
+        if (data.submission_deadline && !isValidDate(data.submission_deadline)) {
+            newErrors.submission_deadline = 'Tanggal penutupan tidak valid.';
+        }
+        if (data.submission_start && data.submission_deadline && new Date(data.submission_deadline) < new Date(data.submission_start)) {
+            newErrors.submission_deadline = 'Tanggal penutupan harus setelah atau sama dengan tanggal pembukaan.';
         }
         if (data.sections.length === 0) {
             newErrors.sections = 'Formulir harus memiliki minimal satu bagian.';
@@ -269,7 +286,15 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
             return;
         }
 
+        // Format dates to ISO 8601 for consistency
+        const formattedData = {
+            ...data,
+            submission_start: data.submission_start ? new Date(data.submission_start).toISOString() : '',
+            submission_deadline: data.submission_deadline ? new Date(data.submission_deadline).toISOString() : '',
+        };
+
         post(route('admin.form.store'), {
+            data: formattedData,
             preserveState: true,
             preserveScroll: true,
             forceFormData: true,
@@ -283,6 +308,8 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                     scholarship_id: '',
                     form_name: '',
                     description: '',
+                    submission_start: '',
+                    submission_deadline: '',
                     sections: [{
                         title: '',
                         fields: [{
@@ -310,6 +337,13 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                 setIsSubmitting(false);
             },
         });
+    };
+
+    // Helper to validate date strings
+    const isValidDate = (dateString) => {
+        if (!dateString) return true; // Allow empty dates (optional)
+        const date = new Date(dateString);
+        return date instanceof Date && !isNaN(date);
     };
 
     return (
@@ -483,6 +517,85 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                                 {errors.scholarship_id && (
                                     <p className="text-red-500 text-xs mt-1">{errors.scholarship_id}</p>
                                 )}
+                            </div>
+
+                            {/* Submission Start and Deadline */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Tanggal Pembukaan (Opsional)
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={data.submission_start}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setData('submission_start', value);
+                                            if (value && !isValidDate(value)) {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    submission_start: 'Tanggal pembukaan tidak valid.',
+                                                }));
+                                            } else if (data.submission_deadline && value && new Date(value) > new Date(data.submission_deadline)) {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    submission_deadline: 'Tanggal penutupan harus setelah atau sama dengan tanggal pembukaan.',
+                                                }));
+                                            } else {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    submission_start: undefined,
+                                                    submission_deadline: undefined,
+                                                }));
+                                            }
+                                        }}
+                                        className={`w-full px-4 py-3 border rounded-lg transition ${
+                                            errors.submission_start
+                                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                        }`}
+                                    />
+                                    {errors.submission_start && (
+                                        <p className="text-red-500 text-xs mt-1">{errors.submission_start}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Tanggal Penutupan (Opsional)
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={data.submission_deadline}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setData('submission_deadline', value);
+                                            if (value && !isValidDate(value)) {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    submission_deadline: 'Tanggal penutupan tidak valid.',
+                                                }));
+                                            } else if (data.submission_start && value && new Date(value) < new Date(data.submission_start)) {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    submission_deadline: 'Tanggal penutupan harus setelah atau sama dengan tanggal pembukaan.',
+                                                }));
+                                            } else {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    submission_deadline: undefined,
+                                                }));
+                                            }
+                                        }}
+                                        className={`w-full px-4 py-3 border rounded-lg transition ${
+                                            errors.submission_deadline
+                                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                        }`}
+                                    />
+                                    {errors.submission_deadline && (
+                                        <p className="text-red-500 text-xs mt-1">{errors.submission_deadline}</p>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Fields */}
@@ -690,7 +803,7 @@ export default function Add({ auth, permissions, userRole, menu, scholarships })
                                                     <input
                                                         type="file"
                                                         onChange={(e) => handleFileChange(sectionIndex, fieldIndex, e)}
-                                                        accept=".pdf,.doc,.docx,.jpg,.png" // Restrict file types
+                                                        accept=".pdf,.doc,.docx,.jpg,.png"
                                                         className={`w-full px-4 py-3 border rounded-lg transition ${
                                                             errors[`sections.${sectionIndex}.fields.${fieldIndex}.file`]
                                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'

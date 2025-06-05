@@ -18,22 +18,15 @@ class FormSetting extends Model
         'setting_id',
         'form_id',
         'accept_responses',
-        'one_submission_per_email',
-        'allow_edit',
         'submission_start',
         'submission_deadline',
         'max_submissions',
-        'response_notification',
-        'is_active',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
         'accept_responses' => 'boolean',
-        'one_submission_per_email' => 'boolean',
-        'allow_edit' => 'boolean',
-        'is_active' => 'boolean',
         'created_by' => 'integer',
         'updated_by' => 'integer',
         'submission_start' => 'datetime',
@@ -53,42 +46,5 @@ class FormSetting extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    /**
-     * Check and update form active status based on submission start and deadline
-     */
-    public function checkAndActivateForm()
-    {
-        $currentDateTime = now();
-        $newActiveStatus = false; // Default to inactive
-
-        // If both submission_start and submission_deadline are set
-        if ($this->submission_start && $this->submission_deadline) {
-            $newActiveStatus = $currentDateTime->between($this->submission_start, $this->submission_deadline);
-        }
-        // If only submission_start is set
-        elseif ($this->submission_start) {
-            $newActiveStatus = $currentDateTime->greaterThanOrEqualTo($this->submission_start);
-        }
-        // If only submission_deadline is set
-        elseif ($this->submission_deadline) {
-            $newActiveStatus = $currentDateTime->lessThanOrEqualTo($this->submission_deadline);
-        }
-        // If neither is set, use accept_responses as fallback
-        else {
-            $newActiveStatus = $this->accept_responses ?? false;
-        }
-
-        // Update if status has changed
-        if ($newActiveStatus !== $this->is_active) {
-            $this->is_active = $newActiveStatus;
-            $this->save();
-
-            // Synchronize ScholarshipForm's is_active
-            $this->form()->update(['is_active' => $newActiveStatus]);
-        }
-
-        return $this->is_active;
     }
 }

@@ -15,8 +15,6 @@ class Scholarship extends Model
         'name',
         'description',
         'poster',
-        'start_date',
-        'end_date',
         'category_id',
         'is_active',
         'created_by',
@@ -24,8 +22,6 @@ class Scholarship extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
         'is_active' => 'boolean',
     ];
 
@@ -43,4 +39,4 @@ class Scholarship extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
-}
+}   

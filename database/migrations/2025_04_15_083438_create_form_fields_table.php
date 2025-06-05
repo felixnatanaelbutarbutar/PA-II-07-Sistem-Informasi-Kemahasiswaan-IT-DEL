@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('options')->nullable();
             $table->string('order', length: 3)->default('0');
             $table->string('file_path')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true); //ini dihapus
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

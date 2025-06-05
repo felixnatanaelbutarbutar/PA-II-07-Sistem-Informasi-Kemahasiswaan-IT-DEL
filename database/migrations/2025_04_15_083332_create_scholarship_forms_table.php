@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('scholarship_id', 10); // Mengacu ke scholarships
             $table->string('form_name', 100); // Nama formulir
             $table->text('description')->nullable(); // Deskripsi formulir
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true); //dihapus aja karna udah ada start date dan end data di form setting
             $table->unsignedBigInteger('created_by'); // Pembuat formulir
             $table->unsignedBigInteger('updated_by')->nullable(); // Pengubah formulir
             $table->timestamps();
