@@ -58,7 +58,7 @@ Route::get('/counseling', [CounselingController::class, 'index'])
 Route::post('/counseling', [CounselingController::class, 'store'])
     ->name('counseling.store')
     ->middleware(['auth', 'role:mahasiswa,adminbem,adminmpm,kemahasiswaan']);
-    
+
 // Activity Calendar for Guests
 Route::get('/activities', [ActivityController::class, 'guestIndex'])->name('activities.guest.index');
 Route::get('/activities/export/pdf', [ActivityController::class, 'guestExportToPDF'])->name('activities.guest.export.pdf');
@@ -84,11 +84,17 @@ Route::get('/mpm', [MpmController::class, 'show'])->name('mpm.show');
 Route::get('/downloads', [DownloadController::class, 'guestIndex'])->name('downloads.guest.index');
 
 // Scholarship and Form Routes for Guests/Mahasiswa
-Route::get('/scholarships', [ScholarshipController::class, 'guestIndex'])->name('scholarships.index');
-Route::get('/scholarships/{scholarship_id}', [ScholarshipController::class, 'guestShow'])->name('scholarships.show');
+Route::get('/scholarships', [ScholarshipController::class, 'guestIndex'])
+    ->middleware(['auth', 'role:mahasiswa,adminbem,adminmpm,kemahasiswaan'])
+    ->name('scholarships.index');
+
+Route::get('/scholarships/{scholarship_id}', [ScholarshipController::class, 'guestShow'])
+    ->middleware(['auth', 'role:mahasiswa,adminbem,adminmpm,kemahasiswaan'])
+    ->name('scholarships.show');
+
 Route::get('/scholarships/form/{form_id}', [FormController::class, 'showForm'])->name('scholarships.form.show');
 Route::post('/forms/submit', [FormController::class, 'storeSubmission'])
-    ->middleware(['auth', 'role:mahasiswa'])
+    ->middleware(['auth', 'role:mahasiswa,adminbem,adminmpm,kemahasiswaan'])
     ->name('forms.submit');
 
 // Login Route

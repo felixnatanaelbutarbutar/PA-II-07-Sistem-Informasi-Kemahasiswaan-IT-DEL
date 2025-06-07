@@ -7,7 +7,8 @@ import FooterLayout from '@/Layouts/FooterLayout';
 export default function ScholarshipForm({ auth, form, scholarship, submission, flash: initialFlash, errors: serverErrors }) {
     const { props } = usePage();
     const isAuthenticated = !!auth.user;
-    const isMahasiswa = isAuthenticated && auth.user.role?.toLowerCase() === 'mahasiswa';
+    // Update role check to include adminmpm and adminbem
+    const canSubmitForm = isAuthenticated && ['mahasiswa', 'adminmpm', 'adminbem'].includes(auth.user.role?.toLowerCase());
 
     const initialFormData = submission?.data || {};
     const [formData, setFormData] = useState(initialFormData);
@@ -47,9 +48,9 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!isMahasiswa) {
-            console.error('Submission blocked: Not mahasiswa', { isMahasiswa, authUser: auth.user });
-            setErrors({ general: 'Anda harus login sebagai mahasiswa untuk mengirim formulir.' });
+        if (!canSubmitForm) {
+            console.error('Submission blocked: Unauthorized role', { canSubmitForm, authUser: auth.user });
+            setErrors({ general: 'Anda harus login sebagai mahasiswa, admin MPM, atau admin BEM untuk mengirim formulir.' });
             setShowError(true);
             setTimeout(() => setShowError(false), 3000);
             return;
@@ -114,7 +115,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                 return (
                     <div className="form-group">
                         <label htmlFor={fieldKey}>
-                            {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                            {field.field_name || '-'} {field.is_required && <span className="text-red-500">*</span>}
                         </label>
                         <input
                             type={field.field_type}
@@ -132,7 +133,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                 return (
                     <div className="form-group">
                         <label htmlFor={fieldKey}>
-                            {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                            {field.field_name || '-'} {field.is_required && <span className="text-red-500">*</span>}
                         </label>
                         <textarea
                             id={fieldKey}
@@ -150,7 +151,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                 return (
                     <div className="form-group">
                         <label htmlFor={fieldKey}>
-                            {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                            {field.field_name || '-'} {field.is_required && <span className="text-red-500">*</span>}
                         </label>
                         <select
                             id={fieldKey}
@@ -160,7 +161,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                             required={field.is_required}
                             className="w-full"
                         >
-                            <option value="">Pilih opsi</option>
+                            <option value="">Pilih salah satu</option>
                             {field.options?.map((option, index) => (
                                 <option key={index} value={option}>
                                     {option}
@@ -174,7 +175,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                 return (
                     <div className="form-group">
                         <label htmlFor={fieldKey}>
-                            {field.field_name} {field.is_required && <span className="text-red-500">*</span>}
+                            {field.field_name || '-'} {field.is_required && <span className="text-red-500">*</span>}
                         </label>
                         <input
                             type="file"
@@ -182,7 +183,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                             name={fieldKey}
                             onChange={(e) => handleChange(e, fieldKey)}
                             required={field.is_required && !formData[fieldKey]}
-                            accept=".pdf,.jpeg,.png"
+                            accept=".pdf,.jpg,.jpeg,.png"
                             className="w-full"
                         />
                         {formData[fieldKey] instanceof File && (
@@ -213,12 +214,13 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                 .auth-message { text-align: center; background: #f9fafb; padding: ${window.innerWidth <= 768 ? '15px' : '20px'}; border-radius: 8px; margin-bottom: ${window.innerWidth <= 768 ? '20px' : '30px'}; }
                 .auth-message p { font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; color: #6b7280; margin-bottom: ${window.innerWidth <= 768 ? '10px' : '15px'}; }
                 .auth-message .auth-name { font-weight: 600; color: #1e40af; }
+                .auth-message .role-text { font-weight: 600; color: #1e40af; text-transform: capitalize; }
                 .auth-message .button-group { display: flex; justify-content: center; gap: ${window.innerWidth <= 768 ? '10px' : '15px'}; margin-top: ${window.innerWidth <= 768 ? '10px' : '15px'}; }
                 .login-link, .logout-button { display: inline-flex; align-items: center; padding: ${window.innerWidth <= 768 ? '10px 20px' : '12px 24px'}; background: #1e40af; color: #ffffff; border-radius: 8px; text-decoration: none; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; }
                 .logout-button { background: #ef4444; }
                 .login-link:hover, .logout-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2); }
                 .logout-button:hover { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
-                .login-link img, .logout-button img { margin-right: 8px; width: ${window.innerWidth <= 768 ? '16px' : '20px'}; height: ${window.innerWidth <= 768 ? '16px' : '20px'}; }
+                .login-link img, .logout-button img { margin-right: 8px; width: ${window.innerWidth <= 768 ? '16px' : '20px'}; height: ${window.innerWidth <= 768 ? '16px' : '20px'}px; }
                 .form-grid { display: grid; grid-template-columns: 1fr; gap: ${window.innerWidth <= 768 ? '16px' : '25px'}; width: 100%; max-width: 800px; margin: 0 auto; }
                 .form-group { width: 100%; }
                 .form-group label { font-weight: 600; color: #1f2937; display: block; margin-bottom: ${window.innerWidth <= 768 ? '8px' : '10px'}; font-size: ${window.innerWidth <= 768 ? '14px' : '16px'}; }
@@ -245,7 +247,8 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                         {isAuthenticated ? (
                             <div>
                                 <p>
-                                    Anda login sebagai: <span className="auth-name">{auth.user.name}</span> (NIM: {auth.user.nim})
+                                    Anda login sebagai: <span className="auth-name">{auth.user.nim || '-'} | {auth.user.name} </span> <br />
+                                    {/* Role: <span className="role-text">{auth.user.role || '-'}</span> */}
                                 </p>
                                 <div className="button-group">
                                     <button onClick={handleLogout} className="logout-button">
@@ -262,7 +265,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                         ) : (
                             <div>
                                 <p>
-                                    Untuk menampilkan dan mengisi formulir ini anda harus terlebih dahulu login.
+                                    Untuk menampilkan dan mengisi formulir ini, Anda harus login sebagai mahasiswa, admin MPM, atau admin BEM.
                                 </p>
                                 <div className="button-group">
                                     <Link
@@ -299,7 +302,7 @@ export default function ScholarshipForm({ auth, form, scholarship, submission, f
                             </div>
                             <button
                                 type="submit"
-                                disabled={!isMahasiswa || !form.accept_responses || isSubmitting}
+                                disabled={!canSubmitForm || !form.accept_responses || isSubmitting}
                                 className="submit-button"
                             >
                                 <img

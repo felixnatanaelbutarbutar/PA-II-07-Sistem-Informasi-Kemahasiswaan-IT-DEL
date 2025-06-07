@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Helpers\RoleHelper;
 use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
 
 class FormController extends Controller
 {
@@ -70,8 +71,7 @@ class FormController extends Controller
                 $query->whereHas('settings', function ($q) {
                     $now = now();
                     $q->where(function ($subQ) use ($now) {
-                        $subQ->whereBetween('submission_start', [$now->startOfDay(), $now->endOfDay()])
-                            ->orWhereBetween('submission_deadline', [$now->startOfDay(), $now->endOfDay()])
+                        $subQ->whereBetween($now, ['submission_start', 'submission_deadline'])
                             ->orWhere('accept_responses', true);
                     });
                 });
@@ -201,8 +201,8 @@ class FormController extends Controller
                 'form_name' => 'required|string|max:100',
                 'description' => 'nullable|string',
                 'created_by' => 'required|exists:users,id',
-                'submission_start' => 'nullable|date', // Added for form settings
-                'submission_deadline' => 'nullable|date|after_or_equal:submission_start', // Added for form settings
+                'submission_start' => 'nullable|date',
+                'submission_deadline' => 'nullable|date|after_or_equal:submission_start',
                 'sections' => 'required|array|min:1',
                 'sections.*.title' => 'nullable|string|max:100',
                 'sections.*.fields' => 'required|array|min:1',
@@ -266,6 +266,9 @@ class FormController extends Controller
 
                 return redirect()->route('admin.form.index')->with('success', 'Formulir berhasil ditambahkan.');
             });
+        } catch (ValidationException $e) {
+            Log::error('Validation error in FormController::store: ' . json_encode($e->errors()));
+            return redirect()->back()->with('error', 'Gagal menambahkan formulir: ' . $e->getMessage())->withInput()->withErrors($e->errors());
         } catch (\Exception $e) {
             Log::error('Error in FormController::store: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return redirect()->back()->with('error', 'Gagal menambahkan formulir: ' . $e->getMessage())->withInput();
@@ -292,7 +295,7 @@ class FormController extends Controller
                             'options' => $field->options,
                             'order' => (int) $field->order,
                             'file_path' => $field->file_path ? Storage::url($field->file_path) : null,
-                            'is_active' => $field->is_active,
+                            'is_active' => (bool) $field->is_active,
                         ];
                     })->sortBy('order')->values()->toArray(),
                 ];
@@ -303,6 +306,7 @@ class FormController extends Controller
                 'userRole' => $role,
                 'permissions' => RoleHelper::getRolePermissions($role),
                 'form' => [
+                    'id' => $form->form_id,
                     'form_id' => $form->form_id,
                     'scholarship_id' => $form->scholarship_id,
                     'form_name' => $form->form_name,
@@ -313,12 +317,12 @@ class FormController extends Controller
                     'status' => $this->isFormActive($form->settings) ? 'Aktif' : 'Non-Aktif',
                     'sections' => $sections,
                 ],
-                'scholarships' => Scholarship::select('scholarship_id', 'name')->get(),
+                'scholarships' => Scholarship::select(['scholarship_id', 'name'])->get(),
                 'menu' => RoleHelper::getNavigationMenu($role),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error in FormController::edit: ' . $e->getMessage());
-            return redirect()->route('admin.form.index')->with('error', 'Gagal memuat halaman edit formulir.');
+            Log::error('Error in FormController::edit: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->route('admin.form.index')->with('error', 'Failed to load edit form page.');
         }
     }
 
@@ -329,56 +333,54 @@ class FormController extends Controller
                 'scholarship_id' => 'required|exists:scholarships,scholarship_id',
                 'form_name' => 'required|string|max:100',
                 'description' => 'nullable|string',
-                'submission_start' => 'nullable|date', // Added for form settings
-                'submission_deadline' => 'nullable|date|after_or_equal:submission_start', // Added for form settings
+                'submission_start' => 'nullable|date',
+                'submission_deadline' => 'nullable|date|after_or_equal:submission_start',
                 'updated_by' => 'required|exists:users,id',
-                'sections' => 'required|array|min:1',
+                'sections' => ['required', 'array', 'min:1'],
                 'sections.*.title' => 'nullable|string|max:100',
-                'sections.*.fields' => 'required|array|min:1',
-                'sections.*.fields.*.field_name' => 'required|string|max:100',
-                'sections.*.fields.*.field_type' => 'required|in:text,number,date,dropdown,file,quill',
-                'sections.*.fields.*.is_required' => 'required|boolean',
-                'sections.*.fields.*.order' => 'required|integer|min:1',
-                'sections.*.fields.*.options' => 'nullable|string',
-                'sections.*.fields.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
-                'sections.*.fields.*.field_id' => 'nullable|string|exists:form_fields,field_id',
-                'sections.*.fields.*.is_active' => 'boolean',
+                'sections.*.fields' => ['required', 'array', 'min:1'],
+                'sections.*.fields.*.field_name' => ['required', 'string', 'max:100'],
+                'sections.*.fields.*.field_type' => ['required', 'in:text,number,date,dropdown,file,quill'],
+                'sections.*.fields.*.is_required' => ['required', 'boolean'],
+                'sections.*.fields.*.order' => ['required', 'integer', 'min:1'],
+                'sections.*.fields.*.options' => ['nullable', 'string'],
+                'sections.*.fields.*.file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,png', 'max:2048'],
+                'sections.*.fields.*.field_id' => ['nullable', 'string', 'exists:form_fields,field_id'],
+                'sections.*.fields.*.is_active' => ['required', 'boolean'],
             ]);
 
-            return DB::transaction(function () use ($request, $validatedData, $form) {
+            return DB::transaction(function ($request, $form, $validatedData) {
                 $form->update([
                     'scholarship_id' => $validatedData['scholarship_id'],
-                    'form_name' => $validatedData['form_name'],
-                    'description' => $validatedData['description'],
-                    'updated_by' => $validatedData['updated_by'],
+                    'form_name' => $request->validatedData['form_name'],
+                    'description' => $request->validatedData['description'],
+                    'updated_by' => $request->validated()->updated_by,
                 ]);
 
-                // Update or create form settings
                 $settings = FormSetting::where('form_id', $form->form_id)->first();
                 if ($settings) {
-                    $settings->update([
-                        'submission_start' => $validatedData['submission_start'],
-                        'submission_deadline' => $validatedData['submission_deadline'],
-                        'updated_by' => $validatedData['updated_by'],
+                    $settings = FormSubmission::create([
+                        'settings_id' => $this->generateId('FS', 'setting_id', 'form_settings'),
+                        'form_id' => $form->form_id,
+                        'accept_response' => true,
+                        'submission_start' => $request->validated()->submission_start,
+                        'submission_deadline' => $request->validated()->submission_deadline,
+                        'max_submission' => null,
+                        'created_by' => $request->validated()->updated_by,
+                        'updated_by' => $request->validated()->updated_by,
                     ]);
                 } else {
-                    $settingId = $this->generateId('FS', 'setting_id', 'form_settings');
-                    FormSetting::create([
-                        'setting_id' => $settingId,
-                        'form_id' => $form->form_id,
-                        'accept_responses' => true,
-                        'submission_start' => $validatedData['submission_start'],
-                        'submission_deadline' => $validatedData['submission_deadline'],
-                        'max_submissions' => null,
-                        'created_by' => $validatedData['updated_by'],
-                        'updated_by' => $validatedData['updated_by'],
+                    $settings->update([
+                        'submission_start' => $request->validated()->submission_start,
+                        'submission_deadline' => $request->validated()->submission_deadline,
+                        'updated_by' => $request->validated()->updated_by,
                     ]);
                 }
 
                 $existingFields = FormField::where('form_id', $form->form_id)->get();
                 $existingFieldIds = $existingFields->pluck('field_id')->toArray();
                 $submittedFieldIds = collect($validatedData['sections'])
-                    ->flatMap(fn($section) => $section['fields'])
+                    ->flatMap(fn ($section) => $section['fields'])
                     ->pluck('field_id')
                     ->filter()
                     ->toArray();
@@ -436,7 +438,7 @@ class FormController extends Controller
 
                 return redirect()->route('admin.form.index')->with('success', 'Formulir berhasil diperbarui.');
             });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             Log::error('Validation error in FormController::update: ' . json_encode($e->errors()), [
                 'form_id' => $form->form_id,
                 'request_data' => $request->except(['sections.*.fields.*.file']),
@@ -551,6 +553,9 @@ class FormController extends Controller
 
                 return redirect()->route('admin.form.index')->with('success', 'Pengaturan formulir berhasil diperbarui.');
             });
+        } catch (ValidationException $e) {
+            Log::error('Validation error in FormController::updateSettings: ' . json_encode($e->errors()));
+            return redirect()->back()->with('error', 'Gagal memperbarui pengaturan formulir: ' . $e->getMessage())->withErrors($e->errors());
         } catch (\Exception $e) {
             Log::error('Error in FormController::updateSettings: ' . $e->getMessage(), [
                 'form_id' => $form->form_id,
@@ -580,7 +585,7 @@ class FormController extends Controller
                             'options' => $field->options,
                             'order' => (int) $field->order,
                             'file_path' => $field->file_path ? Storage::url($field->file_path) : null,
-                            'is_active' => $field->is_active,
+                            'is_active' => (bool) $field->is_active,
                         ];
                     })->sortBy('order')->values()->toArray(),
                 ];
@@ -623,7 +628,7 @@ class FormController extends Controller
 
             $user = Auth::user();
             $submission = null;
-            if ($user && strtolower($user->role) === 'mahasiswa') {
+            if ($user && in_array(strtolower($user->role), ['mahasiswa', 'adminbem', 'adminmpm'])) {
                 $submission = FormSubmission::where('form_id', $form_id)
                     ->where('user_id', $user->id)
                     ->first();
@@ -649,7 +654,7 @@ class FormController extends Controller
                                 'options' => $field->options ? explode(',', $field->options) : null,
                                 'order' => (int) $field->order,
                                 'file_path' => $field->file_path ? Storage::url($field->file_path) : null,
-                                'is_active' => $field->is_active,
+                                'is_active' => (bool) $field->is_active,
                             ];
                         })->sortBy('order')->values()->toArray(),
                     ];
@@ -670,27 +675,30 @@ class FormController extends Controller
                 ] : null,
                 'flash' => session()->only(['success', 'error']),
             ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Form not found in FormController::showForm: ' . $e->getMessage());
+            return redirect()->route('scholarships.index')->with('error', 'Formulir tidak ditemukan.');
         } catch (\Exception $e) {
             Log::error('Error in FormController::showForm: ' . $e->getMessage());
-            return redirect()->route('scholarships.index')->with('error', 'Formulir tidak ditemukan.');
+            return redirect()->route('scholarships.index')->with('error', 'Gagal memuat formulir: ' . $e->getMessage());
         }
     }
 
     public function storeSubmission(Request $request)
     {
         Log::info('storeSubmission method called', [
-            'request_data' => $request->all(),
-            'files' => $request->allFiles(),
+            'request_data' => $request->except(['data.*.file']),
+            'files' => array_keys($request->allFiles()),
             'user' => Auth::user(),
         ]);
 
         $user = Auth::user();
 
-        if (!$user || strtolower($user->role) !== 'mahasiswa') {
-            Log::warning('User not authenticated or not mahasiswa', [
+        if (!$user || !in_array(strtolower($user->role), ['mahasiswa', 'adminbem', 'adminmpm'])) {
+            Log::warning('User not authenticated or not allowed to submit form', [
                 'user' => $user,
             ]);
-            return redirect()->route('login')->with('error', 'Anda harus login sebagai mahasiswa untuk mengirimkan formulir.');
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai mahasiswa, admin BEM, atau admin MPM untuk mengirimkan formulir.');
         }
 
         try {
@@ -700,11 +708,10 @@ class FormController extends Controller
                 'data' => 'required|array',
             ]);
 
-            Log::info('Form submission received', [
+            Log::info('Form submission validated', [
                 'form_id' => $validatedData['form_id'],
                 'scholarship_id' => $validatedData['scholarship_id'],
                 'user_id' => $user->id,
-                'data' => $validatedData['data'],
             ]);
 
             $form = ScholarshipForm::with('settings')
@@ -718,6 +725,15 @@ class FormController extends Controller
                 return redirect()->back()->with('error', 'Formulir ini tidak menerima pengajuan saat ini.');
             }
 
+            // Check for duplicate submission
+            if (FormSubmission::where('form_id', $validatedData['form_id'])->where('user_id', $user->id)->exists()) {
+                Log::warning('Duplicate submission attempted', [
+                    'form_id' => $validatedData['form_id'],
+                    'user_id' => $user->id,
+                ]);
+                return redirect()->back()->with('error', 'Anda sudah mengajukan formulir ini.');
+            }
+
             $submissionData = $validatedData['data'];
             $processedData = [];
 
@@ -727,7 +743,7 @@ class FormController extends Controller
                 $value = $submissionData[$fieldKey] ?? null;
 
                 if ($field->is_required && (is_null($value) || $value === '')) {
-                    Log::warning('Form submission rejected: Required field missing', [
+                    Log::warning('Required field missing', [
                         'form_id' => $validatedData['form_id'],
                         'field' => $field->field_name,
                     ]);
@@ -735,20 +751,22 @@ class FormController extends Controller
                 }
 
                 if ($field->field_type === 'file') {
-                    $fileArray = $request->file('data') ?? [];
-                    $file = $fileArray[$fieldKey] ?? null;
-
+                    $file = $request->file("data.{$fieldKey}");
+                    if ($field->is_required && !$file && !$value) {
+                        Log::warning('Required file missing', [
+                            'form_id' => $validatedData['form_id'],
+                            'field' => $field->field_name,
+                        ]);
+                        return redirect()->back()->with('error', "File untuk {$field->field_name} wajib diunggah.");
+                    }
                     if ($file && $file instanceof \Illuminate\Http\UploadedFile) {
-                        Log::info('File detected for field', [
+                        Log::info('File detected', [
                             'field_key' => $fieldKey,
                             'file_name' => $file->getClientOriginalName(),
                         ]);
                         $path = $file->store('submissions', 'public');
                         $processedData[$fieldKey] = $path;
                     } else {
-                        Log::warning('No file detected for field', [
-                            'field_key' => $fieldKey,
-                        ]);
                         $processedData[$fieldKey] = $value;
                     }
                 } else {
@@ -767,51 +785,36 @@ class FormController extends Controller
                 'personal_data' => [
                     'name' => $user->name,
                     'email' => $user->email,
-                    'nim' => $user->nim,
+                    'nim' => $user->nim ?? null,
                 ],
                 'submitted_at' => now(),
             ]);
 
             DB::commit();
 
-            Log::info('Form submission saved successfully', [
+            Log::info('Form submission saved', [
                 'submission_id' => $submission->submission_id,
                 'form_id' => $submission->form_id,
                 'user_id' => $submission->user_id,
-                'data' => $processedData,
             ]);
 
             return redirect()->route('scholarships.show', $validatedData['scholarship_id'])
                 ->with('success', 'Pengajuan berhasil dikirim.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation failed in storeSubmission', [
-                'user_id' => $user->id,
-                'errors' => $e->errors(),
-                'request_data' => $request->all(),
-            ]);
-            return redirect()->back()
-                ->with('error', 'Gagal memvalidasi data. Silakan periksa input Anda.')
-                ->withErrors($e->errors());
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (ValidationException $e) {
+            Log::error('Validation failed in storeSubmission: ' . json_encode($e->errors()));
+            return redirect()->back()->with('error', 'Gagal memvalidasi data. Silakan periksa input Anda.')->withErrors($e->errors());
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollBack();
-            Log::error('Failed to save form submission', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'request_data' => $request->all(),
-            ]);
-            return redirect()->back()
-                ->with('error', 'Gagal menyimpan pengajuan. Silakan coba lagi.')
-                ->withErrors(['general' => 'Gagal menyimpan pengajuan: ' . $e->getMessage()]);
+            Log::error('Form not found in storeSubmission: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Formulir tidak ditemukan.');
+        } catch (QueryException $e) {
+            DB::rollBack();
+            Log::error('Database error in storeSubmission: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan pengajuan: ' . $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Unexpected error while saving form submission', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'request_data' => $request->all(),
-            ]);
-            return redirect()->back()
-                ->with('error', 'Terjadi kesalahan. Silakan coba lagi.')
-                ->withErrors(['general' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+            Log::error('Unexpected error in storeSubmission: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
@@ -836,12 +839,12 @@ class FormController extends Controller
                             'id' => $submission->user->id,
                             'name' => $submission->user->name,
                             'email' => $submission->user->email,
-                            'nim' => $submission->user->nim,
-                            'prodi' => $submission->user->prodi,
-                            'angkatan' => $submission->user->angkatan,
+                            'nim' => $submission->user->nim ?? '-',
+                            'prodi' => $submission->user->prodi ?? '-',
+                            'angkatan' => $submission->user->angkatan ?? '-',
                         ],
                         'submitted_at' => $submission->submitted_at->toDateTimeString(),
-                        'status' => $submission->status,
+                        'status' => $submission->status ?? 'MENUNGGU',
                         'data' => $submission->data,
                     ];
                 });
@@ -861,6 +864,9 @@ class FormController extends Controller
                 'menu' => RoleHelper::getNavigationMenu($role),
                 'flash' => session()->only(['success', 'error']),
             ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Form not found in FormController::responses: ' . $e->getMessage());
+            return redirect()->route('admin.form.index')->with('error', 'Formulir tidak ditemukan.');
         } catch (\Exception $e) {
             Log::error('Error in FormController::responses: ' . $e->getMessage(), [
                 'form_id' => $form_id,
@@ -875,12 +881,6 @@ class FormController extends Controller
         try {
             $user = Auth::user();
             $role = strtolower($user->role);
-
-            Log::info('FormController::responseDetail called', [
-                'form_id' => $form_id,
-                'submission_id' => $submission_id,
-                'user_role' => $role,
-            ]);
 
             $form = ScholarshipForm::with(['settings', 'scholarship:name', 'fields'])
                 ->where('form_id', $form_id)
@@ -902,8 +902,6 @@ class FormController extends Controller
                 ];
             })->sortBy('order')->values();
 
-            Log::info('Fields retrieved', ['fields' => $fields->toArray()]);
-
             $submissionData = $submission->data;
             $organizedData = [];
             foreach ($fields as $field) {
@@ -912,23 +910,10 @@ class FormController extends Controller
                 $value = $submissionData[$fieldKey] ?? null;
 
                 if ($field['field_type'] === 'file' && $value) {
-                    $fileExists = Storage::disk('public')->exists($value);
-                    Log::info('Checking file existence', [
-                        'file_path' => $value,
-                        'exists' => $fileExists,
-                    ]);
-
-                    if ($fileExists) {
-                        $fileUrl = Storage::url($value);
-                        Log::info('Generated file URL', [
-                            'file_path' => $value,
-                            'file_url' => $fileUrl,
-                        ]);
-                        $value = $fileUrl;
+                    if (Storage::disk('public')->exists($value)) {
+                        $value = Storage::url($value);
                     } else {
-                        Log::warning('File not found in storage', [
-                            'file_path' => $value,
-                        ]);
+                        Log::warning('File not found in storage', ['file_path' => $value]);
                         $value = null;
                     }
                 }
@@ -938,15 +923,6 @@ class FormController extends Controller
                     'value' => $value,
                     'field_type' => $field['field_type'],
                 ];
-            }
-
-            Log::info('Organized data', ['organizedData' => $organizedData]);
-
-            $menu = RoleHelper::getNavigationMenu($role);
-            if (empty($menu)) {
-                Log::warning('Menu is empty for role: ' . $role, ['method' => 'responseDetail']);
-            } else {
-                Log::info('Menu retrieved successfully', ['menu' => $menu]);
             }
 
             return Inertia::render('Admin/Form/ResponsesDetail', [
@@ -964,30 +940,24 @@ class FormController extends Controller
                         'id' => $submission->user->id,
                         'name' => $submission->user->name,
                         'email' => $submission->user->email,
-                        'nim' => $submission->user->nim,
+                        'nim' => $submission->user->nim ?? '-',
                         'prodi' => $submission->user->prodi ?? '-',
                         'angkatan' => $submission->user->angkatan ?? '-',
                     ],
                     'submitted_at' => $submission->submitted_at->toDateTimeString(),
-                    'status' => $submission->status,
+                    'status' => $submission->status ?? 'MENUNGGU',
                     'data' => $organizedData,
                 ],
-                'menu' => $menu,
+                'menu' => RoleHelper::getNavigationMenu($role),
                 'flash' => session()->only(['success', 'error']),
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error('Form or Submission not found in FormController::responseDetail', [
-                'form_id' => $form_id,
-                'submission_id' => $submission_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Form or submission not found in FormController::responseDetail: ' . $e->getMessage());
             return redirect()->route('admin.form.responses', ['form' => $form_id])->with('error', 'Formulir atau pengajuan tidak ditemukan.');
         } catch (\Exception $e) {
             Log::error('Error in FormController::responseDetail: ' . $e->getMessage(), [
                 'form_id' => $form_id,
                 'submission_id' => $submission_id,
-                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
             return redirect()->route('admin.form.responses', ['form' => $form_id])->with('error', 'Gagal memuat detail respons: ' . $e->getMessage());
@@ -1001,41 +971,28 @@ class FormController extends Controller
                 ->where('submission_id', $submission_id)
                 ->firstOrFail();
 
-            $validStatuses = ['MENUNGGU', 'TIDAK_LOLOS_ADMINISTRASI', 'LULUS_ADMINISTRASI', 'TIDAK_LOLOS_TAHAP_AKHIR', 'LULUS_TAHAP_AKHIR'];
-            $status = $request->input('status');
+            $validatedData = $request->validate([
+                'status' => 'required|in:MENUNGGU,TIDAK_LOLOS_ADMINISTRASI,LULOS_ADMINISTRASI,TIDAK_LOLOS_TAHAP_AKHIR,LULOS_TAHAP_AKHIR',
+            ]);
 
-            if (!in_array($status, $validStatuses)) {
-                Log::warning('Invalid status attempted', [
-                    'form_id' => $form_id,
-                    'submission_id' => $submission_id,
-                    'status' => $status,
-                ]);
-                return redirect()->back()->with('error', 'Status tidak valid.');
-            }
+            $submission->update(['status' => $validatedData['status']]);
 
-            $submission->update(['status' => $status]);
-
-            Log::info('Status updated successfully', [
+            Log::info('Status updated', [
                 'form_id' => $form_id,
                 'submission_id' => $submission_id,
-                'new_status' => $status,
+                'new_status' => $validatedData['status'],
             ]);
 
             return redirect()->back()->with('success', 'Status berhasil diperbarui.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in updateStatus: ' . json_encode($e->errors()));
+            return redirect()->back()->with('error', 'Status tidak valid.')->withErrors($e->errors());
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error('Submission not found in FormController::updateStatus', [
-                'form_id' => $form_id,
-                'submission_id' => $submission_id,
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Submission not found in FormController::updateStatus: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Pengajuan tidak ditemukan.');
         } catch (QueryException $e) {
-            Log::error('Database error in FormController::updateStatus', [
-                'form_id' => $form_id,
-                'submission_id' => $submission_id,
-                'error' => $e->getMessage(),
-            ]);
-            return redirect()->back()->with('error', 'Gagal memperbarui status karena kesalahan database.');
+            Log::error('Database error in FormController::updateStatus: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memperbarui status: ' . $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Error in FormController::updateStatus: ' . $e->getMessage(), [
                 'form_id' => $form_id,
@@ -1067,8 +1024,7 @@ class FormController extends Controller
                 return redirect()->back()->with('error', 'Tidak ada data untuk diekspor.');
             }
 
-            $data = [];
-            $data[] = ['No', 'Nama', 'NIM', 'Prodi', 'Angkatan', 'Email', 'Tanggal Pengajuan', 'Status'];
+            $data = [['No', 'Nama', 'NIM', 'Prodi', 'Angkatan', 'Email', 'Tanggal Pengajuan', 'Status']];
 
             foreach ($submissions as $index => $submission) {
                 $data[] = [
@@ -1098,6 +1054,9 @@ class FormController extends Controller
                 "Respons_Form_{$form->form_name}_" . ($type ? "{$type}_" : '') . now()->format('Y-m-d') . '.xlsx',
                 \Maatwebsite\Excel\Excel::XLSX
             );
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Form not found in FormController::export: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Formulir tidak ditemukan.');
         } catch (\Exception $e) {
             Log::error('Error in FormController::export: ' . $e->getMessage(), [
                 'form_id' => $form_id,

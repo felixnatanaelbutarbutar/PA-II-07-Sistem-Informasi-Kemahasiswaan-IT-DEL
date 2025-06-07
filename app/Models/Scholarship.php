@@ -29,6 +29,10 @@ class Scholarship extends Model
     {
         return $this->belongsTo(ScholarshipCategory::class, 'category_id', 'category_id');
     }
+    public function forms()
+    {
+        return $this->hasMany(ScholarshipForm::class, 'scholarship_id', 'scholarship_id');
+    }
 
     public function creator()
     {

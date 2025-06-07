@@ -386,11 +386,17 @@ export default function ScholarshipIndex() {
                                     <p style={styles.cardDetail}>
                                         <strong>Kategori:</strong> {scholarship.category_name || '-'}
                                     </p>
-                                    <p style={styles.cardDetail}>
+                                    {/* <p style={styles.cardDetail}>
                                         <strong>Tanggal Mulai:</strong> {formatDate(scholarship.start_date)}
                                     </p>
                                     <p style={styles.cardDetail}>
                                         <strong>Tanggal Selesai:</strong> {formatDate(scholarship.end_date)}
+                                    </p> */}
+                                    <p style={styles.cardDetail}>
+                                        <strong>Tanggal Mulai:</strong> {formatDate(scholarship.submission_start)}
+                                    </p>
+                                    <p style={styles.cardDetail}>
+                                        <strong>Tanggal Selesai:</strong> {formatDate(scholarship.submission_deadline)}
                                     </p>
                                     <Link
                                         href={`/scholarships/${scholarship.scholarship_id}`}

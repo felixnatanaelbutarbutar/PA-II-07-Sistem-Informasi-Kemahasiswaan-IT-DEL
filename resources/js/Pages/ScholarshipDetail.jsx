@@ -283,14 +283,14 @@ export default function ScholarshipDetail() {
                                         <span style={{ fontWeight: '600', color: '#1e40af' }}>Kategori:</span>{' '}
                                         {scholarship?.category_name || '-'}
                                     </p>
-                                    <p style={styles.detail}>
+                                    {/* <p style={styles.detail}>
                                         <span style={{ fontWeight: '600', color: '#1e40af' }}>Tanggal Mulai:</span>{' '}
                                         {formatDate(scholarship?.start_date)}
                                     </p>
                                     <p style={styles.detail}>
                                         <span style={{ fontWeight: '600', color: '#1e40af' }}>Tanggal Selesai:</span>{' '}
                                         {formatDate(scholarship?.end_date)}
-                                    </p>
+                                    </p> */}
                                     {form ? (
                                         <>
                                             <p style={styles.detail}>

@@ -12,9 +12,12 @@ use App\Models\ScholarshipCategory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Traits\FormActivityTrait;
 
 class ScholarshipController extends Controller
 {
+    use FormActivityTrait;
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -325,7 +328,10 @@ class ScholarshipController extends Controller
     public function guestIndex()
     {
         try {
-            $scholarships = Scholarship::with('category')
+            $scholarships = Scholarship::with([
+                'category',
+                'forms.settings' // Eager-load forms and their settings
+            ])
                 ->where('is_active', true)
                 ->get();
 
@@ -336,6 +342,11 @@ class ScholarshipController extends Controller
 
             return Inertia::render('ScholarshipIndex', [
                 'scholarships' => $scholarships->map(function ($scholarship) {
+                    // Get the first form (or null if no forms exist)
+                    $form = $scholarship->forms->first();
+                    // Get form settings (or null if no settings exist)
+                    $settings = $form ? $form->settings : null;
+
                     return [
                         'scholarship_id' => $scholarship->scholarship_id,
                         'name' => $scholarship->name ?? '-',
@@ -343,6 +354,9 @@ class ScholarshipController extends Controller
                         'poster' => $scholarship->poster ? Storage::url($scholarship->poster) : null,
                         'category_id' => $scholarship->category_id ?? '-',
                         'category_name' => $scholarship->category ? $scholarship->category->category_name ?? '-' : '-',
+                        // Map submission_start and submission_deadline from form_settings
+                        'submission_start' => $settings ? $settings->submission_start?->toDateTimeString() : '-',
+                        'submission_deadline' => $settings ? $settings->submission_deadline?->toDateTimeString() : '-',
                     ];
                 }),
                 'auth' => ['user' => Auth::user()],
@@ -350,7 +364,7 @@ class ScholarshipController extends Controller
                 'flash' => session()->only(['success', 'error']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error in FormController::guestIndex: ' . $e->getMessage(), [
+            Log::error('Error in ScholarshipController::guestIndex: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
             return redirect()->route('home')->with('error', 'Gagal memuat daftar beasiswa. Silakan coba lagi nanti.');
@@ -365,20 +379,19 @@ class ScholarshipController extends Controller
                 ->where('is_active', true)
                 ->firstOrFail();
 
+            // Fetch the first form associated with the scholarship
             $form = ScholarshipForm::with(['fields', 'settings'])
                 ->where('scholarship_id', $scholarship_id)
-                ->where('is_active', true)
                 ->first();
 
-            if ($form && $form->settings) {
-                $form->settings->checkAndActivateForm();
-            }
+            // Determine form activity status
+            $isFormActive = $form ? $this->isFormActive($form->settings) : false;
 
             $formData = $form ? [
                 'form_id' => $form->form_id,
                 'form_name' => $form->form_name,
                 'description' => $form->description,
-                'is_active' => $form->is_active,
+                'is_active' => $isFormActive,
                 'open_date' => $form->settings?->submission_start ? $form->settings->submission_start->toDateTimeString() : '-',
                 'close_date' => $form->settings?->submission_deadline ? $form->settings->submission_deadline->toDateTimeString() : '-',
                 'sections' => $form->fields->groupBy('section_title')->map(function ($fields, $sectionTitle) {
@@ -393,7 +406,7 @@ class ScholarshipController extends Controller
                                 'options' => $field->options ? explode(',', $field->options) : null,
                                 'order' => (int) $field->order,
                                 'file_path' => $field->file_path ? Storage::url($field->file_path) : null,
-                                'is_active' => $field->is_active,
+                                'is_active' => (bool) $field->is_active,
                             ];
                         })->sortBy('order')->values()->toArray(),
                     ];
@@ -414,9 +427,17 @@ class ScholarshipController extends Controller
                 'form' => $formData,
                 'flash' => session()->only(['success', 'error']),
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error in FormController::guestShow: ' . $e->getMessage());
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Scholarship not found in ScholarshipController::guestShow: ' . $e->getMessage(), [
+                'scholarship_id' => $scholarship_id,
+            ]);
             return redirect()->route('scholarships.index')->with('error', 'Beasiswa tidak ditemukan.');
+        } catch (\Exception $e) {
+            Log::error('Error in ScholarshipController::guestShow: ' . $e->getMessage(), [
+                'scholarship_id' => $scholarship_id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('scholarships.index')->with('error', 'Gagal memuat detail beasiswa: ' . $e->getMessage());
         }
     }
 
