@@ -239,7 +239,6 @@
 
 .navbar {
     background: var(--gradient);
-    /* Gunakan --gradient untuk konsistensi */
     backdrop-filter: blur(8px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
@@ -249,7 +248,6 @@
 .navbar-scrolled {
     height: 4rem;
     background: var(--gradient);
-    /* Tetap gunakan --gradient saat scrolled */
     opacity: 0.95;
 }
 
@@ -455,21 +453,6 @@
     margin: 0.5rem;
 }
 
-@media (max-width: 576px) {
-    .carousel-caption {
-        padding: 1rem;
-        width: 95%;
-    }
-    
-    .carousel-caption h1 {
-        margin-bottom: 0.75rem;
-    }
-    
-    .carousel-caption p {
-        margin-bottom: 1.5rem;
-    }
-}
-
 .swiper-pagination {
     position: absolute !important;
     bottom: clamp(20px, 4vw, 40px) !important;
@@ -545,38 +528,6 @@
     opacity: 0 !important;
     cursor: default;
 }
-/* Mobile touch improvements */
-@media (max-width: 768px) {
-    .swiper-button-next,
-    .swiper-button-prev {
-        opacity: 0.7;
-        transform: translateY(-50%) scale(1);
-    }
-    
-    .swiper-container:hover .swiper-button-next,
-    .swiper-container:hover .swiper-button-prev {
-        opacity: 1;
-    }
-}
-
-@media (max-width: 480px) {
-    .swiper-button-next,
-    .swiper-button-prev {
-        display: none; /* Hide navigation buttons on very small screens */
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(1.05);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
 
 .swiper-slide-active .carousel-slide {
     animation: fadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -616,7 +567,7 @@
     outline-offset: 2px;
 }
 
-/* Adjust dropdowns for mobile */
+/* Mobile menu button */
 .mobile-menu-button {
     border: 2px solid white;
     border-radius: 50%;
@@ -631,98 +582,6 @@
 .mobile-menu-button svg {
     width: 1.25rem;
     height: 1.25rem;
-}
-
-@media (max-width: 1100px) {
-    .navbar .hidden.lg\:flex {
-        display: none;
-    }
-
-    .navbar .flex.lg\:hidden {
-        display: flex;
-    }
-
-    .navbar {
-        height: 4rem;
-    }
-
-    .navbar-scrolled {
-        height: 3.5rem;
-    }
-
-    .navbar .logo-container {
-        height: 3.5rem;
-    }
-
-    .navbar-scrolled .logo-container {
-        height: 3rem;
-    }
-
-    .navbar .logo-image {
-        height: 3rem;
-    }
-
-    .navbar-scrolled .logo-image {
-        height: 2.5rem;
-    }
-
-    .navbar .logo-text-secondary {
-        font-size: 1rem;
-    }
-
-    .navbar-scrolled .logo-text-secondary {
-        font-size: 0.875rem;
-    }
-
-    .navbar .logo-text-primary {
-        font-size: 0.75rem;
-    }
-
-    .navbar-scrolled .logo-text-primary {
-        font-size: 0.625rem;
-    }
-
-    .navbar .logo-divider {
-        height: 2.5rem;
-    }
-
-    .navbar-scrolled .logo-divider {
-        height: 2rem;
-    }
-
-    .navbar .mobile-menu-button {
-        height: 2.5rem;
-        width: 2.5rem;
-    }
-
-    .navbar-scrolled .mobile-menu-button {
-        height: 2rem;
-        width: 2rem;
-    }
-
-    .dropdown-menu,
-    .mega-dropdown {
-        display: none;
-    }
-
-    .mobile-menu a,
-    .mobile-menu button {
-        width: 100%;
-        text-align: left;
-    }
-}
-
-@media (max-width: 768px) {
-    .mega-dropdown {
-        width: 100%;
-        max-width: 400px;
-        padding: 1rem;
-    }
-
-    .mega-dropdown .flex {
-        flex-direction: column;
-        gap: 1rem;
-    }
 }
 
 /* Header Image Section */
@@ -804,35 +663,6 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-@media (min-width: 768px) {
-    .header-title {
-        font-size: 2.25rem;
-    }
-
-    .header-subtitle {
-        font-size: 1.25rem;
-    }
-}
-
-@media (min-width: 1024px) {
-    .header-title {
-        font-size: 3rem;
-    }
-
-    .header-subtitle {
-        font-size: 1.5rem;
-    }
-}
-
-@media (max-width: 640px) {
-    .dropdown-menu {
-        width: 100%;
-        max-width: 100%;
-        right: 0;
-        left: 0;
-    }
-}
-
 /* Event Cards */
 .event-card .bg-primary {
     position: relative;
@@ -861,7 +691,6 @@
 /* Organization Cards */
 .bg-primary {
     background: var(--gradient) !important;
-    /* Konsisten menggunakan --gradient */
 }
 
 .org-icon {
@@ -908,14 +737,11 @@
     opacity: 1;
 }
 
-
-
 /* Footer */
 footer {
     position: relative;
     overflow: hidden;
     background: var(--gradient);
-    /* Ganti var(--bs-dark) dengan --gradient */
 }
 
 footer:before {
@@ -927,10 +753,7 @@ footer:before {
     height: 100%;
     background: linear-gradient(135deg,
             rgba(30, 58, 138, 0.97) 0%,
-            /* Sesuaikan dengan --primary */
-            rgba(59, 130, 246, 0.9) 100%
-            /* Sesuaikan dengan --primary-light */
-        );
+            rgba(59, 130, 246, 0.9) 100%);
     z-index: -1;
 }
 
@@ -1040,34 +863,6 @@ footer .btn-link:hover {
     margin-left: -150px;
 }
 
-/* Responsive Styles */
-@media (max-width: 991.98px) {
-    .carousel-caption h1 {
-        font-size: 2rem;
-    }
-
-    .carousel-caption .bg-primary {
-        max-width: 100%;
-    }
-
-    .navbar-collapse {
-        background: var(--primary);
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-top: 0.5rem;
-    }
-}
-
-@media (max-width: 767.98px) {
-    .carousel-caption h1 {
-        font-size: 1.5rem;
-    }
-
-    .nav-link::after {
-        display: none;
-    }
-}
-
 /* Custom Scroll Bar */
 ::-webkit-scrollbar {
     width: 12px;
@@ -1087,10 +882,9 @@ footer .btn-link:hover {
     background: var(--primary-dark);
 }
 
-/*** Footer Start ***/
+/* Footer */
 .footer {
     background: var(--gradient);
-    /* Konsisten menggunakan --gradient */
 }
 
 .footer .footer-item {
@@ -1169,13 +963,310 @@ footer .btn-link:hover {
     color: var(--bs-white);
 }
 
-/*** Footer End ***/
-
-/*** Copyright Start ***/
+/* Copyright */
 .copyright {
     background: var(--gradient);
-    /* Konsisten menggunakan --gradient */
     border-top: 1px solid rgba(255, 255, 255, .08);
 }
 
-/*** Copyright End ***/
+/* Responsive Styles */
+@media (max-width: 1100px) {
+    .navbar .hidden.lg\:flex {
+        display: none;
+    }
+
+    .navbar .flex.lg\:hidden {
+        display: flex;
+    }
+
+    .navbar {
+        height: 4rem;
+        padding: 0 1rem;
+    }
+
+    .navbar-scrolled {
+        height: 3.5rem;
+    }
+
+    .navbar .logo-container {
+        height: 3.5rem;
+    }
+
+    .navbar-scrolled .logo-container {
+        height: 3rem;
+    }
+
+    .navbar .logo-image {
+        height: 3rem;
+    }
+
+    .navbar-scrolled .logo-image {
+        height: 2.5rem;
+    }
+
+    .navbar .logo-text-secondary {
+        font-size: 1rem;
+    }
+
+    .navbar-scrolled .logo-text-secondary {
+        font-size: 0.875rem;
+    }
+
+    .navbar .logo-text-primary {
+        font-size: 0.75rem;
+    }
+
+    .navbar-scrolled .logo-text-primary {
+        font-size: 0.625rem;
+    }
+
+    .navbar .logo-divider {
+        height: 2.5rem;
+    }
+
+    .navbar-scrolled .logo-divider {
+        height: 2rem;
+    }
+
+    .navbar .mobile-menu-button {
+        height: 2.5rem;
+        width: 2.5rem;
+    }
+
+    .navbar-scrolled .mobile-menu-button {
+        height: 2rem;
+        width: 2rem;
+    }
+
+    .dropdown-menu,
+    .mega-dropdown {
+        display: none;
+    }
+
+    .mobile-menu a,
+    .mobile-menu button {
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1rem;
+    }
+
+    .navbar-collapse {
+        position: absolute;
+        top: 4rem;
+        left: 0;
+        right: 0;
+        background: var(--primary);
+        z-index: 1000;
+        padding: 1rem;
+        border-radius: 0 0 0.5rem 0.5rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+}
+
+@media (max-width: 768px) {
+    .swiper-container {
+        height: 60vh; /* Use viewport height for better scaling */
+    }
+
+    .carousel-caption {
+        padding: 1rem;
+        width: 95%;
+    }
+
+    .carousel-caption h1 {
+        font-size: clamp(1.25rem, 3vw, 2rem);
+        margin-bottom: 0.75rem;
+    }
+
+    .carousel-caption p {
+        font-size: clamp(0.8rem, 2vw, 1rem);
+        margin-bottom: 1.5rem;
+    }
+
+    .carousel-caption .btn {
+        font-size: clamp(0.7rem, 1.5vw, 0.875rem);
+        padding: clamp(0.4rem, 1vw, 0.6rem) clamp(0.8rem, 2vw, 1.5rem);
+    }
+
+    .swiper-pagination {
+        bottom: clamp(10px, 2vw, 20px) !important;
+        padding: clamp(4px, 1vw, 6px) clamp(8px, 2vw, 12px);
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+        width: 50px;
+        height: 50px;
+        opacity: 0.7;
+        transform: translateY(-50%) scale(1);
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: clamp(16px, 2.5vw, 20px);
+    }
+
+    .mega-dropdown {
+        width: 100%;
+        max-width: 400px;
+        padding: 1rem;
+    }
+
+    .mega-dropdown .flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .header-image-container {
+        height: 200px;
+    }
+
+    .header-title {
+        font-size: 1.5rem;
+    }
+
+    .header-subtitle {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .dropdown-menu {
+        width: 100%;
+        max-width: 100%;
+        right: 0;
+        left: 0;
+        top: 3.5rem;
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+
+    .swiper-container {
+        height: 50vh; /* Further reduce height for small screens */
+    }
+
+    .carousel-caption {
+        padding: 0.75rem;
+    }
+
+    .carousel-caption h1 {
+        font-size: clamp(1rem, 2.5vw, 1.5rem);
+    }
+
+    .carousel-caption p {
+        font-size: clamp(0.7rem, 1.8vw, 0.875rem);
+    }
+
+    .carousel-caption .btn {
+        font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+        padding: clamp(0.3rem, 0.8vw, 0.5rem) clamp(0.6rem, 1.5vw, 1rem);
+    }
+
+    .swiper-pagination-bullet {
+        width: 6px;
+        height: 6px;
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+        width: 40px;
+        height: 40px;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 16px;
+    }
+
+    /* Social media section */
+    /* .flex-wrap.items-center {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1rem;
+    }
+
+    .flex.items-center.space-x-3 {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.875rem;
+    } */
+}
+
+@media (max-width: 480px) {
+    .swiper-container {
+        height: 40vh; /* Optimize for very small screens */
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+        display: none; /* Hide navigation buttons on very small screens */
+    }
+
+    .carousel-caption {
+        padding: 0.5rem;
+    }
+
+    .carousel-caption h1 {
+        font-size: clamp(0.875rem, 2vw, 1.25rem);
+    }
+
+    .carousel-caption p {
+        font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+        margin-bottom: 1rem;
+    }
+
+    .carousel-caption .btn {
+        font-size: clamp(0.5rem, 1vw, 0.625rem);
+        padding: clamp(0.25rem, 0.6vw, 0.4rem) clamp(0.5rem, 1.2vw, 0.8rem);
+    }
+
+    .navbar {
+        padding: 0 0.75rem;
+    }
+
+    .navbar-collapse {
+        top: 3.5rem;
+        padding: 0.75rem;
+    }
+
+    .mobile-menu a,
+    .mobile-menu button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .header-image-container {
+        height: 150px;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+    }
+
+    .header-subtitle {
+        font-size: 0.875rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .header-title {
+        font-size: 2.25rem;
+    }
+
+    .header-subtitle {
+        font-size: 1.25rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .header-title {
+        font-size: 3rem;
+    }
+
+    .header-subtitle {
+        font-size: 1.5rem;
+    }
+}
