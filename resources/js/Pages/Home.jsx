@@ -29,6 +29,19 @@ export default function Home() {
     const [isNewsVisible, setIsNewsVisible] = useState(false);
     const [isAchievementsVisible, setIsAchievementsVisible] = useState(false);
     const welcomeSectionRef = useRef(null);
+    // Tambahkan juga hook untuk detect screen size
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkScreenSize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -326,10 +339,11 @@ export default function Home() {
         sectionContainer: {
             maxWidth: '1280px',
             margin: '0 auto',
-            padding: '0 24px',
+            padding: isMobile ? '0 16px' : '0 24px',
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '32px',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '24px' : '32px',
         },
         sectionHeader: {
             width: '100%',
@@ -363,29 +377,32 @@ export default function Home() {
         sidebarContainer: {
             flex: '0 0 250px',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '24px',
+            flexDirection: isMobile ? 'row' : 'column', // Kondisional berdasarkan isMobile
+            gap: isMobile ? '16px' : '24px',
+            minWidth: isMobile ? '100%' : 'auto',
         },
+        // Update styles untuk announcementsSidebar
         announcementsSidebar: {
             background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '12px',
             boxShadow: '0 6px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)',
-            padding: '16px',
-            height: '400px',
-            minHeight: '400px',
-            maxHeight: '400px',
+            padding: isMobile ? '12px' : '16px',
+            height: isMobile ? '350px' : '400px',
+            minHeight: isMobile ? '350px' : '400px',
+            maxHeight: isMobile ? '350px' : '400px',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
             animation: 'slideUp 0.7s ease-out 0.2s both',
             position: 'relative',
             overflowY: 'auto',
+            flex: isMobile ? '1' : 'none', // Mengambil setengah lebar pada mobile
         },
         sidebarTitle: {
-            fontSize: '18px',
+            fontSize: isMobile ? '16px' : '18px',
             fontWeight: '600',
             color: '#374151',
-            marginBottom: '12px',
+            marginBottom: isMobile ? '8px' : '12px',
         },
         sidebarItem: {
             padding: '8px 0',
@@ -418,31 +435,32 @@ export default function Home() {
             },
         },
         sidebarItemTitle: {
-            fontSize: '13px',
+            fontSize: isMobile ? '12px' : '13px',
             fontWeight: '500',
             color: '#374151',
             display: '-webkit-box',
-            WebkitLineClamp: 2,
+            WebkitLineClamp: isMobile ? 1 : 2, // Kurangi baris untuk mobile
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
         },
         sidebarItemDate: {
-            fontSize: '11px',
+            fontSize: isMobile ? '10px' : '11px',
             color: '#6b7280',
         },
+        // Update button styles untuk mobile
         sidebarButton: {
             display: 'block',
             width: '100%',
             background: '#DBEAFE',
             color: '#3B82F6',
-            padding: '12px 0',
+            padding: isMobile ? '10px 0' : '12px 0',
             borderRadius: '8px',
             textDecoration: 'none',
-            fontSize: '14px',
+            fontSize: isMobile ? '12px' : '14px',
             fontWeight: '500',
             textAlign: 'center',
             transition: 'background 0.2s ease, color 0.2s ease, transform 0.2s ease',
-            marginTop: '32px',
+            marginTop: isMobile ? '16px' : '32px',
             ':hover': {
                 background: '#BFDBFE',
                 color: '#1D4ED8',
@@ -457,14 +475,15 @@ export default function Home() {
             background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '12px',
             boxShadow: '0 6px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)',
-            padding: '16px',
-            minHeight: '400px',
-            maxHeight: '400px',
+            padding: isMobile ? '12px' : '16px',
+            minHeight: isMobile ? '350px' : '400px',
+            maxHeight: isMobile ? '350px' : '400px',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
             animation: 'slideUp 0.7s ease-out 0.3s both',
             overflowY: 'auto',
+            flex: isMobile ? '1' : 'none', // Mengambil setengah lebar pada mobile
         },
         activityItem: {
             padding: '6px 0',
@@ -481,14 +500,15 @@ export default function Home() {
                 transform: 'translateX(4px)',
             },
         },
+        // Optional: Update activity date box untuk mobile
         activityDateBox: {
             background: '#3B82F6',
             color: '#ffffff',
             borderRadius: '8px',
             padding: '4px 8px',
             textAlign: 'center',
-            width: '60px',
-            height: '50px',
+            width: isMobile ? '50px' : '60px',
+            height: isMobile ? '40px' : '50px',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -520,17 +540,18 @@ export default function Home() {
             },
         },
         activityDay: {
-            fontSize: '18px',
+            fontSize: isMobile ? '14px' : '18px',
             fontWeight: '600',
             lineHeight: '1',
             marginBottom: '2px',
         },
         activityMonth: {
-            fontSize: '12px',
+            fontSize: isMobile ? '10px' : '12px',
             fontWeight: '400',
             textTransform: 'uppercase',
             lineHeight: '1',
         },
+
         activityContent: {
             flex: 1,
             display: 'flex',
@@ -538,16 +559,16 @@ export default function Home() {
             gap: '4px',
         },
         activityItemTitle: {
-            fontSize: '13px',
+            fontSize: isMobile ? '12px' : '13px',
             fontWeight: '500',
             color: '#374151',
             display: '-webkit-box',
-            WebkitLineClamp: 2,
+            WebkitLineClamp: isMobile ? 1 : 2, // Kurangi baris untuk mobile
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
         },
         activityItemDate: {
-            fontSize: '11px',
+            fontSize: isMobile ? '10px' : '11px',
             color: '#6b7280',
         },
         newsGrid: {
@@ -712,6 +733,7 @@ export default function Home() {
             transform: isWelcomeVisible ? 'translateY(0)' : 'translateY(20px)',
             transition: 'opacity 0.8s ease-out, transform 0.8s ease-out',
         },
+
         welcomeContainer: {
             maxWidth: '1280px',
             margin: '0 auto',
@@ -720,13 +742,20 @@ export default function Home() {
             gridTemplateColumns: '300px 1fr',
             gap: '24px',
             alignItems: 'start',
-            '@media (max-width: 640px)': {
-                gridTemplateColumns: '1fr',
-                flexDirection: 'column',
-                textAlign: 'center',
-                gap: '16px',
-            },
         },
+
+        // Tambahkan ini di bagian akhir component sebelum closing tag
+        welcomeContainerMobile: {
+            maxWidth: '1280px',
+            margin: '0 auto',
+            padding: '0 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+            textAlign: 'center',
+        },
+
         welcomePhotoContainer: {
             width: '320px',
             height: '400px',
@@ -738,19 +767,29 @@ export default function Home() {
             opacity: isWelcomeVisible ? 1 : 0,
             transform: isWelcomeVisible ? 'translateX(0) scale(1)' : 'translateX(-20px) scale(0.9)',
             filter: isWelcomeVisible ? 'blur(0)' : 'blur(5px)',
-            '@media (max-width: 640px)': {
-                width: '100%',
-                maxWidth: '300px',
-                height: 'auto',
-                aspectRatio: '3 / 4',
-                margin: '0 auto',
-            },
         },
+
+        welcomePhotoContainerMobile: {
+            width: '100%',
+            maxWidth: '280px',
+            height: '350px',
+            overflow: 'hidden',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            background: '#f3f4f6',
+            transition: 'opacity 0.8s ease-out, transform 0.8s ease-out, filter 0.8s ease-out',
+            opacity: isWelcomeVisible ? 1 : 0,
+            transform: isWelcomeVisible ? 'translateY(0) scale(1)' : 'translateY(-20px) scale(0.9)',
+            filter: isWelcomeVisible ? 'blur(0)' : 'blur(5px)',
+            margin: '0 auto',
+        },
+
         welcomePhoto: {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
         },
+
         welcomePhotoPlaceholder: {
             width: '100%',
             height: '100%',
@@ -759,12 +798,32 @@ export default function Home() {
             justifyContent: 'center',
             color: '#6b7280',
             fontSize: '16px',
-            '@media (max-width: 640px)': {
-                fontSize: '14px',
-            },
         },
+
+        welcomePhotoPlaceholderMobile: {
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#6b7280',
+            fontSize: '14px',
+        },
+
+        welcomeContent: {
+            display: 'flex',
+            flexDirection: 'column',
+        },
+
+        welcomeContentMobile: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+        },
+
         welcomeName: {
-            fontSize: 'clamp(20px, 5vw, 24px)',
+            fontSize: 'clamp(24px, 5vw, 28px)',
             fontWeight: '700',
             color: '#374151',
             marginBottom: '16px',
@@ -773,12 +832,21 @@ export default function Home() {
             opacity: isWelcomeVisible ? 1 : 0,
             transform: isWelcomeVisible ? 'translateX(0) scale(1)' : 'translateX(20px) scale(0.95)',
             filter: isWelcomeVisible ? 'blur(0)' : 'blur(3px)',
-            '@media (max-width: 640px)': {
-                textAlign: 'center',
-                fontSize: 'clamp(18px, 4vw, 20px)',
-                marginBottom: '12px',
-            },
         },
+
+        welcomeNameMobile: {
+            fontSize: 'clamp(20px, 4vw, 24px)',
+            fontWeight: '700',
+            color: '#374151',
+            marginBottom: '12px',
+            marginTop: '16px',
+            textAlign: 'center',
+            transition: 'opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s, filter 0.8s ease-out 0.2s',
+            opacity: isWelcomeVisible ? 1 : 0,
+            transform: isWelcomeVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+            filter: isWelcomeVisible ? 'blur(0)' : 'blur(3px)',
+        },
+
         welcomeMessage: {
             fontSize: 'clamp(14px, 3vw, 15px)',
             color: '#4b5563',
@@ -788,7 +856,7 @@ export default function Home() {
             padding: '21px',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             backdropFilter: 'blur(10px)',
-            maxHeight: '350px',
+            maxHeight: '340px',
             overflowY: 'auto',
             textAlign: 'justify',
             position: 'relative',
@@ -810,16 +878,29 @@ export default function Home() {
                 zIndex: 0,
                 transform: 'translateX(-50%)',
             },
-            '@media (max-width: 640px)': {
-                fontSize: 'clamp(13px, 2.5vw, 14px)',
-                padding: '16px',
-                textAlign: 'center',
-                borderRadius: '12px',
-                ':after': {
-                    display: 'none',
-                },
-            },
         },
+
+        welcomeMessageMobile: {
+            fontSize: 'clamp(13px, 2.5vw, 14px)',
+            color: '#4b5563',
+            lineHeight: '1.7',
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '12px',
+            padding: '18px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(10px)',
+            maxHeight: '280px',
+            overflowY: 'auto',
+            textAlign: 'left',
+            position: 'relative',
+            transition: 'opacity 0.8s ease-out 0.4s, transform 0.8s ease-out 0.4s, filter 0.8s ease-out 0.4s',
+            opacity: isWelcomeVisible ? 1 : 0,
+            transform: isWelcomeVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+            filter: isWelcomeVisible ? 'blur(0)' : 'blur(3px)',
+            marginTop: '8px',
+            width: '100%',
+        },
+
         achievementsSection: {
             padding: '48px 0',
             background: '#F5F7FA',
@@ -912,21 +993,21 @@ export default function Home() {
             '100%': { backgroundPosition: '0% 50%' },
         },
         socialMediaContainer: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-        gap: '16px',
-        justifyItems: 'center',
-        alignItems: 'center',
-        overflowX: 'auto',
-        padding: '0 16px',
-        '@media (min-width: 640px)': {
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '24px',
-            overflowX: 'visible',
-            justifyContent: 'center',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+            gap: '16px',
+            justifyItems: 'center',
+            alignItems: 'center',
+            overflowX: 'auto',
+            padding: '0 16px',
+            '@media (min-width: 640px)': {
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '24px',
+                overflowX: 'visible',
+                justifyContent: 'center',
+            },
         },
-    },
     };
 
     return (
@@ -1085,10 +1166,12 @@ export default function Home() {
 
             {/* Welcome Message Section */}
             <div style={styles.welcomeSection} ref={welcomeSectionRef}>
-                <div style={styles.welcomeContainer}>
-                    <div style={styles.welcomePhotoContainer}>
+                <div style={isMobile ? styles.welcomeContainerMobile : styles.welcomeContainer}>
+                    <div style={isMobile ? styles.welcomePhotoContainerMobile : styles.welcomePhotoContainer}>
                         {metaError ? (
-                            <div style={styles.welcomePhotoPlaceholder}>Gagal memuat foto</div>
+                            <div style={isMobile ? styles.welcomePhotoPlaceholderMobile : styles.welcomePhotoPlaceholder}>
+                                Gagal memuat foto
+                            </div>
                         ) : metaData && metaData.file_path ? (
                             <img
                                 style={styles.welcomePhoto}
@@ -1096,22 +1179,28 @@ export default function Home() {
                                 alt={metaData.meta_title || 'Foto Direktur'}
                             />
                         ) : (
-                            <div style={styles.welcomePhotoPlaceholder}>Tidak ada foto tersedia</div>
+                            <div style={isMobile ? styles.welcomePhotoPlaceholderMobile : styles.welcomePhotoPlaceholder}>
+                                Tidak ada foto tersedia
+                            </div>
                         )}
                     </div>
-                    <div>
+                    <div style={isMobile ? styles.welcomeContentMobile : styles.welcomeContent}>
                         {metaData && (
-                            <h3 style={styles.welcomeName}>{metaData.meta_title}</h3>
+                            <h3 style={isMobile ? styles.welcomeNameMobile : styles.welcomeName}>
+                                {metaData.meta_title}
+                            </h3>
                         )}
                         {metaError ? (
                             <p style={styles.errorMessage}>{metaError}</p>
                         ) : metaData ? (
                             <div
-                                style={styles.welcomeMessage}
+                                style={isMobile ? styles.welcomeMessageMobile : styles.welcomeMessage}
                                 dangerouslySetInnerHTML={{ __html: metaData.meta_description }}
                             />
                         ) : (
-                            <p style={styles.welcomeMessage}>Memuat kata sambutan...</p>
+                            <p style={isMobile ? styles.welcomeMessageMobile : styles.welcomeMessage}>
+                                Memuat kata sambutan...
+                            </p>
                         )}
                     </div>
                 </div>
