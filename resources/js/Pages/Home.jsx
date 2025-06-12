@@ -1379,7 +1379,7 @@ export default function Home() {
                                 </div>
                             )}
                             <Link
-                                href="/activitycalendar"
+                                href="/activities"
                                 style={styles.sidebarButton}
                                 aria-label="Lihat semua kegiatan"
                                 onClick={handleButtonClick}
